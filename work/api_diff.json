@@ -1,0 +1,486 @@
+{
+ "base": {
+  "spec": "server-spec",
+  "game": "com.xh.dachui.xsj 1.25.78923",
+  "apis": 584
+ },
+ "new": {
+  "spec": "server-spec-vn",
+  "game": "com.cmn.buatanew 1.26.81485",
+  "apis": 614
+ },
+ "apisAdded": [
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientBeginBattle",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "tFightHeroIDList",
+     "table"
+    ],
+    [
+     "nLevel",
+     "number"
+    ]
+   ],
+   "handler": "OnBeginBattle",
+   "bound": true,
+   "doc": "开始战斗",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientBuyStock",
+   "objName": "G_ActivityStock",
+   "args": [
+    [
+     "self.m.args.strStockId",
+     "string"
+    ],
+    [
+     "self.m.nCount",
+     "number"
+    ],
+    [
+     "self.m.nPrice",
+     "number"
+    ]
+   ],
+   "handler": "OnBuyStock",
+   "bound": true,
+   "doc": "买股票",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientBuyStockGoods",
+   "objName": "G_ActivityStock",
+   "args": [
+    [
+     "tonumber(strItemKey)",
+     "any"
+    ]
+   ],
+   "handler": "OnBuyStockGoods",
+   "bound": true,
+   "doc": "兑换商城道具",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientCompleteAibeiPayOrder",
+   "objName": "G_RechargeLogic",
+   "args": [
+    [
+     "orderId",
+     "any"
+    ]
+   ],
+   "handler": "OnCompleteAibeiPayOrder",
+   "bound": false,
+   "doc": "",
+   "src": "sc/user/Logical/ClientRechargeLogic.lua:335"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientEndBattle",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "tbHeroDamageHp",
+     "table"
+    ]
+   ],
+   "handler": "OnEndBattle",
+   "bound": true,
+   "doc": "开始战斗",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientFreshStockDetailTrend",
+   "objName": "G_ActivityStock",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "刷新股票详情走势图",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetAiBeiPayOrder",
+   "objName": "G_RechargeLogic",
+   "args": [
+    [
+     "nProductId",
+     "number"
+    ]
+   ],
+   "handler": "OnGetAiBeiPayOrder",
+   "bound": false,
+   "doc": "",
+   "src": "sc/user/Logical/ClientRechargeLogic.lua:319"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetAllCampStep",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": "OnGetAllCampStep",
+   "bound": true,
+   "doc": "所有副本进度排行榜",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetAllCompleteChapterRank",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": "OnGetAllCompleteChapterRank",
+   "bound": true,
+   "doc": "查询自己完成副本信息",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetAllMovingPaths",
+   "objName": "G_ServerStateWarProtocol",
+   "args": [
+    [
+     "self.__nMapMovePath",
+     "any"
+    ]
+   ],
+   "handler": null,
+   "bound": true,
+   "doc": "获取xx个玩家的移动路径",
+   "src": "sc/user/UI/StateWar/StateWarLogic.lua:5"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetCampDamageRank",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "args.nLevel",
+     "number"
+    ],
+    [
+     "1",
+     "number = 1"
+    ],
+    [
+     "50",
+     "number = 50"
+    ]
+   ],
+   "handler": "OnGetCampDamageRank",
+   "bound": true,
+   "doc": "伤害排行",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetCampRankInfo",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "获取阵营排行榜",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetChapterStepInfo",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "args.nLevel",
+     "number"
+    ]
+   ],
+   "handler": "OnGetChapterStepInfo",
+   "bound": true,
+   "doc": "获取关卡进度排行榜",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetCompleteAward",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "self.m.args.nLevel",
+     "number"
+    ]
+   ],
+   "handler": "OnGetCompleteAward",
+   "bound": true,
+   "doc": "获取通关奖励",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetCountryNotice",
+   "objName": "G_ServerStateWarProtocol",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "获取公告",
+   "src": "sc/user/UI/StateWar/StateWarLogic.lua:5"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetMVPInfo",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": "OnGetMVPInfo",
+   "bound": true,
+   "doc": "mvp信息",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetMovingHistory",
+   "objName": "G_ServerStateWarProtocol",
+   "args": [],
+   "handler": "OnGetMovingHistory",
+   "bound": false,
+   "doc": "获取国战移动路径",
+   "src": "sc/user/UI/StateWar/StateWarLogic.lua:71"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetPlayerRankInfo",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "获取单人的伤害排行榜",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetShopConf",
+   "objName": "G_ActivityStock",
+   "args": [],
+   "handler": "OnGetShopConf",
+   "bound": true,
+   "doc": "获取商城道具配置",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientGetStepAward",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "self.m.args.nLevel",
+     "number"
+    ],
+    [
+     "tReward.nPercent",
+     "number"
+    ]
+   ],
+   "handler": "OnGetStepAward",
+   "bound": true,
+   "doc": "获取单关进度奖励",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientJoinCamp",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": "OnJoinCamp",
+   "bound": true,
+   "doc": "加入阵营",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientOneKeyAward",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": "OnOneKeyAward",
+   "bound": true,
+   "doc": "一键领奖",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientQueryAccount",
+   "objName": "G_ActivityStock",
+   "args": [],
+   "handler": "OnQueryAccount",
+   "bound": true,
+   "doc": "查询用户帐户",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientQueryStock",
+   "objName": "G_ActivityStock",
+   "args": [],
+   "handler": "OnQueryStock",
+   "bound": true,
+   "doc": "查询当前股票价格",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientQueryStockAllToday",
+   "objName": "G_ActivityStock",
+   "args": [],
+   "handler": "OnQueryStockAllToday",
+   "bound": true,
+   "doc": "查询今日股票价格",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientSellStock",
+   "objName": "G_ActivityStock",
+   "args": [
+    [
+     "self.m.args.strStockId",
+     "string"
+    ],
+    [
+     "self.m.nCount",
+     "number"
+    ],
+    [
+     "self.m.nPrice",
+     "number"
+    ]
+   ],
+   "handler": "OnSellStock",
+   "bound": true,
+   "doc": "卖股票",
+   "src": "sc/user/UI/Stock/StockData.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientSetChallengedHeroIdList",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "上报挑战列表",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientSetCountryNotice",
+   "objName": "G_ServerStateWarProtocol",
+   "args": [
+    [
+     "strNotice",
+     "string"
+    ]
+   ],
+   "handler": "OnSetCountryNotice",
+   "bound": true,
+   "doc": "设置公告",
+   "src": "sc/user/UI/StateWar/StateWarLogic.lua:5"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientUpdateHp",
+   "objName": "G_JiuFaZhongyuan",
+   "args": [
+    [
+     "g_CUIJFZYDeploy:getLevel()",
+     "any"
+    ],
+    [
+     "tbBossDamageHp",
+     "table"
+    ]
+   ],
+   "handler": "OnUpdateHp",
+   "bound": true,
+   "doc": "血量上报",
+   "src": "sc/user/UI/JFZY/ClientJiuFaZhongYuan.lua:11"
+  },
+  {
+   "module": "GAME_LOGIC",
+   "funcName": "ClientViewPath",
+   "objName": "G_ServerStateWarProtocol",
+   "args": [],
+   "handler": null,
+   "bound": true,
+   "doc": "查看移动路径",
+   "src": "sc/user/UI/StateWar/StateWarLogic.lua:5"
+  }
+ ],
+ "apisRemoved": [],
+ "apisChanged": [],
+ "servers": {
+  "added": {},
+  "removed": {},
+  "renumbered": {}
+ },
+ "handlersAdded": [
+  "OnBeginBattle",
+  "OnBuyStock",
+  "OnBuyStockGoods",
+  "OnCompleteAibeiPayOrder",
+  "OnEndBattle",
+  "OnGetAiBeiPayOrder",
+  "OnGetAllCampStep",
+  "OnGetAllCompleteChapterRank",
+  "OnGetCampDamageRank",
+  "OnGetChapterStepInfo",
+  "OnGetCompleteAward",
+  "OnGetMVPInfo",
+  "OnGetMovingHistory",
+  "OnGetStepAward",
+  "OnJoinCamp",
+  "OnOneKeyAward",
+  "OnQueryAccount",
+  "OnQueryStock",
+  "OnQueryStockAllToday",
+  "OnSellStock",
+  "OnSetCountryNotice",
+  "OnUpdateHp"
+ ],
+ "handlersRemoved": [],
+ "errors": {
+  "groupsAdded": [
+   "ChargeSign",
+   "JFZY",
+   "Stock"
+  ],
+  "groupsRemoved": [],
+  "codes": [
+   {
+    "group": "Arenal",
+    "name": "ServerCalcNotOver",
+    "change": "added",
+    "to": 2322
+   },
+   {
+    "group": "StateWar",
+    "name": "MedalsRankDataNoExists",
+    "change": "added",
+    "to": 6725
+   },
+   {
+    "group": "StateWar",
+    "name": "NotTheMedalsRankChampion",
+    "change": "added",
+    "to": 6726
+   },
+   {
+    "group": "StateWar",
+    "name": "TargetCityUnreachable",
+    "change": "added",
+    "to": 6720
+   }
+  ]
+ }
+}

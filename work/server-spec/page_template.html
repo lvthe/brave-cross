@@ -1,0 +1,569 @@
+<title>Đặc tả RPC Búa Tạ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* ---------------------------------------------------------- tokens (light) */
+:root {
+  --ground:   #EBEAE6;
+  --surface:  #FBFAF7;
+  --sunk:     #E2E0D9;
+  --ink:      #22242A;
+  --muted:    #6C6E76;
+  --faint:    #93949B;
+  --line:     #D5D2CA;
+  --line-soft:#E3E0D8;
+
+  --req:      #A8412B;   /* chu sa — chiều client → server */
+  --req-bg:   #F6E7E2;
+  --resp:     #2A6B68;   /* lam lục — chiều server → client */
+  --resp-bg:  #E0EDEB;
+  --warn:     #8F6416;
+  --warn-bg:  #F5EBD8;
+
+  --shadow:   0 1px 2px rgba(34,36,42,.06), 0 8px 24px -18px rgba(34,36,42,.35);
+
+  --f-disp: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:  #141518;
+    --surface: #1C1E22;
+    --sunk:    #101115;
+    --ink:     #E7E4DE;
+    --muted:   #8A8C94;
+    --faint:   #6A6C74;
+    --line:    #2C2F35;
+    --line-soft:#24272C;
+    --req:     #DE7457;
+    --req-bg:  #33211C;
+    --resp:    #5EA9A3;
+    --resp-bg: #172A29;
+    --warn:    #C79A4A;
+    --warn-bg: #2B2417;
+    --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:  #141518;
+  --surface: #1C1E22;
+  --sunk:    #101115;
+  --ink:     #E7E4DE;
+  --muted:   #8A8C94;
+  --faint:   #6A6C74;
+  --line:    #2C2F35;
+  --line-soft:#24272C;
+  --req:     #DE7457;
+  --req-bg:  #33211C;
+  --resp:    #5EA9A3;
+  --resp-bg: #172A29;
+  --warn:    #C79A4A;
+  --warn-bg: #2B2417;
+  --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+}
+
+/* ---------------------------------------------------------------- base */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 15px/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+h1, h2, h3 { font-family: var(--f-disp); font-weight: 700; text-wrap: balance; margin: 0; }
+code, kbd, .mono { font-family: var(--f-mono); }
+a { color: var(--req); }
+:focus-visible { outline: 2px solid var(--req); outline-offset: 2px; border-radius: 2px; }
+
+.eyebrow {
+  font-family: var(--f-disp); font-weight: 600; font-size: 11.5px;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
+}
+
+/* ------------------------------------------------------------- masthead */
+.masthead { border-bottom: 1px solid var(--line); background: var(--surface); }
+.masthead .wrap { padding-top: 34px; padding-bottom: 28px; }
+.masthead h1 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.04; letter-spacing: -.015em; margin: 10px 0 0; }
+.lede { max-width: 62ch; color: var(--muted); margin: 14px 0 0; font-size: 15.5px; }
+.lede strong { color: var(--ink); font-weight: 600; }
+
+.scope { display: flex; flex-wrap: wrap; gap: 0; margin-top: 26px; border-top: 1px solid var(--line-soft); }
+.scope div {
+  flex: 1 1 130px; padding: 12px 18px 2px 0; margin-right: 18px;
+  border-right: 1px solid var(--line-soft);
+}
+.scope div:last-child { border-right: 0; }
+.scope b {
+  display: block; font-family: var(--f-disp); font-weight: 700;
+  font-size: 27px; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.scope span { font-size: 12px; color: var(--muted); }
+
+/* ------------------------------------------------------------- sections */
+section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+section > .wrap > h2 { font-size: 21px; letter-spacing: -.01em; }
+.sec-head { margin-bottom: 20px; }
+.sec-head p { color: var(--muted); max-width: 66ch; margin: 8px 0 0; font-size: 14.5px; }
+
+/* protocol */
+.proto-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+pre.code {
+  margin: 0; padding: 16px 18px; background: var(--sunk);
+  border: 1px solid var(--line-soft); border-radius: 3px;
+  font: 400 12.6px/1.65 var(--f-mono); overflow-x: auto; color: var(--ink);
+}
+pre.code .c { color: var(--faint); }
+pre.code .k { color: var(--req); }
+pre.code .n { color: var(--resp); }
+.flow { display: flex; flex-direction: column; gap: 14px; }
+.flow-step { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 12px; align-items: start; }
+.flow-step .dir {
+  font: 600 11px/22px var(--f-mono); text-align: center; border-radius: 2px;
+  color: var(--surface);
+}
+.flow-step.out .dir { background: var(--req); }
+.flow-step.in  .dir { background: var(--resp); }
+.flow-step p { margin: 0; font-size: 14px; color: var(--muted); }
+.flow-step p b { color: var(--ink); font-weight: 600; }
+.flow-step code { font-size: 12.5px; background: var(--sunk); padding: 1px 5px; border-radius: 2px; }
+
+/* routing table */
+.routes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0 24px; }
+.route {
+  display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 10px;
+  align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+.route .id { font: 500 12px var(--f-mono); color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }
+.route .nm { font: 500 13px var(--f-mono); }
+.route .ct { font: 500 12.5px var(--f-mono); font-variant-numeric: tabular-nums; }
+.route.used .nm { color: var(--ink); }
+.route.unused .nm, .route.unused .ct { color: var(--faint); }
+.route.used .ct { color: var(--req); }
+
+.note {
+  margin-top: 20px; padding: 13px 16px; border-left: 3px solid var(--warn);
+  background: var(--warn-bg); font-size: 13.5px; border-radius: 0 3px 3px 0;
+}
+.note b { font-weight: 600; }
+
+/* ------------------------------------------------------------- browser */
+#browser { border-bottom: 1px solid var(--line); }
+.browser-grid { display: grid; grid-template-columns: 218px minmax(0, 1fr); gap: 30px; align-items: start; }
+.rail { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field > label { font-family: var(--f-disp); font-weight: 600; font-size: 11px; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); }
+#q {
+  width: 100%; padding: 9px 11px; font: 400 13.5px var(--f-mono);
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 3px;
+}
+#q::placeholder { color: var(--faint); }
+.chips { display: flex; flex-direction: column; gap: 1px; }
+.chip {
+  display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+  padding: 5px 8px; border: 0; border-radius: 3px; cursor: pointer;
+  background: transparent; color: var(--muted);
+  font: 500 12.5px var(--f-mono); text-align: left; width: 100%;
+}
+.chip:hover { background: var(--sunk); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--req); color: #FBFAF7; }
+.chip span { font-variant-numeric: tabular-nums; opacity: .8; }
+.toggle { display: flex; gap: 8px; align-items: flex-start; font-size: 12.8px; color: var(--muted); cursor: pointer; }
+.toggle input { margin: 3px 0 0; accent-color: var(--req); }
+.legend { font-size: 12px; color: var(--faint); border-top: 1px solid var(--line-soft); padding-top: 14px; line-height: 1.75; }
+.legend i { font-style: normal; font-family: var(--f-mono); }
+.legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+
+.count { font: 500 12.5px var(--f-mono); color: var(--muted); margin: 0 0 10px; font-variant-numeric: tabular-nums; }
+
+/* rows */
+.rows { display: flex; flex-direction: column; }
+.api {
+  border-bottom: 1px solid var(--line-soft); padding: 11px 0 11px 13px;
+  border-left: 2px solid transparent; cursor: pointer;
+}
+.api > summary { list-style: none; cursor: pointer; }
+.api > summary::-webkit-details-marker { display: none; }
+.api > summary::marker { content: ""; }
+.api:hover { border-left-color: var(--req); background: var(--surface); }
+.api[open] { border-left-color: var(--req); background: var(--surface); }
+.bound { color: #c98a2b; font-weight: 700; margin-left: .35em; cursor: help; }
+.api-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: baseline; }
+.fn { font: 600 13.8px var(--f-mono); color: var(--req); overflow-wrap: anywhere; }
+.fn .obj { color: var(--faint); font-weight: 400; }
+.args { font: 400 12.6px var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
+.args .an { color: var(--ink); }
+.mod { font: 500 10.5px var(--f-disp); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.api-sub { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 5px; align-items: baseline; }
+.doc { font-size: 13px; color: var(--muted); }
+.hnd { font: 500 12.4px var(--f-mono); color: var(--resp); }
+.hnd.none { color: var(--faint); }
+.src { font: 400 11.5px var(--f-mono); color: var(--faint); margin-left: auto; }
+
+.detail { margin: 12px 0 4px; padding: 13px 15px; background: var(--sunk); border-radius: 3px; display: grid; gap: 12px; }
+.detail h4 { margin: 0 0 6px; font-family: var(--f-disp); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kv { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 3px 14px; font: 400 12.6px var(--f-mono); }
+.kv dt { color: var(--ink); }
+.kv dd { margin: 0; color: var(--muted); }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font: 400 11.8px var(--f-mono); padding: 2px 7px; border-radius: 2px; background: var(--resp-bg); color: var(--resp); }
+.empty { padding: 40px 0; color: var(--muted); font-size: 14px; }
+
+/* ------------------------------------------------------------- errors */
+.err-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 20px 26px; }
+.err-group > h3 { font-size: 13px; font-family: var(--f-mono); font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.err-group > .range { font: 400 11.5px var(--f-mono); color: var(--faint); display: block; margin-bottom: 7px; }
+.err-list { display: flex; flex-direction: column; }
+.err {
+  display: grid; grid-template-columns: 46px minmax(0,1fr); gap: 10px;
+  padding: 3px 0; border-bottom: 1px solid var(--line-soft);
+  font: 400 12.3px var(--f-mono);
+}
+.err b { color: var(--warn); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.err span { color: var(--muted); overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------- footer */
+footer { padding: 30px 0 46px; color: var(--muted); font-size: 13px; }
+footer p { margin: 0 0 8px; max-width: 74ch; }
+footer code { font-size: 12.3px; background: var(--sunk); padding: 1px 5px; border-radius: 2px; }
+
+@media (max-width: 900px) {
+  .proto-grid, .browser-grid { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; }
+  .chips { flex-direction: row; flex-wrap: wrap; }
+  .chip { width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Dịch ngược · <span id="s-game">—</span></p>
+    <h1>Đặc tả RPC Búa Tạ</h1>
+    <p class="lede">
+      Toàn bộ bề mặt giao tiếp client–server, trích tự động từ <strong><span id="s-lua">—</span> file Lua</strong>
+      đã giải mã khỏi APK. Mỗi dòng dưới đây tương ứng một hàm server phải hiện thực,
+      kèm chữ ký tham số, handler trả kết quả và vị trí trong mã nguồn gốc.
+    </p>
+    <div class="scope">
+      <div><b id="s-api">—</b><span>hàm server</span></div>
+      <div><b id="s-hnd">—</b><span>khớp handler trả về</span></div>
+      <div><b id="s-mod">—</b><span>nhóm server</span></div>
+      <div><b id="s-err">—</b><span>mã lỗi</span></div>
+      <div><b>JSON</b><span>payload trên dây</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="protocol">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">01 — Giao thức</p>
+      <h2>Envelope protobuf, payload JSON, định tuyến theo tên hàm</h2>
+      <p>
+        Không có mã opcode. Client gửi thẳng <em>tên hàm</em> server cần gọi trong trường
+        <code>funcName</code>, tham số nằm ở <code>data</code> dưới dạng mảng JSON.
+        Server trả kết quả bằng cách gọi ngược lại một hàm của client theo đúng cơ chế đó.
+      </p>
+    </div>
+    <div class="proto-grid">
+      <pre class="code"><span class="c">// conf/kGameRequestData.proto</span>
+<span class="k">message</span> GameActionData {
+  optional int32  <span class="n">module</span>   = 1;  <span class="c">// nhóm server (§02)</span>
+  optional string <span class="n">funcName</span> = 2;  <span class="c">// TÊN hàm server sẽ chạy</span>
+  optional int64  <span class="n">uid</span>      = 3;
+  optional string <span class="n">sessionId</span>= 4;
+  optional string <span class="n">data</span>     = 5;  <span class="c">// mảng JSON tham số</span>
+  optional uint32 <span class="n">connId</span>   = 6;
+  optional uint64 <span class="n">IP</span>       = 7;
+  optional string <span class="n">objName</span>  = 8;  <span class="c">// "" = hàm toàn cục</span>
+  optional uint64 <span class="n">serialID</span> = 9;  <span class="c">// khớp req ↔ resp</span>
+  optional uint32 <span class="n">serverID</span> = 10;
+}</pre>
+      <div class="flow">
+        <div class="flow-step out">
+          <div class="dir">→</div>
+          <p><b>Client gọi và không chờ.</b> <code>CallServer(module, objName, funcName, ...)</code>
+             gói tham số bằng <code>cjson.encode({...})</code> rồi gửi đi.
+             <span class="mono" style="color:var(--faint)">rpc.lua:155</span></p>
+        </div>
+        <div class="flow-step in">
+          <div class="dir">←</div>
+          <p><b>Server chủ động trả về.</b> Kết quả không đi theo lời gọi cũ mà là một RPC
+             ngược hoàn toàn mới: <code>CallLocal(objName, funcName, data)</code> →
+             <code>func(obj, unpack(cjson.decode(data)))</code>.
+             <span class="mono" style="color:var(--faint)">rpc.lua:39, 84</span></p>
+        </div>
+        <div class="flow-step in">
+          <div class="dir">←</div>
+          <p><b>Hình dạng payload trả về.</b> Mọi handler kiểm tra <code>tData.err ~= 0</code>
+             trước tiên, rồi mới đọc <code>tData.data</code>. Mã lỗi liệt kê ở §03.</p>
+        </div>
+        <pre class="code"><span class="c">-- ví dụ trọn vẹn một vòng</span>
+CallServer(SERVER.GAME_LOGIC, <span class="n">""</span>, <span class="n">"ClientUpgradeBuilding"</span>, nBuildingId)
+  <span class="c">→ data = "[12]"</span>
+  <span class="c">← CallLocal("", "OnUpgradeBuilding", '[{"err":0,...}]')</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="routing">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">02 — Định tuyến</p>
+      <h2>Chín trong mười chín nhóm server thực sự được dùng</h2>
+      <p>Hằng số <code>SERVER</code> lấy từ <code>sc/share/Protocol.lua</code>.
+         Cột phải là số API client thực sự gọi tới nhóm đó.</p>
+    </div>
+    <div class="routes" id="routes"></div>
+    <div class="note" id="undef"></div>
+  </div>
+</section>
+
+<section id="browser">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">03 — Bề mặt API</p>
+      <h2>Danh mục hàm server</h2>
+      <p>Kiểu tham số suy ra từ quy ước Hungarian của chính codebase
+         (<code>n</code>/<code>dw</code> số, <code>sz</code>/<code>str</code> chuỗi,
+         <code>t</code> bảng, <code>b</code> boolean, <code>u</code> uid).
+         Phần mô tả là comment tiếng Trung nguyên bản của tác giả. Bấm một dòng để xem chi tiết.</p>
+    </div>
+    <div class="browser-grid">
+      <aside class="rail">
+        <div class="field">
+          <label for="q">Tìm</label>
+          <input id="q" type="search" placeholder="ví dụ: Guild, 好友, Arena…" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Nhóm server</label>
+          <div class="chips" id="chips"></div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="only-nohnd">
+          <span>Chỉ hàm chưa dò được handler trả về</span></label>
+        <div class="legend">
+          <span class="sw" style="background:var(--req)"></span><i>tên hàm</i> — client gọi lên<br>
+          <span class="sw" style="background:var(--resp)"></span><i>handler</i> — server gọi ngược<br>
+          <i>n×</i> — số chỗ gọi trong client
+        </div>
+      </aside>
+      <div>
+        <p class="count" id="count"></p>
+        <div class="rows" id="rows"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="errors">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">04 — Mã lỗi</p>
+      <h2>Trường <code>err</code>, gom theo dải số</h2>
+      <p>Trích từ <code>sc/share/error.lua</code>. Mỗi phân hệ chiếm một dải riêng —
+         nghiệp vụ chung từ 500, thế giới game từ 1001, đăng nhập từ 1050, gateway từ 1080.</p>
+    </div>
+    <div class="err-groups" id="errs"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Nguồn.</b> Số liệu sinh tự động từ mã nguồn Lua đã giải mã, không suy đoán thủ công.
+       Lời gọi nằm trong comment đã bị loại; tầng vận chuyển <code>sc/system/rpc.lua</code>
+       không tính là API.</p>
+    <p><b>Còn ở bản Markdown.</b> Bảng 138 file luật chơi dùng chung trong <code>sc/share/</code>,
+       danh sách lời gọi có tên hàm dựng động, và toàn bộ đường dẫn nguồn nằm ở
+       <code>server-spec/SERVER_API.md</code>; dữ liệu máy đọc được ở <code>server_api.json</code>.</p>
+  </div>
+</footer>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var rows = D.rows, servers = D.servers, errors = D.errors;
+
+  /* ---------------------------------------------------------- scope */
+  var nHnd = rows.filter(function (r) { return r.h; }).length;
+  var mods = {};
+  rows.forEach(function (r) { mods[r.m] = (mods[r.m] || 0) + 1; });
+  var nErr = Object.keys(errors).reduce(function (a, k) { return a + Object.keys(errors[k]).length; }, 0);
+  document.getElementById('s-api').textContent = rows.length;
+  document.getElementById('s-hnd').textContent = nHnd;
+  document.getElementById('s-mod').textContent = Object.keys(mods).length;
+  document.getElementById('s-err').textContent = nErr;
+  document.getElementById('s-game').textContent = D.game || '';
+  document.getElementById('s-lua').textContent = D.lua || '';
+
+  /* --------------------------------------------------------- routing */
+  var routes = document.getElementById('routes');
+  Object.keys(servers)
+    .filter(function (k) { return k !== 'SERVER_MAX'; })
+    .sort(function (a, b) { return servers[a] - servers[b]; })
+    .forEach(function (k) {
+      var n = mods[k] || 0, el = document.createElement('div');
+      el.className = 'route ' + (n ? 'used' : 'unused');
+      el.innerHTML = '<span class="id">' + servers[k] + '</span>' +
+                     '<span class="nm">' + k + '</span>' +
+                     '<span class="ct">' + (n || '·') + '</span>';
+      routes.appendChild(el);
+    });
+  var undef = Object.keys(mods).filter(function (m) { return !(m in servers); });
+  var noteEl = document.getElementById('undef');
+  if (undef.length) {
+    var fns = rows.filter(function (r) { return undef.indexOf(r.m) > -1; })
+                  .map(function (r) { return r.f; });
+    noteEl.innerHTML = '<b>Bất thường.</b> <span class="mono">SERVER.' + undef.join(', ') +
+      '</span> được client tham chiếu nhưng không tồn tại trong enum — lúc chạy là <span class="mono">nil</span>, ' +
+      'nên <span class="mono">CallServer</span> rơi vào nhánh mặc định và đẩy qua game gateway. ' +
+      'API cũ còn sót: <span class="mono">' + fns.join(', ') + '</span>.';
+  } else { noteEl.remove(); }
+
+  /* --------------------------------------------------------- browser */
+  var qEl = document.getElementById('q'),
+      chipsEl = document.getElementById('chips'),
+      rowsEl = document.getElementById('rows'),
+      countEl = document.getElementById('count'),
+      noHndEl = document.getElementById('only-nohnd');
+  var activeMod = null;
+
+  Object.keys(mods).sort(function (a, b) { return mods[b] - mods[a]; }).forEach(function (m) {
+    var b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = m + '<span>' + mods[m] + '</span>';
+    b.addEventListener('click', function () {
+      activeMod = (activeMod === m) ? null : m;
+      [].forEach.call(chipsEl.children, function (c) {
+        c.setAttribute('aria-pressed', String(c === b && activeMod === m));
+      });
+      render();
+    });
+    chipsEl.appendChild(b);
+  });
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function sigHTML(a) {
+    if (!a.length) return '()';
+    return '(' + a.map(function (p) {
+      return '<span class="an">' + esc(p[0]) + '</span>: ' + esc(p[1]);
+    }).join(', ') + ')';
+  }
+  function hay(r) {
+    if (r._h) return r._h;
+    r._h = (r.f + ' ' + r.m + ' ' + r.o + ' ' + (r.h || '') + ' ' + r.d + ' ' + r.s + ' ' +
+            r.a.map(function (p) { return p[0] + ' ' + p[1]; }).join(' ')).toLowerCase();
+    return r._h;
+  }
+
+  function build(r) {
+    var d = document.createElement('details');
+    d.className = 'api';
+    var obj = r.o ? '<span class="obj">' + esc(r.o) + '.</span>' : '';
+    var hnd = r.h
+      ? '<span class="hnd">← ' + esc(r.h) + '</span>'
+      : '<span class="hnd none">← chưa dò được handler</span>';
+    var times = r.n > 1 ? '<span class="src">' + r.n + '×</span>' : '';
+    d.innerHTML =
+      '<summary style="list-style:none">' +
+        '<div class="api-top">' +
+          '<span class="fn">' + obj + esc(r.f) +
+            (r.b ? '<span class="bound" title="ten sinh luc chay qua CUIAssist.bindRpcToEvent">⟳</span>' : '') + '<span class="args">' + sigHTML(r.a) + '</span></span>' +
+          '<span class="mod">' + esc(r.m) + '</span>' +
+        '</div>' +
+        '<div class="api-sub">' +
+          (r.d ? '<span class="doc">' + esc(r.d) + '</span>' : '') +
+          hnd + times +
+          '<span class="src">' + esc(r.s) + '</span>' +
+        '</div>' +
+      '</summary>';
+
+    var det = document.createElement('div');
+    det.className = 'detail';
+    var html = '<div><h4>Yêu cầu — mảng JSON ở trường data</h4><dl class="kv">' +
+      (r.a.length
+        ? r.a.map(function (p, i) {
+            return '<dt>[' + i + '] ' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd>';
+          }).join('')
+        : '<dt>—</dt><dd>không tham số, data = ""</dd>') +
+      '</dl></div>';
+    if (r.h) {
+      html += '<div><h4>Trả về — server gọi ngược</h4><dl class="kv">' +
+        '<dt>hàm</dt><dd>' + esc(r.h) + '</dd>' +
+        '<dt>objName</dt><dd>' + (r.ho ? esc(r.ho) : '"" (toàn cục)') + '</dd>' +
+        (r.hs ? '<dt>định nghĩa</dt><dd>' + esc(r.hs) + '</dd>' : '') +
+        '</dl>' +
+        (r.hf && r.hf.length
+          ? '<div style="margin-top:8px"><h4>Khoá client đọc từ payload</h4><div class="tags">' +
+            r.hf.map(function (f) { return '<span class="tag">' + esc(f) + '</span>'; }).join('') +
+            '</div></div>'
+          : '') +
+        '</div>';
+    }
+    det.innerHTML = html;
+    d.appendChild(det);
+    return d;
+  }
+
+  function render() {
+    var q = qEl.value.trim().toLowerCase();
+    var terms = q ? q.split(/\s+/) : [];
+    var onlyNo = noHndEl.checked;
+    var list = rows.filter(function (r) {
+      if (activeMod && r.m !== activeMod) return false;
+      if (onlyNo && r.h) return false;
+      if (!terms.length) return true;
+      var h = hay(r);
+      return terms.every(function (t) { return h.indexOf(t) > -1; });
+    });
+    rowsEl.textContent = '';
+    if (!list.length) {
+      var e = document.createElement('p');
+      e.className = 'empty';
+      e.textContent = 'Không có hàm nào khớp. Thử bỏ bớt bộ lọc.';
+      rowsEl.appendChild(e);
+    } else {
+      var frag = document.createDocumentFragment();
+      list.forEach(function (r) { frag.appendChild(build(r)); });
+      rowsEl.appendChild(frag);
+    }
+    countEl.textContent = list.length === rows.length
+      ? rows.length + ' hàm'
+      : list.length + ' / ' + rows.length + ' hàm';
+  }
+
+  qEl.addEventListener('input', render);
+  noHndEl.addEventListener('change', render);
+  render();
+
+  /* ---------------------------------------------------------- errors */
+  var errsEl = document.getElementById('errs');
+  Object.keys(errors).map(function (g) {
+    var codes = errors[g], vals = Object.keys(codes).map(function (k) { return codes[k]; });
+    return { g: g, codes: codes, min: Math.min.apply(null, vals), max: Math.max.apply(null, vals) };
+  }).sort(function (a, b) { return a.min - b.min; }).forEach(function (G) {
+    var el = document.createElement('div');
+    el.className = 'err-group';
+    var names = Object.keys(G.codes).sort(function (a, b) { return G.codes[a] - G.codes[b]; });
+    el.innerHTML = '<h3>ErrorCode.' + esc(G.g) + '</h3>' +
+      '<span class="range">' + (G.min === G.max ? G.min : G.min + '–' + G.max) +
+      ' · ' + names.length + ' mã</span>' +
+      '<div class="err-list">' + names.map(function (n) {
+        return '<div class="err"><b>' + G.codes[n] + '</b><span>' + esc(n) + '</span></div>';
+      }).join('') + '</div>';
+    errsEl.appendChild(el);
+  });
+})();
+</script>

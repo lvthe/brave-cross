@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------
+# Nội dung của game — KHÔNG đưa lên repo.
+#
+# Đây là tài sản có bản quyền của bản gốc, và cũng quá lớn cho GitHub
+# (riêng file .xapk đã 241 MB, vượt giới hạn 100 MB mỗi file).
+# Repo này chỉ chứa công cụ, đặc tả rút ra được, và lớp offline tự viết.
+#
+# Muốn dựng lại từ đầu: đặt APK/XAPK vào thư mục gốc rồi làm theo
+# work/README.md, mục "Cách chạy lại từ đầu".
+# ---------------------------------------------------------------------------
+
+*.apk
+*.xapk
+*.obb
+*.dex
+*.so
+*.arsc
+
+work/apk/
+work/decrypted/
+work/vn/
+
+# Kết quả build: nhúng chính file gốc của game (require.lua), sinh lại được
+# bằng `python build.py`
+work/offline/deploy/
+
+# Rác
+__pycache__/
+*.pyc
+*.bak
+*.log
+
+# Bản trung gian cũ, đã sai (488 API) — server-spec-vn/server_api.json thay thế
+work/vn_api.json
