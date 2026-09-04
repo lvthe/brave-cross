@@ -24,8 +24,19 @@ Toàn bộ nội dung game — APK, OBB, tài nguyên đã giải mã, mã Lua g
 file, 320 MB riêng phần APK/XAPK).
 
 Repo chỉ chứa phần tự viết: bộ công cụ, đặc tả rút ra được từ phân tích, và lớp
-offline. Muốn chạy lại thì tự lấy APK về, đặt vào thư mục gốc, làm theo mục
-"Cách chạy lại từ đầu" trong [`work/README.md`](work/README.md).
+offline. Nhưng **dựng lại được đầy đủ** — tự lấy APK/XAPK về, đặt vào thư mục
+gốc, rồi:
+
+```bash
+cd work
+python unpack.py ../<file>.apk            # hoặc .xapk, dùng --out vn
+python build_spec.py
+```
+
+`unpack.py` giải nén, giải nhị phân manifest và giải mã toàn bộ tài nguyên.
+Đã kiểm chứng: dựng lại từ file gốc cho ra cây thư mục **trùng từng byte** với
+bản đang dùng (3984 file bản CN, 9728 file bản VN), và đặc tả sinh ra cũng
+trùng khít.
 
 ## Trạng thái
 

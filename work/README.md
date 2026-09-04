@@ -27,6 +27,7 @@ work/
       *.pkm                   texture ETC1 (đã về đúng định dạng PKM 10)
   vn/decrypted/               bản VN đã giải mã — 10090 file, 973 .lua
 
+  unpack.py                   giải nén APK/XAPK -> cả cây thư mục làm việc
   sng_decrypt.py              bộ giải mã tài nguyên
   axml.py                     bộ giải mã AndroidManifest nhị phân
   dexinfo.py                  đo mức độ bị đóng gói của classes.dex
@@ -186,12 +187,12 @@ cd offline && python run_tests.py && python build.py
 
 ## Cách chạy lại từ đầu
 
+Chỉ cần hai file gốc, đặt ở thư mục cha của `work/`. `unpack.py` lo hết phần
+giải nén APK/XAPK, giải nhị phân manifest và giải mã tài nguyên:
+
 ```bash
-python sng_decrypt.py apk/assets decrypted/assets "**/*"
-python axml.py apk/AndroidManifest.xml > decrypted/AndroidManifest.xml
-python sng_decrypt.py vn/obb/assets vn/decrypted/assets "**/*"
-python sng_decrypt.py vn/apk/assets vn/decrypted/apk_assets "**/*"
-python axml.py vn/apk/AndroidManifest.xml > vn/AndroidManifest.xml
+python unpack.py ../OAR1_XGSDK_1.25_jinshan_gwbb_sec.apk
+python unpack.py "../Búa+Tạ+-+Siêu+Anh+Hùng_1.26.81485_APKPure.xapk" --out vn
 
 python inventory.py                                             # → inventory.json
 python build_spec.py
