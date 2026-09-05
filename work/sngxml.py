@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Bo doc dinh dang 'sngXml' — plist atlas da bien dich san.
+"""Bo doc dinh dang 'sngXml' — plist atlas va du lieu hoat anh.
 
 MOT MAGIC, HAI CAU TRUC. 904 file mang magic 'sngXml' chia lam hai loai khac
-han nhau, va chi loai thu nhat giai duoc:
+han nhau, chia dung theo duoi file. Ca hai deu doc duoc:
 
-    .plist   493 file   atlas sprite  — DA GIAI, doc duoc bang file nay
-    .xml     411 file   CHUA GIAI     — bo cuc khac, xem ghi chu cuoi
+    .plist   493 file   atlas sprite (TexturePacker)
+    .xml     411 file   du lieu hoat anh: lop, va cham, plugin
 
 NGUON GOC. Bo nap trong libgame.so (ban CN) la FUN_0050da18, tim qua xref toi
 chuoi 'sngXml' @ 0x007dfb74; no chi kiem magic roi cat buffer vao doi tuong
@@ -53,9 +53,42 @@ DA KIEM CHUNG tren 493 file .plist:
     - 20459 chuoi: 20306 giai duoc (16 co ten tieng Trung UTF-8),
       153 do dai 0, 0 HONG
 
-    python sngxml.py <file.plist>          # doc
-    python sngxml.py <file.plist> --json   # xuat JSON
-    python sngxml.py --scan <thu_muc>      # kiem tra ca cay
+BO CUC ban .xml
+
+Loai nay khop chinh xac voi nhanh code di qua FUN_0026f704: ba mang, hai
+trong so do co mang con. Header giu mot bang muc luc 9 offset o 0x44-0x64,
+tang dan.
+
+    0x20  uint32  count mang 1        0x44  uint32  goc mang 1   (buoc 0x10)
+    0x28  uint32  count mang 2        0x48  uint32  goc con 1    (buoc 0x10)
+    0x40  uint32  count mang 3        0x50  uint32  goc mang 2   (buoc 0x10)
+                                      0x54  uint32  goc con 2    (buoc 0x28)
+                                      0x60  uint32  goc mang 3   (buoc 0x28)
+                                      0x64  uint32  goc kho chuoi
+
+    ban ghi mang 1 va 2 (0x10):  str_off, str_len, sub_off, sub_count
+    ban ghi con va mang 3     :  str_off, str_len, roi cac truong CHUA RO
+
+Vi du map/DebuffBurn.xml:
+
+    mang1  'DebuffBurn'  -> con: 'Particle_firefog_t', 'Collision'
+    mang2  'DebuffBurn'  -> con: 'PluginPlay'
+    mang3  'DebuffBurn_44'
+
+Ten hay gap trong 411 file: Play (1929), LayerName000 (862), Layer000 (631),
+Collision (582), PlugIn_1 (544), Walk (406) — tuc la lop hoat anh, hop va
+cham va plugin.
+
+DA KIEM CHUNG tren 411 file .xml: 50042 chuoi, giai duoc 100.00%, 0 rong,
+0 HONG.
+
+CHUA RO trong ban .xml: moi truong so ngoai cap (str_off, str_len) dau moi
+ban ghi. Da THU va LOAI TRU gia thuyet ban ghi con chua them mo ta chuoi thu
+hai/thu ba: doc nhu vay cho ra rac ('D', 'n', 'De') va 332 truong hop hong.
+
+    python sngxml.py <file>          # doc (tu nhan .plist hay .xml)
+    python sngxml.py <file> --json   # xuat JSON
+    python sngxml.py --scan <thu_muc>
 """
 import os, sys, json, glob, struct, argparse, collections
 
@@ -130,9 +163,73 @@ class SngXml(object):
         ])
 
 
+class SngXmlAnim(object):
+    """Ban .xml: ba mang, hai trong so do co mang con."""
+
+    # (ten, offset count, offset goc, offset goc con, buoc, buoc con)
+    ARRAYS = (
+        ('mang1', 0x20, 0x44, 0x48, 0x10, 0x10),
+        ('mang2', 0x28, 0x50, 0x54, 0x10, 0x28),
+        ('mang3', 0x40, 0x60, None, 0x28, None),
+    )
+
+    def __init__(self, data, name=''):
+        self.data, self.name, self.size = data, name, len(data)
+        if self.size < 0x70 or data[:7] != MAGIC:
+            raise SngXmlError('khong phai file sngXml')
+        self.u = lambda o: struct.unpack_from('<I', data, o)[0]
+        self.off_pool = self.u(0x64)
+        if not 0 < self.off_pool <= self.size:
+            raise SngXmlError('goc kho chuoi = %d nam ngoai file' % self.off_pool)
+        for _, cnt_o, base_o, sub_o, _, _ in self.ARRAYS:
+            for o in (base_o, sub_o):
+                if o is not None and not 0 < self.u(o) <= self.size:
+                    raise SngXmlError('offset o 0x%02X = %d ngoai file' % (o, self.u(o)))
+
+    def string(self, off, length):
+        if length == 0:
+            return ''
+        a = self.off_pool + off
+        if a + length > self.size:
+            raise SngXmlError('chuoi tai pool+%d dai %d vuot cuoi file' % (off, length))
+        return self.data[a:a + length].decode('utf-8', 'replace')
+
+    def _rec_name(self, at):
+        return self.string(self.u(at), self.u(at + 4))
+
+    def array(self, tag):
+        """Muc cua mot mang, kem mang con neu co."""
+        spec = next(a for a in self.ARRAYS if a[0] == tag)
+        _, cnt_o, base_o, sub_o, stride, sub_stride = spec
+        out = []
+        for i in range(self.u(cnt_o)):
+            r = self.u(base_o) + i * stride
+            item = collections.OrderedDict([('name', self._rec_name(r))])
+            if sub_o is not None:
+                sb, sn = self.u(r + 8), self.u(r + 0xc)
+                item['children'] = [
+                    self._rec_name(self.u(sub_o) + sb + k * sub_stride) for k in range(sn)]
+            out.append(item)
+        return out
+
+    def to_dict(self):
+        d = collections.OrderedDict([
+            ('file', self.name), ('size', self.size), ('kind', 'anim'),
+            ('offPool', self.off_pool),
+        ])
+        for tag, _, _, _, _, _ in self.ARRAYS:
+            d[tag] = self.array(tag)
+        return d
+
+
 def load(path):
+    """Tu nhan loai: thu ban .plist truoc, khong duoc thi ban .xml."""
     with open(path, 'rb') as fp:
-        return SngXml(fp.read(), os.path.basename(path))
+        data = fp.read()
+    try:
+        return SngXml(data, os.path.basename(path))
+    except SngXmlError:
+        return SngXmlAnim(data, os.path.basename(path))
 
 
 def find_files(root):
@@ -145,8 +242,25 @@ def find_files(root):
     return sorted(out)
 
 
+def show_anim(path, x, limit):
+    print('%s  —  %d byte, du lieu hoat anh' % (path, x.size))
+    print('  kho chuoi: 0x%X' % x.off_pool)
+    for tag, _, _, _, _, _ in x.ARRAYS:
+        items = x.array(tag)
+        print()
+        print('  %s — %d muc%s:' % (tag, len(items),
+              '' if len(items) <= limit else ' (hien %d dau)' % limit))
+        for it in items[:limit]:
+            kids = it.get('children')
+            print('    %-30s%s' % (it['name'][:30],
+                  ('  -> %d con: %s' % (len(kids), ', '.join(kids[:4])
+                   + (' ...' if len(kids) > 4 else ''))) if kids else ''))
+
+
 def cmd_show(path, limit):
     x = load(path)
+    if isinstance(x, SngXmlAnim):
+        return show_anim(path, x, limit)
     print('%s  —  %d byte, %d khung' % (path, x.size, x.count))
     print('  chuoi header : %s' % ', '.join(repr(s) for s in x.header_strings()))
     print('  mang ban ghi : 0x%X    kho chuoi: 0x%X' % (x.off_recs, x.off_pool))
@@ -167,33 +281,38 @@ def cmd_scan(root):
     files = find_files(root)
     if not files:
         sys.exit('khong thay file sngXml nao trong %s' % root)
-    ok = other = nstr = nempty = 0
+    n_plist = n_anim = nstr = nempty = 0
     errs = []
     for p in files:
         try:
             x = load(p)
-            for s in x.header_strings():
-                nempty += (s == '')
-                nstr += (s != '')
-            for f in x.frames():
-                nempty += (f['name'] == '')
-                nstr += (f['name'] != '')
-            ok += 1
-        except SngXmlError as e:
-            if 'bo cuc .xml' in str(e):
-                other += 1
+            if isinstance(x, SngXmlAnim):
+                n_anim += 1
+                names = []
+                for tag, _, _, _, _, _ in x.ARRAYS:
+                    for it in x.array(tag):
+                        names.append(it['name'])
+                        names.extend(it.get('children', []))
             else:
-                errs.append((p, str(e)))
+                n_plist += 1
+                names = x.header_strings() + [f['name'] for f in x.frames()]
+            for s in names:
+                if s:
+                    nstr += 1
+                else:
+                    nempty += 1
+        except (SngXmlError, struct.error) as e:
+            errs.append((p, str(e)))
 
     print('quet %s' % root)
-    print('  file sngXml     : %d' % len(files))
-    print('  .plist giai duoc: %d' % ok)
-    print('  bo cuc .xml     : %d  (chua giai)' % other)
-    print('  loi that su     : %d' % len(errs))
+    print('  file sngXml : %d' % len(files))
+    print('  ban .plist  : %d' % n_plist)
+    print('  ban .xml    : %d' % n_anim)
+    print('  loi         : %d' % len(errs))
     for p, e in errs[:5]:
         print('     %s — %s' % (p, e))
     print()
-    print('  chuoi           : %d giai duoc, %d rong' % (nstr, nempty))
+    print('  chuoi       : %d giai duoc, %d rong' % (nstr, nempty))
     return 0 if not errs else 1
 
 

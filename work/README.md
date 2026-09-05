@@ -132,7 +132,7 @@ cho ra khoá duy nhất, và lộ ra chu kỳ lặp 32 byte. Bản VN dùng **c�
 | `xgg5.0` | 278 / 290 | **đã giải**, xem `xgg.py` |
 | `sngXgg` | 6 / 6 | **cùng một định dạng với `xgg5.0`** — chung bộ đọc |
 | `sngXml` — `.plist` | 493 / 501 | **đã giải**, xem `sngxml.py` |
-| `sngXml` — `.xml` | 411 / 418 | chưa giải — bố cục khác hẳn |
+| `sngXml` — `.xml` | 411 / 418 | **đã giải**, xem `sngxml.py` |
 
 `xgg5.0` và `sngXgg` hoá ra **không phải hai định dạng**: cùng một hàm trong
 `libgame.so` nhận cả hai magic, và cả 580 file của hai bản đọc được bằng chung
@@ -272,11 +272,41 @@ python sngxml.py <file.plist>            # đọc
 python sngxml.py <file.plist> --json     # xuất JSON
 ```
 
-**Còn lại:** 411 file `.xml` (`map/Archer.xml`, `ADou01.xml`… cỡ 160–300 KB).
-Bố cục khác: các trường `0x38`/`0x3c` ở đó là float chứ không phải offset.
-Nhánh code phục vụ chúng đi qua `FUN_0026f704` — ba mảng bước
-`0x10`/`0x10`/`0x28`, count ở `0x20`/`0x28`/`0x40`, gốc ở `0x44`/`0x50`/`0x60`,
-và bản ghi mảng 1 còn lồng mảng con. Đó là điểm bắt đầu cho lần sau.
+### Bố cục `sngXml` bản `.xml` — dữ liệu hoạt ảnh
+
+411 file (`map/Archer.xml`, `ADou01.xml`… cỡ 160 KB–1,1 MB). Loại này khớp
+**chính xác** với nhánh code đi qua `FUN_0026f704`: ba mảng, hai trong số đó
+có mảng con. Header giữ một bảng mục lục 9 offset ở `0x44`–`0x64`, tăng dần.
+
+```
+0x20  count mảng 1      0x44  gốc mảng 1   (bước 0x10)
+0x28  count mảng 2      0x48  gốc con 1    (bước 0x10)
+0x40  count mảng 3      0x50  gốc mảng 2   (bước 0x10)
+                        0x54  gốc con 2    (bước 0x28)
+                        0x60  gốc mảng 3   (bước 0x28)
+                        0x64  gốc kho chuỗi   ← đúng `+ 100` trong FUN_0050daac
+
+bản ghi mảng 1 và 2 (0x10):  str_off, str_len, sub_off, sub_count
+bản ghi con và mảng 3     :  str_off, str_len, rồi các trường CHƯA RÕ
+```
+
+`map/Archer.xml` đọc ra:
+
+```
+mảng1  Archer_WeaponNormal  -> Arrow, Fire, PlugIn_60, PlugIn_3 ...
+mảng2  Archer_WeaponNormal  -> Walk
+mảng3  Archer_res-Head4, Archer_Dong_res-Phantasm ...
+```
+
+Tức là bộ phận, hoạt ảnh và sprite của một nhân vật — định dạng hoạt ảnh
+xương. Tên hay gặp trong 411 file: `Play` (1929), `LayerName000` (862),
+`Layer000` (631), `Collision` (582), `PlugIn_1` (544), `Walk` (406).
+
+**Đã kiểm chứng:** 50042 chuỗi, giải được **100.00%**, 0 rỗng, **0 hỏng**.
+
+**Chưa rõ:** mọi trường số ngoài cặp `(str_off, str_len)` đầu mỗi bản ghi. Đã
+**thử và loại** giả thuyết bản ghi con chứa thêm mô tả chuỗi thứ hai/thứ ba —
+đọc như vậy cho ra rác (`'D'`, `'n'`, `'De'`) và 332 trường hợp hỏng.
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
 hiểu game.
