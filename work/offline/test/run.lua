@@ -130,5 +130,59 @@ for i = nBefore + 1, #Mock.logs do
 end
 check(not bNoisy, "khong lam nhieu log")
 
+--[[ Từ đây là test hồi quy cho bốn lỗi đã sửa. Cả bốn đều thuộc loại hỏng
+	IM LẶNG — không ném lỗi, không ghi log, chỉ là dữ liệu bốc hơi — nên phải
+	có test giữ, không thì lần sau tái phát cũng chẳng ai biết. ]]
+
+print("\n=== 7. tham so nil khong lam mat danh sach (net.lua) ===")
+Mock:reset()
+G_Probe = {}
+function G_Probe:OnProbeNil(a, b, c)
+	self.tGot = { a, b, c }
+end
+OfflineRouter:on("ClientProbeNil", function(ctx)
+	ctx:call("G_Probe", "OnProbeNil", 1, nil, 3)
+end)
+CallServer(5, "G_Probe", "ClientProbeNil")
+Mock:tick(1)
+
+local got = Mock:find("OnProbeNil")
+check(got ~= nil and #got.args == 3, "giu du 3 tham so du co nil o giua",
+      got and #got.args or "khong goi duoc")
+check(G_Probe.tGot and G_Probe.tGot[3] == 3, "tham so DUNG SAU nil van toi noi",
+      G_Probe.tGot and tostring(G_Probe.tGot[3]))
+check(G_Probe.tGot and G_Probe.tGot[2] == cjson.null,
+      "cho trong thanh cjson.null, dung nhu transport JSON that")
+
+print("\n=== 8. cjson gia phai giong lua-cjson ===")
+check(cjson.encode({ b = false }) == '{"b":false}',
+      "false khong bien thanh null", cjson.encode({ b = false }))
+check(cjson.decode(cjson.encode({ b = false })).b == false,
+      "false song sot round-trip")
+check(cjson.encode({}) == "{}",
+      "bang rong ra {} chu khong phai []", cjson.encode({}))
+check(#cjson.decode("[1,null,3]") == 3,
+      "null giua mang khong nuot cac phan tu sau no")
+
+print("\n=== 9. defaultHandler do bang cach thu that ===")
+local Ctx = OfflineNet.Ctx
+G_Fish = {}
+function G_Fish:OnCatchFish() end        -- ten dung theo server-spec-vn
+OnClientGetData = function() end          -- ten dung theo server-spec-vn
+
+-- quy tac chuoi don thuan cho ra OnCatchFishReq / OnGetData, deu sai
+local h1 = Ctx.new(5, "G_Fish", "ClientCatchFishReq"):defaultHandler()
+check(h1 == "OnCatchFish", "ClientCatchFishReq -> OnCatchFish", h1)
+local h2 = Ctx.new(5, "", "ClientGetData"):defaultHandler()
+check(h2 == "OnClientGetData", "ClientGetData -> OnClientGetData", h2)
+
+local nBefore = #Mock.logs
+Ctx.new(5, "G_Fish", "ClientKhongAiNghe"):defaultHandler()
+local bWarn = false
+for i = nBefore + 1, #Mock.logs do
+	if Mock.logs[i]:find("khong tim thay handler") then bWarn = true end
+end
+check(bWarn, "khong tim duoc handler nao thi phai keu, khong duoc im")
+
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

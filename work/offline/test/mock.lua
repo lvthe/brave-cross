@@ -20,18 +20,26 @@ local function esc(s)
 	end))
 end
 
+-- Sentinel cho JSON null, đúng vai trò cjson.null của lua-cjson: encode ra
+-- `null`, và decode `null` trả về chính nó chứ KHÔNG phải nil — nếu trả nil
+-- thì một null giữa mảng sẽ làm mọi phần tử sau nó biến mất.
+local NULL = setmetatable({}, { __tostring = function() return "null" end })
+
+--[[ Bảng rỗng: lua-cjson mã hoá thành `{}` (object) chứ không phải `[]`.
+	Mock phải theo cho khớp, nếu không test sẽ xác nhận một hành vi mà game
+	thật không có. ]]
 local function isArray(t)
 	local n = 0
 	for k in pairs(t) do
 		if type(k) ~= "number" then return false end
 		n = n + 1
 	end
-	return n == #t
+	return n > 0 and n == #t
 end
 
 local function enc(v)
 	local tv = type(v)
-	if v == nil then return "null" end
+	if v == nil or v == NULL then return "null" end
 	if tv == "number" then return tostring(v) end
 	if tv == "boolean" then return tostring(v) end
 	if tv == "string" then return '"' .. esc(v) .. '"' end
@@ -41,11 +49,14 @@ local function enc(v)
 		for i = 1, #v do out[#out + 1] = enc(v[i]) end
 		return "[" .. table.concat(out, ",") .. "]"
 	end
+	-- Giữ NGUYÊN khoá gốc chứ không tostring() rồi tra ngược: mẹo
+	-- `v[k] ~= nil and v[k] or ...` biến giá trị `false` thành null, mà
+	-- codebase này đầy cờ boolean.
 	local keys = {}
-	for k in pairs(v) do keys[#keys + 1] = tostring(k) end
-	table.sort(keys)
+	for k in pairs(v) do keys[#keys + 1] = k end
+	table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
 	for _, k in ipairs(keys) do
-		out[#out + 1] = '"' .. esc(k) .. '":' .. enc(v[k] ~= nil and v[k] or v[tonumber(k)])
+		out[#out + 1] = '"' .. esc(tostring(k)) .. '":' .. enc(v[k])
 	end
 	return "{" .. table.concat(out, ",") .. "}"
 end
@@ -101,7 +112,7 @@ dec = function(s, i)
 		error("chuoi khong dong")
 	elseif s:sub(i, i + 3) == "true" then return true, i + 4
 	elseif s:sub(i, i + 4) == "false" then return false, i + 5
-	elseif s:sub(i, i + 3) == "null" then return nil, i + 4
+	elseif s:sub(i, i + 3) == "null" then return NULL, i + 4
 	else
 		local num = s:match("^-?%d+%.?%d*[eE]?[-+]?%d*", i)
 		if not num then error("JSON hong tai vi tri " .. i .. ": " .. s:sub(i, i + 20)) end
@@ -110,6 +121,7 @@ dec = function(s, i)
 end
 
 cjson = {
+	null = NULL,
 	encode = enc,
 	decode = function(s) local v = dec(s, 1); return v end,
 }

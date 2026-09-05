@@ -50,4 +50,4 @@ trùng khít.
   đã mang sẵn, kho dữ liệu 33 bảng lưu ra JSON
 
 Đang làm: **9/614 handler**. Chuỗi đăng nhập → bắt tay → vào game đã chạy thông
-trong môi trường test (23/23), chưa kiểm chứng trên máy Android thật.
+trong môi trường test (33/33), chưa kiểm chứng trên máy Android thật.

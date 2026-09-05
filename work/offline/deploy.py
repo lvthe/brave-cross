@@ -147,7 +147,28 @@ def cmd_push(flavour):
     print('\nda day vao %d cho. Mo game roi chay: python deploy.py --log' % n)
 
 
-SET_FLAGS = ['<DebugTestMode>true</DebugTestMode>', '<CloseGuide>true</CloseGuide>']
+SET_FLAGS = [b'<DebugTestMode>true</DebugTestMode>', b'<CloseGuide>true</CloseGuide>']
+
+
+def plain_xml(raw):
+    """set.xgg co that su la XML thuan khong.
+
+    Game tu ghi file nay luc chay (sc/user/Public/set.lua:83) nen binh thuong
+    la text. Nhung duoi .xgg cung la duoi cua tai nguyen da ma hoa 'sngFile' /
+    nen gzip — sua mot file nhu the bang phep thay chuoi roi day nguoc len may
+    la lam hong no. Tha khong lam gi con hon.
+    """
+    if raw.endswith(b'sngFile'):
+        return False, 'da ma hoa sngFile'
+    if raw[:3] == b'\x1f\x8b\x08':
+        return False, 'da nen gzip'
+    if b'\x00' in raw:
+        return False, 'co byte NUL, khong phai text'
+    try:
+        raw.decode('utf-8')
+    except UnicodeDecodeError:
+        return False, 'khong phai UTF-8'
+    return True, ''
 
 
 def cmd_flags():
@@ -165,19 +186,39 @@ def cmd_flags():
             continue
         found = True
         local = os.path.join(HERE, 'deploy', 'set.xgg')
+        os.makedirs(os.path.dirname(local), exist_ok=True)
         adb('pull', remote, local, check=True)
-        raw = open(local, encoding='utf-8', errors='replace').read()
-        added = []
-        for f in SET_FLAGS:
-            tag = f[1:f.index('>')]
-            if '<%s>' % tag in raw:
-                continue
-            raw = raw.replace('</user>', '\t' + f + '\n</user>', 1)
-            added.append(tag)
-        if not added:
-            print('   %s: da co san ca hai cong tac' % remote)
+        raw = open(local, 'rb').read()
+
+        ok, why = plain_xml(raw)
+        if not ok:
+            print('   %s: BO QUA — %s.' % (remote, why))
+            print('      Sua bang phep thay chuoi se lam hong file; phai giai ma truoc'
+                  ' (xem ../sng_decrypt.py).')
             continue
-        open(local, 'w', encoding='utf-8').write(raw)
+
+        # Sua tren bytes, va chi tinh la "da them" khi phep thay THAT SU an —
+        # thieu the </user> thi khong duoc bao thanh cong roi day file y nguyen.
+        edited, added, no_anchor = raw, [], []
+        for f in SET_FLAGS:
+            tag = f[1:f.index(b'>')]
+            if b'<' + tag + b'>' in edited:
+                continue
+            before = edited
+            edited = edited.replace(b'</user>', b'\t' + f + b'\n</user>', 1)
+            (added if edited != before else no_anchor).append(tag.decode())
+
+        if no_anchor:
+            print('   %s: KHONG chen duoc %s — file khong co the </user>.'
+                  % (remote, ', '.join(no_anchor)))
+            print('      Dau file: %s'
+                  % raw.decode('utf-8', 'replace')[:120].replace('\n', ' '))
+        if not added:
+            if not no_anchor:
+                print('   %s: da co san ca hai cong tac' % remote)
+            continue
+
+        open(local, 'wb').write(edited)
         adb('push', local, remote, check=True)
         print('   %s: them %s' % (remote, ', '.join(added)))
     if not found:

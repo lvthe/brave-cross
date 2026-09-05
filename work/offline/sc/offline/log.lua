@@ -62,7 +62,18 @@ function OfflineLog:err(msg)  self:write("ERROR", msg) end
 	Day la dong quan trong nhat trong ca file log: no cho biet chinh xac
 	game dang can gi ma minh chua lam. ]]
 function OfflineLog:missing(nModule, strObj, strFunc, tArgs)
-	local ok, json = pcall(cjson.encode, tArgs or {})
+	-- tArgs mang theo .n (xem packv o net.lua): phai lap cho trong, khong thi
+	-- mot nil o giua se lam ca danh sach tham so bien mat khoi log
+	tArgs = tArgs or { n = 0 }
+	local dense = {}
+	for i = 1, (tArgs.n or #tArgs) do
+		local v = tArgs[i]
+		if v == nil then
+			v = cjson.null
+		end
+		dense[i] = v
+	end
+	local ok, json = pcall(cjson.encode, dense)
 	self:write("THIEU", string.format("%s.%s  module=%s  args=%s",
 		strObj ~= "" and strObj or "(toan cuc)", strFunc, tostring(nModule),
 		ok and json or "<khong encode duoc>"))

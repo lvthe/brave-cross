@@ -56,13 +56,27 @@ trả đồng bộ sẽ tái nhập logic client giữa chừng và phá vỡ gi
 `OnServerEnterGame` nhận 5 tham số vị trí (`ClientGameWorld.lua:37`). `ctx:reply`
 dùng cho loại bao bì, `ctx:call` cho loại tham số vị trí.
 
+**`ctx:reply` tự dò tên handler lúc chạy.** Nó dựng danh sách ứng viên đúng thứ
+tự `build_spec.candidates()` thử (bỏ tiền tố `Client`/`Req`/`Request`, thêm `On`)
+rồi chọn tên nào thực sự phân giải ra một hàm theo đúng luật của `CallLocal`.
+Quy tắc chuỗi đơn thuần sai 25/415 trường hợp — `ClientCatchFishReq` phải về
+`OnCatchFish` chứ không phải `OnCatchFishReq` — và cách dò này còn bắt được cả
+handler do `bindRpcToEvent` sinh lúc chạy. Không tên nào phân giải được thì nó
+ghi `WARN` chứ không im lặng để client treo.
+
+**Tham số `nil` được giữ chỗ bằng `cjson.null`.** `ctx:call(obj, fn, 1, nil, 3)`
+gửi đủ ba tham số; bên client tham số giữa về thành `cjson.null` — đúng thứ
+server thật cũng buộc phải gửi, vì transport là JSON và JSON không có "vắng mặt"
+ở giữa mảng.
+
 ## Trạng thái
 
 | | |
 |---|---:|
 | Handler đã hiện thực | **9** / 614 |
 | API nuốt lặng lẽ (nhịp tim, thống kê) | 4 |
-| Test đạt | 23 / 23 |
+| Test đạt — lớp offline | 33 / 33 |
+| Test đạt — `deploy.py` | 23 / 23 |
 
 Đã chạy được: đăng nhập → danh sách máy chủ → bắt tay → `ClientEnterGame` →
 `G_DataManager:Init` với đủ 33 bảng, lưu và nạp lại tiến trình.
@@ -76,8 +90,15 @@ biết bản gốc dùng số nào — và được đánh dấu `ĐẶT` trong 
 
 ```bash
 pip install lupa
-python run_tests.py
+python run_tests.py            # lớp offline — 33 check, cần lupa
+python test/test_deploy.py     # deploy.py  — 23 check, không cần gì thêm
 ```
+
+`test_deploy.py` thay hàm `adb()` bằng một máy giả (dict đường dẫn → bytes) nên
+chạy được khi không có thiết bị nào cắm vào. Nó khoá ba lời hứa của `--flags`:
+không đụng vào file không phải XML thuần, không báo "đã thêm" khi phép chèn
+không ăn, và không đẩy gì lên máy khi không sửa được gì. `--flags` là lệnh duy
+nhất ghi đè một file của game trên máy thật, nên đây là chỗ đáng có test nhất.
 
 ## Đóng gói và tha lên máy
 
@@ -139,6 +160,10 @@ lần client gọi một API chưa có handler, dòng này xuất hiện:
 ```
 [14:22:07] THIEU    G_ActivityStock.ClientBuyStock  module=5  args=["S001",10,99]
 ```
+
+Hai loại dòng `WARN` cũng thuộc danh sách việc: *"khong tim thay handler nao"*
+(tên client chờ không khớp ứng viên nào — phải truyền tên tay cho `ctx:reply`)
+và *"client khong co ham nay"* (đã trả về một tên không tồn tại).
 
 Cứ chơi, đọc log, viết handler cho cái xuất hiện, lặp lại. Tra chữ ký và hình
 dạng phản hồi ở `../server-spec-vn/rpc-reference.html`; hình dạng payload chính
