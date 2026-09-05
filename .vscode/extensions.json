@@ -1,0 +1,9 @@
+{
+	// Repo này là Python (bộ công cụ dịch ngược) + Lua (lớp offline).
+	// Hai extension dưới đây là đủ; không cần IDE nặng vì repo không có
+	// build system hay project file nào.
+	"recommendations": [
+		"ms-python.python",
+		"sumneko.lua"
+	]
+}

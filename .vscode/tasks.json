@@ -1,0 +1,106 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			// 33 check — chuỗi vào game, kho dữ liệu, và bốn lỗi im lặng đã sửa
+			"label": "Test: lớp offline (Lua)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"work/offline/run_tests.py"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": {
+				"clear": true
+			}
+		},
+		{
+			// 28 check — chạy bằng adb giả, không cần thiết bị Android
+			"label": "Test: deploy.py",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"work/offline/test/test_deploy.py"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": {
+				"clear": true
+			}
+		},
+		{
+			"label": "Test: tất cả",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Test: lớp offline (Lua)",
+				"Test: deploy.py"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			// Cần cây đã giải nén (work/vn/decrypted). Chưa có thì chạy
+			// unpack.py trước — xem work/README.md.
+			"label": "Đặc tả: dựng lại bản VN",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"build_spec.py",
+				"--assets",
+				"vn/decrypted/assets",
+				"--out",
+				"server-spec-vn"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/work"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"clear": true
+			}
+		},
+		{
+			// Sinh deploy/plain và deploy/sng để thả lên máy
+			"label": "Offline: build cây deploy",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"build.py"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/work/offline"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"clear": true
+			}
+		},
+		{
+			// Không đụng gì vào máy: chỉ đọc ABI, phiên bản, và thử ghi
+			"label": "Offline: kiểm tra thiết bị (deploy.py --status)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"deploy.py",
+				"--status"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/work/offline"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"clear": true
+			}
+		}
+	]
+}

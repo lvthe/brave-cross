@@ -1,0 +1,92 @@
+{
+	// ------------------------------------------------------------------ Lua
+	// Game chạy Lua 5.2.3 (Cocos2d-x). Đặt đúng bản để LuaLS không gợi ý
+	// những API 5.3/5.4 mà game không có — goto, integer division, v.v.
+	"Lua.runtime.version": "Lua 5.2",
+
+	// package.path của game lấy sc/ làm gốc (sc/game.lua:60), nên
+	// require("offline.log") ứng với work/offline/sc/offline/log.lua.
+	"Lua.runtime.path": [
+		"?.lua",
+		"?/init.lua",
+		"work/offline/sc/?.lua"
+	],
+
+	// Global do MÔI TRƯỜNG GAME cung cấp, không khai báo ở đâu trong repo.
+	// Thiếu danh sách này thì mỗi lời gọi CallServer/cjson đều bị gạch đỏ
+	// "undefined global" và cảnh báo trở nên vô dụng vì quá nhiều nhiễu.
+	//
+	//   nhóm 1 — hàm/đối tượng toàn cục của client (sc/system/rpc.lua, engine sng)
+	//   nhóm 2 — chính lớp offline tự đặt ra
+	//   nhóm 3 — client giả trong test/
+	"Lua.diagnostics.globals": [
+		"CallServer",
+		"CallLocal",
+		"cjson",
+		"S_CCSchedule",
+		"CUIRPCManager",
+		"CDataManager",
+		"LGG_GetSetFilePath",
+		"sngUtil_log",
+
+		"Offline",
+		"OfflineLog",
+		"OfflineNet",
+		"OfflineRouter",
+		"OfflineStore",
+		"OfflineBootstrap",
+
+		"Mock",
+		"MOCK_DIR",
+		"G_GameGateway",
+		"G_GameWorld",
+		"G_Login",
+		"g_CUIGameRPCManager",
+		"G_Probe",
+		"G_Fish",
+		"OnClientGetData"
+	],
+	// khỏi bị hỏi "có phải project OpenResty/LÖVE không" mỗi lần mở
+	"Lua.workspace.checkThirdParty": false,
+
+	// --------------------------------------------------------------- Python
+	// build_spec.py `import extract_api`, build.py `from sng_encrypt import pack`
+	// — cả hai dựa vào sys.path chỉnh lúc chạy, nên phải nói cho Pylance biết.
+	"python.analysis.extraPaths": [
+		"work",
+		"work/offline"
+	],
+
+	// ----------------------------------------------------- hiệu năng / tìm kiếm
+	// Cây giải nén chiếm ~1.8 GB và hơn 14.000 file. Theo dõi thay đổi trên
+	// chúng chỉ tổ ngốn CPU: chúng là kết quả sinh ra, không ai sửa tay.
+	"files.watcherExclude": {
+		"**/work/apk/**": true,
+		"**/work/decrypted/**": true,
+		"**/work/vn/**": true,
+		"**/work/offline/deploy/**": true,
+		"**/__pycache__/**": true
+	},
+
+	// CỐ Ý không loại work/decrypted và work/vn/decrypted khỏi tìm kiếm:
+	// 973 file Lua của game nằm ở đó, và tra chúng chính là việc chính khi
+	// viết handler. Chỉ loại phần nhị phân thô, tìm trong đó vô nghĩa.
+	"search.exclude": {
+		"work/apk": true,
+		"work/vn/apk": true,
+		"work/vn/obb": true,
+		"work/vn/_xapk": true,
+		"work/offline/deploy": true,
+		"**/__pycache__": true
+	},
+
+	"[python]": {
+		"editor.rulers": [
+			92
+		]
+	},
+	"[lua]": {
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4
+	}
+}
