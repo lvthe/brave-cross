@@ -38,6 +38,7 @@ work/
   xgg.py                      đọc định dạng .xgg (sngXgg / xgg5.0)
   sngxml.py                   đọc plist atlas sngXml
   anim.py                     xuất hoạt ảnh xương ra JSON
+  sprites.py                  cắt sprite từ atlas ra PNG (giải ETC1)
 
   server-spec/                đặc tả bản CN — 584 API
   server-spec-vn/             đặc tả bản VN — 614 API
@@ -355,6 +356,46 @@ python anim.py vn/decrypted/assets --scan
 cùng góc xoay đều được lưu hai lần. Đã **thử và loại** giả thuyết bản ghi con
 chứa thêm mô tả chuỗi thứ hai/thứ ba — đọc như vậy cho ra rác (`'D'`, `'n'`,
 `'De'`) và 332 trường hợp hỏng.
+
+### Cắt sprite ra PNG (`work/sprites.py`)
+
+Mảnh cuối: pixel. Texture là `.pkm` — **ETC1**, định dạng nén của GPU di động,
+7260 file bản VN.
+
+ETC1 **không có kênh alpha**, nên game dùng thủ thuật kinh điển: ảnh cao gấp
+đôi vùng sprite, **nửa trên là màu RGB, nửa dưới là alpha dạng xám**. Đo trên
+397 cặp plist+texture: tỉ lệ chiều cao / vùng sprite = **2.00 đúng 397/397
+file**, không một ngoại lệ.
+
+Kiểm chứng luôn cả bộ giải ETC1 bằng cách đó: nửa dưới giải ra **100% xám,
+lệch lớn nhất bằng 0** trên 20.400 điểm mẫu — bộ giải sai thì nửa dưới phải ra
+nhiễu màu.
+
+Toạ độ sprite xác định bằng cách lấy kích thước texture làm chuẩn, thử từng
+cặp trường xem cặp nào cho sprite nằm gọn trong ảnh:
+
+```
++0x08, +0x0c   vị trí trong atlas (x, y)
++0x10, +0x14   kích thước (w, h)
++0x20          cờ xoay — TexturePacker xoay 90° để xếp chặt, khi đó
+               chiều rộng và cao bị hoán đổi trong atlas
+
+không xét xoay : 12613/12998 khung nằm gọn  (97.04%)
+có xét xoay    : 12996/12998 khung nằm gọn  (99.98%)
+```
+
+Không dùng thư viện ngoài — bộ giải ETC1 và bộ ghi PNG viết thẳng trong file,
+giữ đúng kiểu của repo.
+
+```bash
+python sprites.py <file.plist>                  # xem thông tin atlas
+python sprites.py <file.plist> --out <thư_mục>  # cắt ra PNG RGBA
+python sprites.py vn/decrypted/assets --scan
+```
+
+Quét toàn bộ, **0 lỗi**: bản VN 397 atlas / 12998 khung, bản CN 88 atlas /
+2816 khung. 33 file `.plist` là XML thuần chưa biên dịch (đọc bằng parser XML
+bất kỳ), 104 file không có `.pkm` đi kèm.
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
 hiểu game.
