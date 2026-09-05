@@ -20,6 +20,12 @@ work/apk/
 work/decrypted/
 work/vn/
 
+# unpack.py ghi manifest da giai nhi phan ra <out>/AndroidManifest.xml. Ban VN
+# roi vao work/vn/ nen da bi chan o tren, ban CN thi roi thang vao work/ —
+# van la noi dung dan xuat tu APK co ban quyen. Repo nay khong bao gio tu viet
+# file nay nen chan han theo ten.
+AndroidManifest.xml
+
 # Kết quả build: nhúng chính file gốc của game (require.lua), sinh lại được
 # bằng `python build.py`
 work/offline/deploy/

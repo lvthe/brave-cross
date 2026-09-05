@@ -23,7 +23,7 @@ ton gi, va chac chan trung mot cho.
     python deploy.py --flags
     python deploy.py --log
 """
-import os, sys, shutil, subprocess, argparse, posixpath
+import os, sys, glob, shutil, subprocess, argparse, posixpath
 
 PKG = 'com.cmn.buatanew'
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -51,19 +51,50 @@ ADB_GUESSES = [
 _adb_path = None
 
 
+def nearby_adb():
+    """Tim platform-tools giai nen san quanh repo.
+
+    Cach cai pho bien nhat van la tai zip platform-tools ve roi bung ra mot cho
+    nao do — kieu do khong sua PATH va cung khong nam o duong winget/Android
+    Studio hay dat, nen hai nhanh tren deu truot. Do nguoc len vai cap thu muc
+    la bat duoc.
+    """
+    root = os.path.abspath(HERE)
+    for _ in range(4):                    # offline -> work -> repo -> cha repo
+        root = os.path.dirname(root)
+        for pat in ('platform-tools*/platform-tools/adb*', 'platform-tools*/adb*'):
+            for p in sorted(glob.glob(os.path.join(root, pat))):
+                if os.path.isfile(p) and os.path.basename(p) in ('adb', 'adb.exe'):
+                    return p
+    return None
+
+
 def find_adb():
     global _adb_path
     if _adb_path:
         return _adb_path
-    found = shutil.which('adb')
+
+    # Bien moi truong ADB thang thua tat ca: co may ban platform-tools thi day
+    # la cach chi dinh ban nao, khong phai doan.
+    env = os.environ.get('ADB')
+    if env:
+        if not os.path.isfile(env):
+            sys.exit('bien moi truong ADB tro toi cho khong co file: %s' % env)
+        _adb_path = env
+        return env
+
+    found = shutil.which('adb') or nearby_adb()
     if not found:
         for g in ADB_GUESSES:
             if g and os.path.exists(g):
                 found = g
                 break
     if not found:
-        print('khong tim thay adb. Cai bang:  winget install Google.PlatformTools')
-        print('roi MO LAI terminal (winget sua PATH, cua so dang mo chua thay).')
+        print('khong tim thay adb. Ba cach:')
+        print('  1. winget install Google.PlatformTools   (roi MO LAI terminal:')
+        print('     winget sua PATH, cua so dang mo chua thay)')
+        print('  2. giai nen platform-tools canh repo — deploy.py tu do ra')
+        print('  3. tro thang:  set ADB=D:/duong/dan/platform-tools/adb.exe')
         sys.exit(1)
     _adb_path = found
     return found

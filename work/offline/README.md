@@ -76,7 +76,7 @@ server thật cũng buộc phải gửi, vì transport là JSON và JSON không 
 | Handler đã hiện thực | **9** / 614 |
 | API nuốt lặng lẽ (nhịp tim, thống kê) | 4 |
 | Test đạt — lớp offline | 33 / 33 |
-| Test đạt — `deploy.py` | 23 / 23 |
+| Test đạt — `deploy.py` | 28 / 28 |
 
 Đã chạy được: đăng nhập → danh sách máy chủ → bắt tay → `ClientEnterGame` →
 `G_DataManager:Init` với đủ 33 bảng, lưu và nạp lại tiến trình.
@@ -91,7 +91,7 @@ biết bản gốc dùng số nào — và được đánh dấu `ĐẶT` trong 
 ```bash
 pip install lupa
 python run_tests.py            # lớp offline — 33 check, cần lupa
-python test/test_deploy.py     # deploy.py  — 23 check, không cần gì thêm
+python test/test_deploy.py     # deploy.py  — 28 check, không cần gì thêm
 ```
 
 `test_deploy.py` thay hàm `adb()` bằng một máy giả (dict đường dẫn → bytes) nên

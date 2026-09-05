@@ -184,5 +184,71 @@ check(len(dev.pushed) == 1, 'chi day vao thu muc ghi duoc', len(dev.pushed))
 check(dev.pushed and dev.pushed[0][1] == P + '/', 'day dung dich',
       dev.pushed[0][1] if dev.pushed else None)
 
+print('\n=== 7. tim adb ===')
+
+
+@contextlib.contextmanager
+def adb_env(value, here=None):
+    """Do sach cache va PATH de moi lan do lai tu dau."""
+    saved_env = os.environ.get('ADB')
+    saved = (deploy._adb_path, deploy.HERE, deploy.ADB_GUESSES, os.environ.get('PATH'))
+    deploy._adb_path = None
+    deploy.ADB_GUESSES = []                          # bo cac duong doan co san
+    os.environ['PATH'] = ''                          # bo shutil.which('adb')
+    if here:
+        deploy.HERE = here
+    if value is None:
+        os.environ.pop('ADB', None)
+    else:
+        os.environ['ADB'] = value
+    try:
+        yield
+    finally:
+        deploy._adb_path, deploy.HERE, deploy.ADB_GUESSES = saved[0], saved[1], saved[2]
+        os.environ['PATH'] = saved[3] or ''
+        if saved_env is None:
+            os.environ.pop('ADB', None)
+        else:
+            os.environ['ADB'] = saved_env
+
+
+tmp = tempfile.mkdtemp(prefix='adb_test_')
+fake_adb = os.path.join(tmp, 'adb.exe')
+open(fake_adb, 'w').write('')
+
+with adb_env(fake_adb):
+    check(deploy.find_adb() == fake_adb, 'bien moi truong ADB duoc uu tien')
+
+with adb_env(os.path.join(tmp, 'khong-ton-tai.exe')):
+    try:
+        deploy.find_adb()
+        bStopped = False
+    except SystemExit:
+        bStopped = True
+    check(bStopped, 'ADB tro toi cho khong co file thi bao loi, khong im lang di tiep')
+
+# platform-tools giai nen canh repo: <cha>/platform-tools_rXX/platform-tools/adb.exe
+sib = os.path.join(tmp, 'repo', 'work', 'offline')
+os.makedirs(sib)
+pt = os.path.join(tmp, 'platform-tools_r33.0.2-windows', 'platform-tools')
+os.makedirs(pt)
+open(os.path.join(pt, 'adb.exe'), 'w').write('')
+with adb_env(None, here=sib):
+    got = deploy.find_adb()
+    check(got == os.path.join(pt, 'adb.exe'), 'do ra platform-tools giai nen canh repo', got)
+
+with adb_env(None, here=tempfile.mkdtemp(prefix='trong_')):
+    buf = io.StringIO()
+    try:
+        # find_adb() in huong dan ra stdout; nuot lai cho khoi lam ban output test
+        with contextlib.redirect_stdout(buf):
+            deploy.find_adb()
+        bStopped = False
+    except SystemExit:
+        bStopped = True
+    check(bStopped, 'khong tim thay o dau thi dung lai')
+    check('winget' in buf.getvalue() and 'ADB=' in buf.getvalue(),
+          'va chi ra ca ba cach cai', buf.getvalue().strip()[:60])
+
 print('\n===== dat %d, hong %d =====' % (nPass, nFail))
 sys.exit(0 if nFail == 0 else 1)
