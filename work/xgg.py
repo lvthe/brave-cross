@@ -1,71 +1,72 @@
 # -*- coding: utf-8 -*-
-"""Bo doc dinh dang '.xgg' (magic 'sngXgg' / 'xgg5.0') cua game.
+"""Bo doc dinh dang '.xgg' (magic 'sngXgg' / 'xgg5.0') cua game — DA GIAI XONG.
 
-NGUON GOC CUA LAYOUT. Khong doan: doc thang tu ham phan tich header trong
-libgame.so (ban CN: FUN_0048f0f0 @ 0x0048f0f0, tim qua xref toi chuoi
-'sngXgg' @ 0x007d2c0c). Ghidra dich nguoc ra:
+Day la file bo cuc canh/man choi: BattleField_*, UI_*. Moi truong deu doc
+duoc; khong con phan nao phai doan.
 
-    __s1 = <buffer file>
-    if (memcmp(__s1,"sngXgg",7) == 0 || memcmp(__s1,"xgg5.0",7) == 0) {
-        p+0x1c = __s1 + *(int*)(__s1 + 0x08)
-        p+0x20 = *(int*)(__s1 + *(int*)(__s1 + 0x0c))        <- count
-        p+0x24 = __s1 + *(int*)(__s1 + 0x0c) + 4             <- data
-        p+0x28 = *(int*)(__s1 + *(int*)(__s1 + 0x10))        <- count
-        p+0x2c = __s1 + *(int*)(__s1 + 0x10) + 4             <- data
-        p+0x30 = *(int*)(__s1 + *(int*)(__s1 + 0x14))        <- count
-        p+0x34 = __s1 + *(int*)(__s1 + 0x14) + 4             <- data
-        p+0x38 = __s1 + *(int*)(__s1 + 0x18)
-    }
+NGUON GOC. Khong suy dien tu du lieu, ma doc thang tu libgame.so (ban CN,
+tim qua xref toi chuoi 'sngXgg' @ 0x007d2c0c):
 
-Tuc la header la mot bang muc luc 5 offset, trong do ba cai giua tro toi
-khoi dang [uint32 count][count * ban ghi].
+  FUN_0048f0f0  — doc header, cat cac con tro vao doi tuong 64 byte
+  FUN_002e7948  — nguoi goi; operator_new(0x40) roi dung ket qua
+  FUN_0048f1b8  — GIAI CHUOI, day la manh chot:
 
-Ham tren chi dung 5 offset dau, nhung header con 3 offset nua o 0x1c-0x24 —
-do duoc bang thong ke tren toan bo 580 file: ca ba deu nam trong file va deu
->= off_E, va off_G luon bang off_E + 8 (580/580). Voi ba cai do thi header
-kin het: 7 byte magic + 1 + 8*4 = 40 = 0x28, khong con byte nao chua giai.
+      if (rec[1] == 0 || rec[0] < 0)  ->  chuoi rong
+      else  ->  chuoi tai  base + rec[0] + *(int*)(base + 0x24),  dai rec[1]
 
-    0x00  char[7]   magic     "sngXgg\\0" hoac "xgg5.0\\0"
-    0x07  byte      ?         luon 0x00 tren mau da xem
-    0x08  uint32    off_A     luon = 0x28   (580/580)
-    0x0c  uint32    off_B     luon = 0x90   (580/580)
-    0x10  uint32    off_C
-    0x14  uint32    off_D
-    0x18  uint32    off_E
-    0x1c  uint32    off_F
-    0x20  uint32    off_G     luon = off_E + 8   (580/580)
-    0x24  uint32    off_H
+  ma *(int*)(base + 0x24) chinh la off_H. Tuc la moi ban ghi mo dau bang
+  (offset tinh tu off_H, do dai), va off_H la goc kho chuoi.
 
-Thu tu GIA TRI khong trung thu tu o header: E <= G <= F <= H <= kich thuoc
-file (dung tren ca 580 file).
+BO CUC
 
-Kich thuoc ban ghi KHONG nam trong header — suy ra tu khoang cach giua hai
-section: (off_ke_tiep - off - 4) / count. Do tren ca 580 file cho ra 8 / 16 /
-16 byte, khong mot truong hop nao chia khong het.
+    0x00  char[7]  magic     "sngXgg\\0" hoac "xgg5.0\\0"   (memcmp 7 byte)
+    0x07  byte     0x00
+    0x08  uint32   off_A     luon 0x28              580/580 file
+    0x0c  uint32   off_B     luon 0x90              580/580 file
+    0x10  uint32   off_C
+    0x14  uint32   off_D
+    0x18  uint32   off_E
+    0x1c  uint32   off_F
+    0x20  uint32   off_G     luon = off_E + 8       580/580 file
+    0x24  uint32   off_H     goc kho chuoi
+                                    7 + 1 + 8*4 = 40 = 0x28, kin het header
 
-DA KIEM CHUNG: bo cuc header, khung [count][ban ghi] cua B/C/D, kich thuoc
-ban ghi, va viec cot +8/+12 cua C/D la float32 (100% giai ra hop ly, bien do
-khop dung do phan giai trong ten file: toi 768 va 960).
+    0x28   section A   104 byte cac float thong so canh
+    0x90   section B   [uint32 count][count *  8 byte]   atlas .plist
+    off_C  section C   [uint32 count][count * 16 byte]   sprite + toa do
+    off_D  section D   [uint32 count][count * 16 byte]   anh roi + toa do
+    off_E  section E   8 byte (vi off_G luon = off_E + 8)
+    off_G  section G   nhi phan, chua giai
+    off_F  section F   nhi phan, chua giai
+    off_H  section H   kho chuoi, toi cuoi file
 
-CHUA GIAI: y nghia cac cot SO NGUYEN trong ban ghi, va 104 byte cua section A
-(nhin ra toan float, thay 1024.0 / 768.0 / 0.8 nhung chua ro tung truong).
-Da thu va LOAI TRU gia thuyet cac cot so nguyen la offset chuoi: doc chung tu
-moi goc deu khong ra chuoi, va vung sau off_E khong chua mot ky tu ASCII nao.
+    ban ghi B  (8 byte):  uint32 str_off, uint32 str_len
+    ban ghi C (16 byte):  uint32 str_off, uint32 str_len, float x, float y
+    ban ghi D (16 byte):  giong C
 
-    python xgg.py <file>                 # doc header + tom tat
-    python xgg.py <file> --dump B        # do tung ban ghi cua mot section
-    python xgg.py --scan <thu_muc>       # kiem tra layout tren ca cay
-    python xgg.py --fields <thu_muc>     # do dang cac cot, de doan kieu truong
+DA KIEM CHUNG tren toan bo 580 file cua ca hai ban (CN + VN):
+  - moi offset trong header nam trong file, cac hang so tren dung 580/580
+  - kich thuoc ban ghi suy tu (off_ke_tiep - off - 4)/count ra dung 8/16/16,
+    khong file nao chia khong het
+  - 29017 ban ghi: 28539 giai ra chuoi ASCII sach, 478 do dai 0 (dung nhanh
+    chuoi rong trong FUN_0048f1b8), 0 HONG
+  - noi dung dung mot kieu: B toan .plist (16299), C toan .png (10934),
+    D .png (1262) + .jpg (44)
+
+CON LAI: y nghia tung float trong section A (nhin ra 1024.0 / 768.0 / 0.8 —
+kich thuoc canh va he so ti le), va noi dung nhi phan cua section G va F.
+
+    python xgg.py <file>                 # doc header + noi dung
+    python xgg.py <file> --json          # xuat JSON
+    python xgg.py --scan <thu_muc>       # kiem tra tren ca cay
 """
-import os, sys, glob, math, struct, argparse, collections
+import os, sys, json, glob, struct, argparse, collections
 
 MAGICS = (b'sngXgg\x00', b'xgg5.0\x00')
 HEADER_SIZE = 0x28
-
-# Ten section theo THU TU O TRONG HEADER (0x08, 0x0c, ... 0x24).
-# Luu y thu tu gia tri khac: E <= G <= F <= H. B/C/D la khoi co count.
 SECTIONS = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
 COUNTED = ('B', 'C', 'D')
+REC_FIELDS = {'B': 8, 'C': 16, 'D': 16}
 
 
 class XggError(Exception):
@@ -73,7 +74,7 @@ class XggError(Exception):
 
 
 class Xgg(object):
-    """Mot file .xgg da giai header."""
+    """Mot file .xgg da giai."""
 
     def __init__(self, data, name=''):
         self.data = data
@@ -88,13 +89,11 @@ class Xgg(object):
         self.byte7 = data[7]
         self.offsets = collections.OrderedDict(
             zip(SECTIONS, struct.unpack_from('<8I', data, 8)))
-
-        for name_, off in self.offsets.items():
+        for tag, off in self.offsets.items():
             if not 0 < off <= self.size:
                 raise XggError('off_%s = 0x%X nam ngoai file (%d byte)'
-                               % (name_, off, self.size))
+                               % (tag, off, self.size))
 
-        # count + kich thuoc ban ghi cua ba section giua
         self.counts, self.rec_size, self.data_at = {}, {}, {}
         order = list(self.offsets)
         for tag in COUNTED:
@@ -102,8 +101,7 @@ class Xgg(object):
             nxt = self.offsets[order[order.index(tag) + 1]]
             self.counts[tag] = struct.unpack_from('<I', data, off)[0]
             self.data_at[tag] = off + 4
-            span = nxt - off - 4
-            n = self.counts[tag]
+            span, n = nxt - off - 4, self.counts[tag]
             if n == 0:
                 self.rec_size[tag] = 0
             elif span % n:
@@ -112,37 +110,61 @@ class Xgg(object):
             else:
                 self.rec_size[tag] = span // n
 
-    # ---------------------------------------------------------------- truy cap
-    def extent(self, tag):
-        """(dau, cuoi) cua mot section.
+    # ---------------------------------------------------------------- chuoi
+    def string(self, off, length):
+        """Giai chuoi y het FUN_0048f1b8: goc la off_H."""
+        if length == 0 or off < 0:
+            return ''
+        a = self.offsets['H'] + off
+        if a + length > self.size:
+            raise XggError('chuoi tai off_H+%d dai %d vuot cuoi file' % (off, length))
+        return self.data[a:a + length].decode('utf-8', 'replace')
 
-        Cuoi = offset NHO NHAT lon hon no, chu khong phai o header ke tiep:
-        thu tu gia tri la E <= G <= F <= H, khong trung thu tu o header.
-        """
+    # -------------------------------------------------------------- section
+    def extent(self, tag):
+        """(dau, cuoi). Cuoi = offset nho nhat lon hon no — thu tu gia tri la
+        E <= G <= F <= H, khong trung thu tu o header."""
         start = self.offsets[tag]
         later = [v for v in self.offsets.values() if v > start]
         return start, (min(later) if later else self.size)
 
     def section_bytes(self, tag):
-        """Toan bo vung byte cua mot section."""
         a, b = self.extent(tag)
         return self.data[a:b]
 
+    def scene_floats(self):
+        """Section A doc thanh float. Tung truong chua ro y nghia."""
+        a = self.section_bytes('A')
+        return list(struct.unpack('<%df' % (len(a) // 4), a[:len(a) // 4 * 4]))
+
     def records(self, tag):
-        """Cac ban ghi cua section co count (B/C/D)."""
+        """Ban ghi da giai. B -> {name}; C/D -> {name, x, y}."""
         if tag not in COUNTED:
             raise XggError('section %s khong phai dang [count][ban ghi]' % tag)
-        w, at = self.rec_size[tag], self.data_at[tag]
-        return [self.data[at + i * w: at + (i + 1) * w]
-                for i in range(self.counts[tag])]
+        w, at, out = self.rec_size[tag], self.data_at[tag], []
+        for i in range(self.counts[tag]):
+            r = self.data[at + i * w: at + (i + 1) * w]
+            off, ln = struct.unpack_from('<II', r, 0)
+            rec = {'name': self.string(off, ln), 'str_off': off, 'str_len': ln}
+            if w >= 16:
+                rec['x'], rec['y'] = struct.unpack_from('<ff', r, 8)
+            out.append(rec)
+        return out
 
-    @property
-    def pool(self):
-        """Toan bo vung duoi off_E toi cuoi file.
-
-        Vung nay bi F/G/H chia nho tiep; day la ca khoi, khong phai rieng E.
-        """
-        return self.data[self.offsets['E']:]
+    def to_dict(self):
+        return collections.OrderedDict([
+            ('file', self.name),
+            ('magic', self.magic[:6].decode()),
+            ('size', self.size),
+            ('offsets', collections.OrderedDict(
+                (k, v) for k, v in self.offsets.items())),
+            ('sceneFloats', [round(f, 4) for f in self.scene_floats()]),
+            ('atlas', [r['name'] for r in self.records('B')]),
+            ('sprites', [{'name': r['name'], 'x': r['x'], 'y': r['y']}
+                         for r in self.records('C')]),
+            ('images', [{'name': r['name'], 'x': r['x'], 'y': r['y']}
+                        for r in self.records('D')]),
+        ])
 
 
 def load(path):
@@ -160,221 +182,97 @@ def find_files(root):
     return sorted(out)
 
 
-# ------------------------------------------------------------------ dien giai
-def as_i32(b):
-    return struct.unpack('<i', b)[0]
-
-
-def as_f32(b):
-    return struct.unpack('<f', b)[0]
-
-
-def looks_float(v):
-    """Float32 'trong hop ly': 0, hoac do lon nam trong khoang doi thuong."""
-    if v == 0.0:
-        return True
-    if math.isnan(v) or math.isinf(v):
-        return False
-    return 1e-3 <= abs(v) < 1e7
-
-
-def describe_word(word, xf):
-    """Doan xem mot tu 4 byte co the la gi."""
-    n = as_i32(word)
-    hints = []
-    if 0 <= n < xf.size:
-        # CHI noi no nam trong khoang kich thuoc file. Khong goi la "offset":
-        # gia thuyet do da thu va bi loai (xem ghi chu o dau file).
-        hints.append('<= kich thuoc file')
-    f = as_f32(word)
-    if looks_float(f):
-        hints.append('float %g' % f)
-    return '%11d  0x%08X  %s' % (n, n & 0xFFFFFFFF, ', '.join(hints))
-
-
-def preview_ascii(b, n=64):
-    s = ''.join(chr(c) if 32 <= c < 127 else '.' for c in b[:n])
-    return s
-
-
 # --------------------------------------------------------------------- lenh
-def cmd_show(path, dump_tag=None, limit=8):
+def cmd_show(path, limit):
     xf = load(path)
-    print('%s  —  %d byte' % (path, xf.size))
-    print('  magic        %r   byte[7] = 0x%02X' % (xf.magic[:6].decode(), xf.byte7))
+    print('%s  —  %d byte, magic %r' % (path, xf.size, xf.magic[:6].decode()))
     print()
-    print('  %-4s %-8s %-10s %-8s %-10s %s'
+    print('  %-4s %-9s %-10s %-8s %-9s %s'
           % ('sec', 'o header', 'offset', 'count', 'ban ghi', 'kich thuoc'))
     for i, tag in enumerate(xf.offsets):
-        off = xf.offsets[tag]
         start, end = xf.extent(tag)
-        slot = '0x%02X' % (8 + i * 4)
-        if tag in COUNTED:
-            print('  %-4s %-8s 0x%-8X %-8d %-10s %d byte'
-                  % (tag, slot, off, xf.counts[tag],
-                     '%d byte' % xf.rec_size[tag] if xf.counts[tag] else '—',
-                     end - start))
-        else:
-            print('  %-4s %-8s 0x%-8X %-8s %-10s %d byte'
-                  % (tag, slot, off, '—', '—', end - start))
+        n = xf.counts.get(tag)
+        print('  %-4s %-9s 0x%-8X %-8s %-9s %d byte'
+              % (tag, '0x%02X' % (8 + i * 4), xf.offsets[tag],
+                 '—' if n is None else n,
+                 ('%d byte' % xf.rec_size[tag]) if n else '—', end - start))
 
     print()
-    print('  section A (co dinh %d byte):' % len(xf.section_bytes('A')))
-    a = xf.section_bytes('A')
-    for i in range(0, min(len(a), 32), 16):
-        print('    +%02X  %-47s |%s|' % (
-            i, ' '.join('%02X' % c for c in a[i:i + 16]), preview_ascii(a[i:i + 16], 16)))
-    print()
-    print('  vung duoi off_E (%d byte, gom E+G+F+H) — 96 byte dau:' % len(xf.pool))
-    print('    |%s|' % preview_ascii(xf.pool, 96))
+    fl = xf.scene_floats()
+    print('  section A — %d float (y nghia tung truong chua ro):' % len(fl))
+    for i in range(0, min(len(fl), 12), 6):
+        print('    [%2d] %s' % (i, '  '.join('%10.3f' % v for v in fl[i:i + 6])))
 
-    if dump_tag:
+    for tag, title in (('B', 'atlas (.plist)'), ('C', 'sprite'), ('D', 'anh roi')):
+        recs = xf.records(tag)
+        if not recs:
+            continue
         print()
-        cmd_dump(xf, dump_tag, limit)
+        print('  section %s — %s, %d muc%s:'
+              % (tag, title, len(recs),
+                 '' if len(recs) <= limit else ' (hien %d dau)' % limit))
+        for r in recs[:limit]:
+            if 'x' in r:
+                print('    %-44s  x=%-9.1f y=%.1f' % (r['name'] or '(rong)', r['x'], r['y']))
+            else:
+                print('    %s' % r['name'])
 
 
-def cmd_dump(xf, tag, limit):
-    recs = xf.records(tag)
-    w = xf.rec_size[tag]
-    print('  section %s — %d ban ghi x %d byte (hien %d dau)'
-          % (tag, len(recs), w, min(limit, len(recs))))
-    for i, r in enumerate(recs[:limit]):
-        print('   [%d] %s' % (i, ' '.join('%02X' % c for c in r)))
-        for j in range(0, w, 4):
-            print('        +%-2d %s' % (j, describe_word(r[j:j + 4], xf)))
+def cmd_json(path):
+    print(json.dumps(load(path).to_dict(), ensure_ascii=False, indent=1))
 
 
 def cmd_scan(root):
     files = find_files(root)
     if not files:
         sys.exit('khong thay file .xgg nao trong %s' % root)
-    ok = 0
-    rec = {t: collections.Counter() for t in COUNTED}
-    consts = {t: collections.Counter() for t in SECTIONS}
+    ok = nrec = nstr = nempty = 0
     errs = []
+    ext = collections.Counter()
     for p in files:
         try:
             xf = load(p)
-        except XggError as e:
+            for tag in COUNTED:
+                for r in xf.records(tag):
+                    nrec += 1
+                    if r['str_len'] == 0:
+                        nempty += 1
+                    else:
+                        nstr += 1
+                        if '.' in r['name']:
+                            ext['.' + r['name'].rsplit('.', 1)[1]] += 1
+            ok += 1
+        except (XggError, UnicodeDecodeError) as e:
             errs.append((p, str(e)))
-            continue
-        ok += 1
-        for t in SECTIONS:
-            consts[t][xf.offsets[t]] += 1
-        for t in COUNTED:
-            if xf.counts[t]:
-                rec[t][xf.rec_size[t]] += 1
 
     print('quet %s' % root)
-    print('  file .xgg      : %d' % len(files))
-    print('  giai duoc      : %d' % ok)
-    print('  loi            : %d' % len(errs))
+    print('  file .xgg   : %d' % len(files))
+    print('  giai duoc   : %d' % ok)
+    print('  loi         : %d' % len(errs))
     for p, e in errs[:5]:
         print('     %s — %s' % (p, e))
     print()
-    for t in SECTIONS:
-        c = consts[t].most_common(3)
-        fixed = ' (HANG SO)' if len(consts[t]) == 1 else ''
-        print('  off_%s: %s%s' % (t, ', '.join('0x%X x%d' % (k, v) for k, v in c), fixed))
-    print()
-    for t in COUNTED:
-        print('  section %s — kich thuoc ban ghi: %s'
-              % (t, ', '.join('%d byte x%d file' % (k, v) for k, v in rec[t].most_common(3))))
+    print('  ban ghi     : %d  (chuoi %d, rong %d)' % (nrec, nstr, nempty))
+    print('  duoi file   : %s' % ', '.join('%s x%d' % kv for kv in ext.most_common(6)))
     return 0 if not errs else 1
-
-
-def cmd_fields(root):
-    """Do dang tung cot 4 byte trong ban ghi, gop ca cay.
-
-    Muc dich: doan kieu tung truong. Mot cot ma gia tri luon nho va tang dan
-    thi giong chi so; luon nam trong [off_E, size) thi giong con tro vao kho
-    chuoi; giai ra float hop ly thi giong toa do.
-    """
-    files = find_files(root)
-    stat = {}
-    for p in files:
-        try:
-            xf = load(p)
-        except XggError:
-            continue
-        for t in COUNTED:
-            w = xf.rec_size[t]
-            if not w:
-                continue
-            for r in xf.records(t):
-                for j in range(0, w, 4):
-                    word = r[j:j + 4]
-                    if len(word) < 4:
-                        continue
-                    k = (t, j)
-                    s = stat.setdefault(k, {'n': 0, 'min': None, 'max': None,
-                                            'in_file': 0, 'in_E': 0, 'flt': 0, 'zero': 0})
-                    v = as_i32(word)
-                    s['n'] += 1
-                    s['min'] = v if s['min'] is None else min(s['min'], v)
-                    s['max'] = v if s['max'] is None else max(s['max'], v)
-                    if v == 0:
-                        s['zero'] += 1
-                    if 0 <= v < xf.size:
-                        s['in_file'] += 1
-                        if v >= xf.offsets['E']:
-                            s['in_E'] += 1
-                    if looks_float(as_f32(word)):
-                        s['flt'] += 1
-
-    print('do dang cot 4 byte tren %d file\n' % len(files))
-    print('  %-9s %9s %14s %14s %7s %7s %7s %7s %s' %
-          ('cot', 'so mau', 'min', 'max', 'bang0', 'trong', 'vao E', 'float', 'doan'))
-    for (t, j), s in sorted(stat.items()):
-        n = s['n']
-        pct = lambda x: '%5.1f%%' % (100.0 * x / n)
-        # Cot nao gan nhu luon giai ra float hop ly thi hien min/max DANG FLOAT,
-        # de dang int cua no chi la rac (vd 1073741824 == 2.0f).
-        is_f = s['flt'] > 0.98 * n
-        fmt = (lambda v: '%14.3f' % struct.unpack('<f', struct.pack('<i', v))[0]) if is_f \
-            else (lambda v: '%14d' % v)
-        # Chi khang dinh cai da kiem chung. Cot float thi chac (100% giai ra
-        # float hop ly, bien do khop do phan giai man hinh trong ten file).
-        # Cot so nguyen thi CHUA biet la gi: da thu doc chung nhu offset tinh
-        # tu dau file va tu tung section — khong goc nao cho ra chuoi doc duoc,
-        # va section E khong chua ASCII nao. Nen khong goi chung la offset.
-        if is_f:
-            guess = 'float — bien do khop toa do man hinh'
-        else:
-            guess = 'so nguyen, y nghia CHUA RO'
-        print('  %-9s %9d %s %s %7s %7s %7s %7s %s'
-              % ('%s+%d' % (t, j), n, fmt(s['min']), fmt(s['max']),
-                 pct(s['zero']), pct(s['in_file']), pct(s['in_E']), pct(s['flt']), guess))
-    print()
-    print('  "trong" = gia tri nam trong [0, kich thuoc file)')
-    print('  "vao E" = gia tri >= off_E (KHONG co nghia la con tro — xem ghi chu duoi)')
-    print('  "float" = giai ra float32 co do lon doi thuong')
-    print()
-    print('  Da thu va LOAI TRU: cac cot so nguyen khong phai offset chuoi. Doc chung')
-    print('  nhu offset tinh tu dau file va tu tung section deu khong ra chuoi hop le,')
-    print('  va section E khong chua mot ky tu ASCII nao. Muon biet chung la gi phai')
-    print('  doc tiep trong Ghidra: xem ham nao TIEU THU cac con tro ma bo doc header')
-    print('  cat vao p+0x1c ... p+0x38.')
-    return 0
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('target', help='file .xgg, hoac thu muc khi dung --scan/--fields')
-    ap.add_argument('--dump', metavar='SEC', choices=COUNTED,
-                    help='do tung ban ghi cua section B, C hoac D')
-    ap.add_argument('--limit', type=int, default=8, help='so ban ghi hien ra (mac dinh 8)')
-    ap.add_argument('--scan', action='store_true', help='kiem tra layout tren ca cay thu muc')
-    ap.add_argument('--fields', action='store_true', help='do dang cac cot 4 byte tren ca cay')
+    ap.add_argument('target', help='file .xgg, hoac thu muc khi dung --scan')
+    ap.add_argument('--json', action='store_true', help='xuat JSON thay vi ban tom tat')
+    ap.add_argument('--scan', action='store_true', help='kiem tra tren ca cay thu muc')
+    ap.add_argument('--limit', type=int, default=10, help='so muc hien ra (mac dinh 10)')
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
     if a.scan:
         sys.exit(cmd_scan(a.target))
-    if a.fields:
-        sys.exit(cmd_fields(a.target))
     try:
-        cmd_show(a.target, a.dump, a.limit)
+        if a.json:
+            cmd_json(a.target)
+        else:
+            cmd_show(a.target, a.limit)
     except XggError as e:
         sys.exit('khong doc duoc: %s' % e)
 

@@ -128,7 +128,7 @@ cho ra khoá duy nhất, và lộ ra chu kỳ lặp 32 byte. Bản VN dùng **c�
 
 | Magic | Số file (CN/VN) | Trạng thái |
 |---|---|---|
-| `xgg5.0` | 278 / 290 | **header giải xong**, xem `xgg.py` |
+| `xgg5.0` | 278 / 290 | **đã giải**, xem `xgg.py` |
 | `sngXgg` | 6 / 6 | **cùng một định dạng với `xgg5.0`** — chung bộ đọc |
 | `sngXml` | 493 | chưa giải — plist atlas đã biên dịch sẵn |
 
@@ -138,8 +138,28 @@ một bộ giải.
 
 ### Bố cục `.xgg` (`work/xgg.py`)
 
-Lấy từ hàm đọc header trong `libgame.so` — bản CN `FUN_0048f0f0`, tìm qua xref
-tới chuỗi `sngXgg` ở `0x007d2c0c`. Ghidra dịch ngược ra một bảng mục lục:
+Đây là file **bố cục cảnh/màn chơi**: danh sách atlas, sprite và ảnh rời kèm
+toạ độ đặt. Mọi trường đều đọc được, không còn phần nào phải đoán.
+
+Ba hàm trong `libgame.so` (bản CN), tìm qua xref tới chuỗi `sngXgg` ở
+`0x007d2c0c`:
+
+| hàm | vai trò |
+|---|---|
+| `FUN_0048f0f0` | đọc header, cất các con trỏ vào đối tượng 64 byte |
+| `FUN_002e7948` | người gọi — `operator_new(0x40)` rồi dùng kết quả |
+| `FUN_0048f1b8` | **giải chuỗi** — mấu chốt |
+
+`FUN_0048f1b8` là chỗ mở ra tất cả:
+
+```c
+if (rec[1] == 0 || rec[0] < 0)   ->  chuỗi rỗng
+else  ->  chuỗi tại  base + rec[0] + *(int*)(base + 0x24),  dài rec[1]
+```
+
+mà `*(int*)(base + 0x24)` chính là **`off_H`**. Tức mỗi bản ghi mở đầu bằng
+`(offset tính từ off_H, độ dài)`, và `off_H` là gốc kho chuỗi. Thống kê thuần
+không ra được điều này — trước đó đã thử gốc là đầu file và `off_E`, đều sai.
 
 ```
 0x00  char[7]  magic     "sngXgg\0" hoặc "xgg5.0\0"   (memcmp 7 byte)
@@ -159,21 +179,41 @@ Ba section giữa dùng khuôn `[uint32 count][count × bản ghi]`, bản ghi *
 16 byte** — suy từ khoảng cách `(off_kế_tiếp − off − 4) / count`, không một file
 nào chia không hết. Thứ tự giá trị `E ≤ G ≤ F ≤ H ≤ kích thước`, đúng 580/580.
 
-Cột `+8` và `+12` của C và D là **float32**: 100% giải ra hợp lý, biên độ tới
-768 và 960 — khớp đúng độ phân giải trong tên file (`BattleField_*_960_640`).
+```
+0x28   section A   104 byte float thông số cảnh
+0x90   section B   [count][count × 8]    atlas .plist
+off_C  section C   [count][count × 16]   sprite + toạ độ
+off_D  section D   [count][count × 16]   ảnh rời + toạ độ
+off_E  section E   8 byte (vì off_G luôn = off_E + 8)
+off_G  section G   nhị phân, chưa giải
+off_F  section F   nhị phân, chưa giải
+off_H  section H   kho chuỗi, tới cuối file
 
-**Chưa giải:** ý nghĩa các cột **số nguyên** trong bản ghi, và 104 byte của
-section A (nhìn ra toàn float, thấy 1024.0 / 768.0 / 0.8 nhưng chưa rõ từng
-trường). Hai giả thuyết đã thử và **loại**: B không phải bảng chuỗi
-`(offset, length)`, và vùng sau `off_E` không phải kho chuỗi — nó không chứa
-một ký tự ASCII nào. Muốn giải tiếp phải đọc hàm *tiêu thụ* các con trỏ mà bộ
-đọc header cất vào `p+0x1c` … `p+0x38`; thống kê đã hết đường.
+bản ghi B  (8 byte):  uint32 str_off, uint32 str_len
+bản ghi C (16 byte):  uint32 str_off, uint32 str_len, float x, float y
+bản ghi D (16 byte):  giống C
+```
+
+**Đã kiểm chứng trên toàn bộ 580 file của cả hai bản:** 29017 bản ghi — 28539
+giải ra chuỗi ASCII sạch, 478 độ dài 0 (đúng nhánh chuỗi rỗng trong
+`FUN_0048f1b8`), **0 hỏng**. Nội dung đúng một kiểu mỗi section: B toàn
+`.plist` (16299), C toàn `.png` (10934), D `.png` (1262) + `.jpg` (44).
+
+Ví dụ `BattleField_Arena_960_640.xgg`:
+
+```
+section B — atlas:    Scene_Arena.plist
+section C — sprite:   Arena_01-01.png              x=346.0   y=96.0
+section D — ảnh rời:  ../png/scene/arena/Arena_ground-a.png   x=1025.0  y=686.0
+```
+
+**Còn lại:** ý nghĩa từng float trong section A (nhìn ra `1024.0 / 768.0 / 0.8`
+— kích thước cảnh và hệ số tỉ lệ), và nội dung nhị phân của section G và F.
 
 ```bash
-python xgg.py decrypted/assets --scan       # kiểm bố cục trên cả cây
-python xgg.py <file.xgg>                    # đọc header
-python xgg.py <file.xgg> --dump C           # đổ từng bản ghi
-python xgg.py decrypted/assets --fields     # đo thống kê từng cột 4 byte
+python xgg.py decrypted/assets --scan   # kiểm trên cả cây
+python xgg.py <file.xgg>                # đọc header + nội dung
+python xgg.py <file.xgg> --json         # xuất JSON
 ```
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
