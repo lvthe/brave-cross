@@ -37,6 +37,7 @@ work/
   inventory.py                so kho tài nguyên hai bản
   xgg.py                      đọc định dạng .xgg (sngXgg / xgg5.0)
   sngxml.py                   đọc plist atlas sngXml
+  anim.py                     xuất hoạt ảnh xương ra JSON
 
   server-spec/                đặc tả bản CN — 584 API
   server-spec-vn/             đặc tả bản VN — 614 API
@@ -304,9 +305,56 @@ xương. Tên hay gặp trong 411 file: `Play` (1929), `LayerName000` (862),
 
 **Đã kiểm chứng:** 50042 chuỗi, giải được **100.00%**, 0 rỗng, **0 hỏng**.
 
-**Chưa rõ:** mọi trường số ngoài cặp `(str_off, str_len)` đầu mỗi bản ghi. Đã
-**thử và loại** giả thuyết bản ghi con chứa thêm mô tả chuỗi thứ hai/thứ ba —
-đọc như vậy cho ra rác (`'D'`, `'n'`, `'De'`) và 332 trường hợp hỏng.
+### Keyframe — hoạt ảnh xương (`work/anim.py`)
+
+Lớp cuối của định dạng. `sngxml.py` đọc bộ xương, tên động tác và tên sprite;
+`anim.py` đọc thêm **dữ liệu biến đổi từng khung**.
+
+```
+bản ghi động tác (0x28), ở mảng con của mảng 2:
+  +0x00  str_off, str_len    "Walk", "Fight", "Death"...
+  +0x08  uint32              số khung
+  +0x20  uint32  bone_off    offset vào mảng ở header 0x58
+  +0x24  uint32  bone_count  số xương tham gia
+
+bản ghi xương (24 byte), gốc header[0x58]:
+  +0x00  str_off, str_len    "HandLeft", "ThighLeft"...
+  +0x08  float 1.0
+  +0x10  uint32  key_off     offset vào mảng ở header 0x5c
+  +0x14  uint32  key_count
+
+khung (80 byte), gốc header[0x5c]:
+  +0x00  float x, y          vị trí
+  +0x08  float x, y          cùng vị trí, đã làm tròn
+  +0x10  float rot, rot      góc xoay (độ), lặp lại
+  +0x18  float sx, sy        tỉ lệ
+  +0x20..+0x50               0 trên toàn bộ mẫu đã xem
+```
+
+`Cavalry.xml`, động tác `Walk` — nhìn là thấy chu kỳ đi thật:
+
+```
+ArmLeft   góc:  0.00° →  8.48° → -10.20° →  -2.51°   (tay vung)
+LegLeft   góc: 27.00° → 35.47° →  16.80° →  24.33°   (chân bước)
+```
+
+`ZhangLiaoGod`, động tác `Fight`, xương `Weapon`:
+`-122.7° → 69.9° → 39.4° → -102.0° → 69.9°` — nhịp chém.
+
+**Đã kiểm chứng trên 418/418 file bản VN, 0 lỗi:** 8207 động tác, 131029
+xương, **641538 keyframe**.
+
+```bash
+python anim.py <file.xml>                # tóm tắt
+python anim.py <file.xml> --anim Fight   # đổ chi tiết một động tác
+python anim.py <file.xml> --json         # xuất JSON đầy đủ
+python anim.py vn/decrypted/assets --scan
+```
+
+**Chưa rõ:** 48 byte cuối mỗi khung (luôn 0 trên mẫu đã xem), và vì sao vị trí
+cùng góc xoay đều được lưu hai lần. Đã **thử và loại** giả thuyết bản ghi con
+chứa thêm mô tả chuỗi thứ hai/thứ ba — đọc như vậy cho ra rác (`'D'`, `'n'`,
+`'De'`) và 332 trường hợp hỏng.
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
 hiểu game.
