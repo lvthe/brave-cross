@@ -169,18 +169,84 @@ Cứ chơi, đọc log, viết handler cho cái xuất hiện, lặp lại. Tra 
 dạng phản hồi ở `../server-spec-vn/rpc-reference.html`; hình dạng payload chính
 xác thì đọc thẳng hàm `On*` tương ứng trong mã client — mã nguồn client có đủ.
 
-## Chưa kiểm chứng — phải thử trên máy trước
+## Chạy game để thử: dùng emulator ARM, không cần điện thoại
 
-Toàn bộ ở trên mới chỉ chạy trong môi trường giả lập trên PC. Ba điều còn là
-suy luận từ mã, chưa có bằng chứng chạy thật:
+Game chỉ có `armeabi-v7a` — **32-bit**. Điện thoại đời mới không chạy được, và
+đây không phải chuyện cấu hình: chip từ Snapdragon 8 Elite trở đi bỏ hẳn
+32-bit ở mức phần cứng, máy không có cả `/system/bin/linker`. Đã đo trên
+Galaxy Z Fold7: `ro.product.cpu.abilist` chỉ có `arm64-v8a`, `abilist32` rỗng.
 
-1. **Cổng đăng nhập SDK.** Kull SDK có thể chặn ngay trước khi Lua chạy. Nếu
-   vậy phải vá ở tầng Java — dex bản VN không đóng gói nên sửa được.
-2. **Đường ghi đè.** Đã thu hẹp còn 3 ứng viên (bảng ở trên) nhưng chưa biết
-   `libgame.so` hỏi JNI cái nào. `deploy.py --push` đẩy vào tất cả nên không
-   còn là rào cản, chỉ là chưa xác nhận cái nào ăn.
-3. **File nguyên văn hay đã mã hoá.** Bộ nạp nhiều khả năng kiểm tra magic
+Giả lập kiểu LDPlayer/Nox thì cần VT-x, mà VT-x lại bị Windows chiếm khi VBS
+bật — phải tắt tính năng bảo mật mới dùng được.
+
+Đường sạch nhất: **emulator của Android SDK chạy ảnh hệ thống ARM**. Nó *giả
+lập* CPU ARM qua QEMU chứ không *dịch*, nên không cần VT-x và chạy được ngay
+khi VBS đang bật.
+
+Ba chỗ vướng, ghi lại để khỏi mò lại:
+
+* **Emulator 37.x đã bỏ ARM 32-bit** (`CPU Architecture 'arm' is not supported
+  by the QEMU2 emulator`). Phải dùng bản cũ — `30.2.2` vẫn tải được ở
+  `dl.google.com/android/repository/emulator-windows-6885378.zip` dù không
+  còn được liệt kê trong repo XML.
+* **Chỉ ảnh API 23 trở lên mới có `kernel-ranchu`.** Ảnh API 19/22 chỉ có
+  `kernel-qemu` của engine cổ điển, mà engine đó đã bị gỡ. Nên API 23 là bản
+  nhẹ nhất còn dùng được, dù Android 6 khá nặng cho CPU giả lập.
+* **`sdkmanager` trong cmdline-tools mới đã khai tử**, không cài được các gói
+  cũ. Phải lấy `cmdline-tools` bản 12 trở về trước. Thiếu
+  `platforms/android-23` thì emulator báo `Broken AVD system path`.
+
+```bash
+emulator -avd <ten> -no-snapshot -no-boot-anim -gpu swiftshader_indirect
+```
+
+`-gpu off` làm game chết ở `GLThread` (`No configs match configSpec`), còn
+`-gpu guest` làm `surfaceflinger` chết. Chỉ `swiftshader_indirect` dựng được
+EGL.
+
+### Quyền lưu trữ trên Android 6 — phải cấp tay
+
+Game khai `targetSdkVersion 23`, đúng ngưỡng Android bắt đầu áp quyền lúc
+chạy, và nó không có code xin quyền kiểu mới. Hệ thống từ chối thẳng:
+
+```
+Not granting permission android.permission.READ_EXTERNAL_STORAGE to package com.cmn.buatanew
+```
+
+Không có quyền đó thì game **không đọc nổi file OBB** — toàn bộ tài nguyên.
+Nó vẫn khởi động, vẫn nạp `libgame.so`, vẫn dựng EGL, rồi chết vì không có dữ
+liệu. Cấp trước khi mở game:
+
+```bash
+adb shell pm grant com.cmn.buatanew android.permission.READ_EXTERNAL_STORAGE
+adb shell pm grant com.cmn.buatanew android.permission.WRITE_EXTERNAL_STORAGE
+```
+
+## Đã kiểm chứng được gì trên emulator
+
+**Kull SDK KHÔNG chặn.** Đây là rủi ro lớn nhất của cả lớp offline, và nó đã
+bị loại. Log cho thấy game vào thẳng activity, nạp hết thư viện native rồi
+khởi động Cocos2d-x, không có cổng đăng nhập nào cản:
+
+```
+Start proc com.cmn.buatanew/org.kingsoft.com.R1_OLChina
+sngDownload: loadlib by name Crasheye / fmod / fmodstudio / Bugly
+sngDownload: loadlib by name game          <- libgame.so nạp được
+Cocos2dxActivity: model=sdk_phone_armv7, isEmulator=true
+OpenGLRenderer: Initialized EGL, version 1.4
+Displayed com.cmn.buatanew/org.kingsoft.com.R1_OLChina: +39s948ms
+```
+
+Không có `FATAL EXCEPTION` nào của chính `com.cmn.buatanew`.
+
+## Vẫn chưa kiểm chứng
+
+1. **Đường ghi đè.** Chưa biết `libgame.so` hỏi JNI thư mục nào.
+   `deploy.py --push` đẩy vào tất cả ứng viên nên không phải rào cản, chỉ là
+   chưa xác nhận cái nào ăn.
+2. **File nguyên văn hay đã mã hoá.** Bộ nạp nhiều khả năng kiểm magic
    `sngFile` ở cuối để quyết định có giải mã không, nhưng đây là suy đoán từ
    định dạng. Thử `plain/` trước, không được thì `sng/`.
-
-Việc đầu tiên đáng làm: cài bản VN, bật chế độ máy bay, xem nó chết ở đâu.
+3. **Game có chơi được không.** Mới chứng minh nó *khởi động* được. Emulator
+   ARM chậm tới mức mỗi thao tác mất hàng chục giây, nên chưa ai thấy nó vẽ ra
+   màn hình đầu tiên.
