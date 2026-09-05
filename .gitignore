@@ -26,6 +26,13 @@ work/vn/
 # file nay nen chan han theo ten.
 AndroidManifest.xml
 
+# Project cua Ghidra — chua ca CSDL phan tich cua libgame.so (403 MB), tuc la
+# noi dung dan xuat tu APK co ban quyen. Dung lai duoc bang cach import lai.
+*.gpr
+*.rep/
+*.lock
+*.lock~
+
 # Kết quả build: nhúng chính file gốc của game (require.lua), sinh lại được
 # bằng `python build.py`
 work/offline/deploy/
