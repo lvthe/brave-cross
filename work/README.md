@@ -36,6 +36,7 @@ work/
   diff_api.py                 so hai đặc tả (API, chữ ký, enum, mã lỗi)
   inventory.py                so kho tài nguyên hai bản
   xgg.py                      đọc định dạng .xgg (sngXgg / xgg5.0)
+  sngxml.py                   đọc plist atlas sngXml
 
   server-spec/                đặc tả bản CN — 584 API
   server-spec-vn/             đặc tả bản VN — 614 API
@@ -130,7 +131,8 @@ cho ra khoá duy nhất, và lộ ra chu kỳ lặp 32 byte. Bản VN dùng **c�
 |---|---|---|
 | `xgg5.0` | 278 / 290 | **đã giải**, xem `xgg.py` |
 | `sngXgg` | 6 / 6 | **cùng một định dạng với `xgg5.0`** — chung bộ đọc |
-| `sngXml` | 493 | chưa giải — plist atlas đã biên dịch sẵn |
+| `sngXml` — `.plist` | 493 / 501 | **đã giải**, xem `sngxml.py` |
+| `sngXml` — `.xml` | 411 / 418 | chưa giải — bố cục khác hẳn |
 
 `xgg5.0` và `sngXgg` hoá ra **không phải hai định dạng**: cùng một hàm trong
 `libgame.so` nhận cả hai magic, và cả 580 file của hai bản đọc được bằng chung
@@ -215,6 +217,66 @@ python xgg.py decrypted/assets --scan   # kiểm trên cả cây
 python xgg.py <file.xgg>                # đọc header + nội dung
 python xgg.py <file.xgg> --json         # xuất JSON
 ```
+
+### Bố cục `sngXml` bản `.plist` (`work/sngxml.py`)
+
+Một magic nhưng **hai cấu trúc khác hẳn nhau**, chia đúng theo đuôi file: 493
+file `.plist` là atlas sprite (đã giải), 411 file `.xml` là thứ khác (chưa
+giải). Chuỗi header lộ nguồn gốc:
+
+```
+'Background_2.png'
+'$TexturePacker:SmartUpdate:8a9ca6937f09f769cb27d53a0e6d5066$'
+'Background_2.png'
+```
+
+Đây là plist cocos2d do **TexturePacker** sinh, đã biên dịch sang nhị phân —
+ba chuỗi đó chính là khối `metadata` của plist gốc.
+
+Bộ nạp `FUN_0050da18` chỉ kiểm magic rồi cất buffer, không phân tích gì. Hàm
+giải chuỗi là `FUN_0050daac`, **cùng khuôn với `.xgg`**:
+
+```c
+if (rec[1] == 0)  ->  chuỗi rỗng
+else  ->  chuỗi tại  base + rec[0] + <gốc kho chuỗi>,  dài rec[1]
+```
+
+```
+0x00  char[7]  "sngXml\0"
+0x10  uint32   count        số khung
+0x18  uint32   str_off, str_len   } ba chuỗi header:
+0x28  uint32   str_off, str_len   }   tên texture, hash TexturePacker,
+0x30  uint32   str_off, str_len   }   tên texture thật
+0x38  uint32   off_recs     gốc mảng bản ghi
+0x3c  uint32   off_pool     gốc kho chuỗi
+
+bản ghi 60 byte:
+  +0x00  uint32  str_off      ) chắc chắn — từ FUN_0050daac
+  +0x04  uint32  str_len      )
+  +0x08  float x2    vị trí trong atlas       ) kiểu đo được từ 18980 bản
+  +0x10  float x2    kích thước khung         ) ghi thật; TÊN là suy diễn
+  +0x18  float x2    độ lệch, 85% bằng 0      ) theo khuôn TexturePacker,
+  +0x20  uint32      chỉ nhận 0/1 — cờ rotated) chưa đối chiếu từng trường
+  +0x24  float x2    82% bằng 0               ) với code
+  +0x2c  float x2    kích thước gốc           )
+  +0x34  float x2                             )
+```
+
+**Đã kiểm chứng:** `(off_pool − off_recs) / count = 60` byte trên 493/493 file,
+không ngoại lệ. 20459 chuỗi: 20306 giải được (16 tên tiếng Trung UTF-8), 153 độ
+dài 0, **0 hỏng**. Bản VN cũng vậy: 501 file, 0 lỗi.
+
+```bash
+python sngxml.py decrypted/assets --scan
+python sngxml.py <file.plist>            # đọc
+python sngxml.py <file.plist> --json     # xuất JSON
+```
+
+**Còn lại:** 411 file `.xml` (`map/Archer.xml`, `ADou01.xml`… cỡ 160–300 KB).
+Bố cục khác: các trường `0x38`/`0x3c` ở đó là float chứ không phải offset.
+Nhánh code phục vụ chúng đi qua `FUN_0026f704` — ba mảng bước
+`0x10`/`0x10`/`0x28`, count ở `0x20`/`0x28`/`0x40`, gốc ở `0x44`/`0x50`/`0x60`,
+và bản ghi mảng 1 còn lồng mảng con. Đó là điểm bắt đầu cho lần sau.
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
 hiểu game.
