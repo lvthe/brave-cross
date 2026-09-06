@@ -183,6 +183,16 @@ class Atlas(object):
     def frames(self):
         return self.x.frames()
 
+    @staticmethod
+    def why_skip(fr):
+        """Vi sao mot khung khong cat duoc — None neu cat duoc."""
+        w, h = int(round(fr['sizeWH'][0])), int(round(fr['sizeWH'][1]))
+        if w <= 0 or h <= 0:
+            # Moi nhan vat co dung mot muc kieu 'X_res-44.png' kich thuoc 0x0.
+            # Day la muc danh dau, khong phai sprite — bo la dung.
+            return 'kich thuoc 0'
+        return None
+
     def cut(self, fr):
         """Cat mot khung ra bytearray RGBA, da xoay ve dung chieu."""
         x, y = int(round(fr['atlasXY'][0])), int(round(fr['atlasXY'][1]))

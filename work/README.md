@@ -39,6 +39,7 @@ work/
   sngxml.py                   đọc plist atlas sngXml
   anim.py                     xuất hoạt ảnh xương ra JSON
   sprites.py                  cắt sprite từ atlas ra PNG (giải ETC1)
+  export.py                   xuất trọn gói một nhân vật: PNG + JSON
 
   server-spec/                đặc tả bản CN — 584 API
   server-spec-vn/             đặc tả bản VN — 614 API
@@ -396,6 +397,45 @@ python sprites.py vn/decrypted/assets --scan
 Quét toàn bộ, **0 lỗi**: bản VN 397 atlas / 12998 khung, bản CN 88 atlas /
 2816 khung. 33 file `.plist` là XML thuần chưa biên dịch (đọc bằng parser XML
 bất kỳ), 104 file không có `.pkm` đi kèm.
+
+### Xuất trọn gói một nhân vật (`work/export.py`)
+
+Gộp ba mảnh trên. Một nhân vật gồm ba file cùng tên trong assets:
+
+```
+Cavalry.xml     bộ xương + hoạt ảnh
+Cavalry.plist   toạ độ sprite trong atlas
+Cavalry.pkm     texture ETC1
+```
+
+Bản VN có **397 nhân vật đủ cả ba**, 21 thiếu texture.
+
+```
+<out>/<Tên>/
+    sprites/*.png      từng sprite một file, nền trong suốt
+    <Tên>.json         bộ xương, động tác, keyframe, danh sách sprite
+```
+
+JSON có trường `spriteFiles` nối **tên sprite trong hoạt ảnh** với **tên file
+PNG thật**, nên đọc JSON ra là nạp ảnh được ngay, không phải đoán tên. Trên
+`Cavalry` khớp 132/132.
+
+Chạy toàn bộ: **397/397 nhân vật, 0 lỗi** — 12820 PNG, 7999 động tác,
+636388 keyframe, 314 MB.
+
+178 khung bị bỏ đều là mục kích thước 0×0 tên theo mẫu `X_res-44.png`, mỗi
+nhân vật đúng một cái — mục đánh dấu chứ không phải sprite. Công cụ phân biệt
+rõ hai loại: mục đánh dấu (bình thường) và khung vượt biên atlas (bất thường,
+đáng nghi đọc sai bố cục).
+
+```bash
+python export.py --list                       # 397 nhân vật xuất được
+python export.py Cavalry --out <thư_mục>
+python export.py --all --out <thư_mục>
+```
+
+Kết quả là **nội dung dẫn xuất từ APK có bản quyền** — để ngoài repo, giống
+mọi thứ khác trong `.gitignore`.
 
 Phần lớn dữ liệu quan trọng đã có sẵn ở dạng JSON/XML nên không chặn việc đọc
 hiểu game.
