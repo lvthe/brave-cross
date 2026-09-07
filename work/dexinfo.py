@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Doc classes.dex: dem method co / khong co bytecode.
+"""Doc classes.dex: dem method co / khong co bytecode, va doi chieu voi manifest.
 
-Dung de phan biet mot dex that voi mot dex vo (stub cua packer):
-packer thuong giu nguyen khai bao class/method nhung xoa than method
-(code_off = 0), roi khoi phuc trong RAM luc chay.
+Hai phep do, dung de phan biet mot dex that voi mot dex vo (stub cua packer):
+
+  1. Than method — packer kieu "rut ruot" giu nguyen khai bao class/method nhung
+     xoa than method (code_off = 0) roi khoi phuc trong RAM luc chay.
+       python dexinfo.py apk/classes.dex vn/apk/classes.dex
+
+  2. Class bi lay ra ngoai — packer kieu "boc lop" xoa han class cua app khoi dex
+     va nap lai luc chay; luc do manifest van khai bao ma dex khong co.
+       python dexinfo.py apk/classes.dex --manifest decrypted/AndroidManifest.xml \\
+                         --package com.xh.dachui.xsj
+
+Ca hai phep do tren ban CN va VN cua game nay deu ra 0 — xem work/README.md,
+muc "Phan Java (classes.dex)".
 """
-import struct, sys, collections
+import struct, sys, re, collections
 
 
 def uleb128(d, p):
@@ -88,9 +98,75 @@ def analyse(path):
     }
 
 
+def class_names(path):
+    """Tap ten class co that trong dex, dang com.a.B."""
+    d = open(path, 'rb').read()
+    v = struct.unpack_from('<20I', d, 32)
+    string_ids_off, type_ids_off = v[7], v[9]
+    class_defs_size, class_defs_off = v[16], v[17]
+
+    def type_name(idx):
+        s = struct.unpack_from('<I', d, type_ids_off + idx * 4)[0]
+        off = struct.unpack_from('<I', d, string_ids_off + s * 4)[0]
+        n, p = uleb128(d, off)
+        return d[p:p + n].decode('utf-8', 'replace')
+
+    out = set()
+    for i in range(class_defs_size):
+        t = struct.unpack_from('<I', d, class_defs_off + i * 32)[0]
+        out.add(type_name(t).lstrip('L').rstrip(';').replace('/', '.'))
+    return out
+
+
+TAGS = re.compile(r'<(application|activity|activity-alias|service|receiver|provider)\b(.*?)>', re.S)
+
+
+def manifest_classes(path, pkg):
+    """Ten class ma manifest (da giai nhi phan bang axml.py) khai bao."""
+    txt = open(path, encoding='utf-8').read()
+    out = set()
+    for m in TAGS.finditer(txt):
+        a = re.search(r'android:name="([^"]+)"', m.group(2))
+        if not a:
+            continue
+        n = a.group(1)
+        if n.startswith('.'):
+            n = pkg + n
+        if '.' in n:
+            out.add(n)
+    return out
+
+
+def check_manifest(dex_path, manifest_path, pkg):
+    have = class_names(dex_path)
+    declared = manifest_classes(manifest_path, pkg)
+    missing = sorted(n for n in declared if n not in have)
+    own = sorted(n for n in have if n.startswith(pkg + '.'))
+    print('=' * 68)
+    print('%s  vs  %s' % (dex_path, manifest_path))
+    print('  manifest khai bao   %d class' % len(declared))
+    print('  dex co              %d class' % len(have))
+    print('  khai bao ma dex KHONG co: %d%s' % (len(missing), '' if missing else '   -> khong lop nao bi lay ra ngoai'))
+    for n in missing:
+        print('     THIEU  %s' % n)
+    print('  class thuoc goi %s: %d' % (pkg, len(own)))
+    for n in own[:20]:
+        print('     %s' % n.split('.')[-1])
+    return missing
+
+
 if __name__ == '__main__':
     sys.stdout.reconfigure(encoding='utf-8')
-    for p in sys.argv[1:]:
+    argv = sys.argv[1:]
+    if '--manifest' in argv:
+        i = argv.index('--manifest')
+        manifest = argv[i + 1]
+        pkg = argv[argv.index('--package') + 1] if '--package' in argv else ''
+        dexes = [a for a in argv[:i] if not a.startswith('--')]
+        for p in dexes:
+            check_manifest(p, manifest, pkg)
+        sys.exit(0)
+    for p in argv:
         r = analyse(p)
         print('=' * 68)
         print(r['path'], '|', r['size'] // 1024, 'KB')

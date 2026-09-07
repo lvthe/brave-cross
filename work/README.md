@@ -8,7 +8,7 @@ Hai bản của cùng một game, dịch ngược song song để đối chiếu
 | Package | `com.xh.dachui.xsj` — *dachui* = 大锤 = **búa tạ** | `com.cmn.buatanew` |
 | Version | 1.25.78923 (build 2017-10-25) | 1.26.81485 |
 | SDK | Kingsoft Passport, XGSDK, Umeng, iFlytek, Bugly/TPNS | Kull SDK, Facebook, Google Play, Bugly/TPNS |
-| Bảo vệ | **SecNeo** (`libDexHelper.so`) — chỉ gói lớp Java riêng của app | **không có** |
+| Bảo vệ | **SecNeo** (`libDexHelper.so`) — lớp bọc + native, **không rút lớp nào khỏi dex** | **không có** |
 | Lua | 952 file | 973 file |
 
 Chung: Cocos2d-x + Lua 5.2.3, lớp engine riêng tiền tố `sng`, `libgame.so` (ARMv7) + FMOD Studio.
@@ -39,7 +39,7 @@ work/
   sngxml.py                   đọc plist atlas sngXml
   anim.py                     xuất hoạt ảnh xương ra JSON
   sprites.py                  cắt sprite từ atlas ra PNG (giải ETC1)
-  export.py                   xuất trọn gói một nhân vật: PNG + JSON
+  export.py                   xuất trọn gói một atlas hoạt ảnh: PNG + JSON
 
   server-spec/                đặc tả bản CN — 584 API
   server-spec-vn/             đặc tả bản VN — 614 API
@@ -398,9 +398,9 @@ Quét toàn bộ, **0 lỗi**: bản VN 397 atlas / 12998 khung, bản CN 88 atl
 2816 khung. 33 file `.plist` là XML thuần chưa biên dịch (đọc bằng parser XML
 bất kỳ), 104 file không có `.pkm` đi kèm.
 
-### Xuất trọn gói một nhân vật (`work/export.py`)
+### Xuất trọn gói một atlas hoạt ảnh (`work/export.py`)
 
-Gộp ba mảnh trên. Một nhân vật gồm ba file cùng tên trong assets:
+Gộp ba mảnh trên. Một atlas hoạt ảnh gồm ba file cùng tên trong assets:
 
 ```
 Cavalry.xml     bộ xương + hoạt ảnh
@@ -408,7 +408,9 @@ Cavalry.plist   toạ độ sprite trong atlas
 Cavalry.pkm     texture ETC1
 ```
 
-Bản VN có **397 nhân vật đủ cả ba**, 21 thiếu texture.
+Bản VN có **397 atlas đủ cả ba file**. Đây **không phải 397 "nhân vật"** —
+trong đó có 97 atlas `UI*`, 8 `XS*` (hiệu ứng) và 3 `AttackButton`/`StartCartoon`;
+còn lại ~289 mới là nhân vật / quân chủng / trang phục.
 
 ```
 <out>/<Tên>/
@@ -420,8 +422,29 @@ JSON có trường `spriteFiles` nối **tên sprite trong hoạt ảnh** với 
 PNG thật**, nên đọc JSON ra là nạp ảnh được ngay, không phải đoán tên. Trên
 `Cavalry` khớp 132/132.
 
-Chạy toàn bộ: **397/397 nhân vật, 0 lỗi** — 12820 PNG, 7999 động tác,
+Chạy toàn bộ: **397/397 atlas, 0 lỗi** — 12820 PNG, 7999 động tác,
 636388 keyframe, 314 MB.
+
+#### 21 atlas không xuất được — đã truy đến gốc
+
+Đọc tên texture từ header của plist (chứ không đoán theo tên atlas): cả 21 đều
+trỏ tới `<tên>.png`, và file đó **không tồn tại ở cả bản CN lẫn bản VN**. Tức
+texture không được đóng gói trong build — không phải lỗi tìm đường dẫn của
+`export.py`.
+
+**Không có nhân vật nào trong số 21 này**: 16 mục là `UI*`/`XS*` (hiệu ứng giao
+diện — `UIJieSuan` 结算, `UIChengHao` 称号, `UIJunTuanTaoFa` 军团讨伐…), 3 mục
+`*Multi` là atlas gộp, còn `ZhaoYunWake` / `ZhaoYunExclusWake` là **lớp chữ phụ
+đề cảnh thức tỉnh** — các khung trong đó tên `_vi` / `_en` / `_kr` / `_zh_Hant`,
+không phải sprite nhân vật.
+
+Kiểm lại bằng:
+
+```bash
+python export.py --list        # in cả 21 tên kèm lý do
+```
+
+Kết luận: **mọi nhân vật chơi được đều xuất được, không thiếu nhân vật nào.**
 
 178 khung bị bỏ đều là mục kích thước 0×0 tên theo mẫu `X_res-44.png`, mỗi
 nhân vật đúng một cái — mục đánh dấu chứ không phải sprite. Công cụ phân biệt
@@ -429,7 +452,7 @@ rõ hai loại: mục đánh dấu (bình thường) và khung vượt biên atl
 đáng nghi đọc sai bố cục).
 
 ```bash
-python export.py --list                       # 397 nhân vật xuất được
+python export.py --list                       # 397 atlas xuất được + 21 mục thiếu texture
 python export.py Cavalry --out <thư_mục>
 python export.py --all --out <thư_mục>
 ```
@@ -456,13 +479,37 @@ header không hỏng, `file_size` khớp đúng kích thước file, không meth
 rút ruột. Toàn bộ lớp SDK đọc được: `kingsoft_pass` 254 class, `xgsdk` 195,
 `iflytek` 159, `zxing` 223, `fastjson` 183.
 
-SecNeo ở bản CN **không** làm rối cả dex — nó chỉ **bỏ hẳn ~20 lớp riêng của app**
-ra ngoài (`com.xh.dachui.xsj.*` chỉ còn `R$*` và `CallbackActivity`, mất
-MainActivity), rồi `libDexHelper.so` nạp lại chúng trong RAM lúc chạy.
+SecNeo ở bản CN **không lấy lớp nào ra khỏi dex**. Đối chiếu từng class khai báo
+trong manifest với class có thật trong dex — **thiếu 0 / 26 ở bản CN, 0 / 23 ở bản
+VN**:
 
-Bản VN **không đóng gói gì cả**: không có `com/secneo`, `com.cmn.buatanew` +
-`com.kull.sdk` (299 class) + Facebook SDK đọc được hết. Cần xem lớp Java thì lấy
-từ bản VN, không phải dump bộ nhớ.
+```bash
+python dexinfo.py apk/classes.dex --manifest decrypted/AndroidManifest.xml \
+                  --package com.xh.dachui.xsj
+python dexinfo.py vn/apk/classes.dex --manifest vn/AndroidManifest.xml \
+                  --package com.cmn.buatanew
+```
+
+Không có "MainActivity bị mất" — gói `com.xh.dachui.xsj` vốn chỉ có `R*` và
+`CallbackActivity`, vì điểm vào Java của game nằm ở gói khác: `org.kingsoft.com.*`
+(30 class — `R1_OLChina`, `sngGameEngine`, `SDKHandler`, `TargetActivity`,
+`AsrManager`…), **có đủ ở CẢ HAI bản**. Activity `MAIN/LAUNCHER` của bản CN là
+`com.xgsdk.client.api.splash.XGSplashActivity`; `R1_OLChina` được khai báo với
+action `xg.game.MAIN` + category `DEFAULT` — `xg.game.MAIN` là **tên action**,
+không phải tên class.
+
+Vậy SecNeo ở đây là lớp bọc `<application>` (`com.secneo.apkwrapper.ApplicationWrapper`)
+cộng thư viện native (`libDexHelper.so`, `libDexHelper-x86.so`) — chống gỡ lỗi và
+chống can thiệp lúc chạy, chứ không rút ruột dex.
+
+Thứ thật sự bị mã hoá ở bản CN là hai blob trong assets:
+`xgsdk-data-2.0.apk` (35 KB) và `xgsdk-channel-20170726171953.apk` (21 KB) —
+**không phải zip, cũng không dùng lớp `sngFile`**, nên `sng_decrypt.py` chỉ chép
+nguyên. Đây là gói riêng của XGSDK; nội dung bên trong **chưa kiểm chứng**.
+
+Bản VN **không đóng gói gì cả**: không có `com/secneo`, `com.cmn.buatanew` (23 class)
++ `com.kull.sdk` (299 class) + Facebook SDK đọc được hết, và cũng không có hai blob
+XGSDK nói trên. Cần đọc lớp SDK phát hành thì lấy từ bản VN.
 
 Dù sao **logic game không nằm ở Java**. Java chỉ là launcher + SDK (đăng nhập,
 thanh toán, thống kê, push). Toàn bộ gameplay nằm ở Lua (đã có đủ) và C++ trong

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Xuat tron goi mot nhan vat: PNG roi + JSON hoat anh, dung duoc ngay.
+"""Xuat tron goi mot atlas hoat anh: PNG roi + JSON hoat anh, dung duoc ngay.
 
 Gop ba manh da giai:
 
@@ -7,13 +7,23 @@ Gop ba manh da giai:
     sprites.py  pixel — giai ETC1, tach alpha, cat ra PNG
     anim.py     bo xuong, dong tac, keyframe
 
-Mot nhan vat gom ba file cung ten trong assets:
+Mot atlas hoat anh gom ba file cung ten trong assets:
 
     Cavalry.xml     bo xuong + hoat anh
     Cavalry.plist   toa do sprite trong atlas
     Cavalry.pkm     texture ETC1
 
-Ban VN co 397 nhan vat du ca ba, 21 nhan vat thieu texture.
+Ban VN co 397 atlas du ca ba file. KHONG phai 397 "nhan vat": trong so do co
+97 atlas UI* + 8 XS* (hieu ung) + 3 Button/Cartoon, con lai ~289 moi la nhan
+vat / quan chung / trang phuc.
+
+21 atlas nua co .xml + .plist nhung khong xuat duoc. Kiem lai bang cach doc ten
+texture tu header cua plist: ca 21 deu tro toi <ten>.png — mot file KHONG ton
+tai trong ca ban CN lan ban VN, tuc texture khong duoc dong goi trong build.
+Day khong phai loi tim duong dan. Va khong co nhan vat nao trong so 21 nay:
+16 la UI*/XS*, 3 la *Multi (atlas gop), con ZhaoYunWake / ZhaoYunExclusWake la
+lop chu phu de canh thuc tinh (cac khung ten _vi/_en/_kr/_zh_Hant).
+=> Moi nhan vat choi duoc deu xuat duoc; khong thieu nhan vat nao.
 
 Cay ket qua:
 
@@ -40,7 +50,7 @@ DEFAULT_ASSETS = os.path.join('vn', 'decrypted', 'assets')
 
 
 def index(assets):
-    """{ten: (xml, plist, pkm)} — chi nhung nhan vat du ca ba file."""
+    """{ten: (xml, plist, pkm)} — chi nhung atlas du ca ba file."""
     def by_name(pattern, check=None):
         out = {}
         for p in glob.glob(os.path.join(assets, '**', pattern), recursive=True):
@@ -118,19 +128,23 @@ def main():
     ap.add_argument('--assets', default=DEFAULT_ASSETS, help='mac dinh: %(default)s')
     ap.add_argument('--out', help='thu muc ket qua')
     ap.add_argument('--all', action='store_true', help='xuat tat ca')
-    ap.add_argument('--list', action='store_true', help='liet ke nhan vat xuat duoc')
+    ap.add_argument('--list', action='store_true', help='liet ke atlas xuat duoc')
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
     idx, missing = index(a.assets)
     if a.list:
-        print('%d nhan vat du ca ba file:' % len(idx))
+        print('%d atlas du ca ba file (.xml + .plist + .pkm):' % len(idx))
         for i, n in enumerate(idx):
             print('   %-28s' % n, end='\n' if i % 3 == 2 else '')
         print()
         if missing:
-            print('\n%d thieu texture, khong xuat duoc: %s'
-                  % (len(missing), ', '.join(missing[:8])))
+            print('\n%d atlas co .xml + .plist nhung texture khong duoc dong goi'
+                  ' trong build (plist tro toi <ten>.png, file do khong ton tai'
+                  ' o ca hai ban) — khong co nhan vat nao trong so nay:' % len(missing))
+            for i, n in enumerate(missing):
+                print('   %-28s' % n, end='\n' if i % 3 == 2 else '')
+            print()
         return 0
 
     if not a.out:
@@ -155,7 +169,7 @@ def main():
             print('  [%3d/%3d] %-26s LOI: %s' % (i, len(todo), n[:26], e))
 
     print()
-    print('xong: %d nhan vat, %d PNG, %d dong tac, %d keyframe'
+    print('xong: %d atlas, %d PNG, %d dong tac, %d keyframe'
           % (len(todo) - len(fail), tp, ta, tk))
     if te:
         print('  muc danh dau kich thuoc 0 (binh thuong): %d' % te)
