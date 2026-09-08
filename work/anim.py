@@ -10,9 +10,20 @@ BO CUC (tiep noi sngxml.py)
 Ban ghi dong tac, 0x28 byte, nam o mang con cua mang 2:
 
     +0x00  uint32  str_off, str_len     ten dong tac: "Walk", "Fight"...
-    +0x08  uint32  so khung khai bao
+    +0x08  uint32  so keyframe
+    +0x10  uint32  do dai dong tac tinh bang khung
+    +0x14  uint32  co lap: 1 = lap vo han, 0 = chay mot lan
     +0x20  uint32  bone_off             offset vao mang o header 0x58
     +0x24  uint32  bone_count           so xuong tham gia dong tac nay
+
+Hai truong +0x10 va +0x14 doc duoc bang cach quet 7995 ban ghi cua 411 file:
+
+  +0x10  bang so keyframe o 7715 ban ghi, lon hon o 136. Vd Archer/Hang co 2
+         keyframe nhung do dai 10 khung — giu tu the 5 khung moi keyframe.
+  +0x14  chi nhan 0 hoac 1, va chia dung theo nghia dong tac:
+         lap 1   Walk, Standby, Run, WalkBack, Walk2, Defend, Hang, Fire
+         lap 0   Fight, Death, Hit, Wake, Fight2, Jump, Down, Fight3
+         Khong co dong tac mot-lan nao bi danh dau lap va nguoc lai.
 
 Ban ghi xuong, 24 byte, o goc header[0x58]:
 
@@ -35,8 +46,25 @@ Vi du Cavalry.xml, dong tac Walk:
     ArmLeft   goc:  0.00 ->  8.48 -> -10.20 ->  -2.51    (tay vung)
     LegLeft   goc: 27.00 -> 35.47 ->  16.80 ->  24.33    (chan buoc)
 
-CHUA RO: 48 byte cuoi cua moi khung (luon 0 tren mau da xem), va vi sao vi tri
-cung goc xoay deu duoc luu hai lan.
+BAN GHI BO PHAN, 16 byte, o mang con cua mang 1:
+
+    +0x00  uint32  str_off, str_len     ten bo phan: "Head", "ArmLeft"...
+    +0x08  uint32  ref_off              offset vao mang o header 0x4c
+    +0x0c  uint32  ref_count            so ANH ma bo phan nay dung
+
+Mang o 0x4c, ban ghi 20 byte, tam thoi chi doc 8 byte dau (ten anh). Day la
+LIEN KET XUONG -> ANH do chinh file luu, khong phai suy tu ten:
+
+    Archer/Head   -> Head1, Head3, Head2, Head4, Head5   (5 net mat)
+    CaoCao/LeftArm-> CaoCao_res-RightArm                 (dung lai anh tay phai)
+    CaoCao/Head   -> CaoCao_mc_Head                      (mot rig long nhau)
+
+Quan trong voi nhung nhan vat dat ten anh khong theo bo phan: CaoCao co
+"face1", "touguan", "toufa0013_instant" — do ten thi chiu, doc bang o day thi
+ra dung.
+
+CHUA RO: 12 byte cuoi cua ban ghi 20 byte nay; 48 byte cuoi cua moi khung
+(luon 0 tren mau da xem); va vi sao vi tri cung goc xoay deu duoc luu hai lan.
 
     python anim.py <file.xml>                # tom tat
     python anim.py <file.xml> --json         # xuat JSON day du
@@ -49,6 +77,7 @@ MAGIC = b'sngXml\x00'
 ANIM_REC = 0x28
 BONE_REC = 24
 KEY_REC = 80
+REF_REC = 20
 
 
 class AnimError(Exception):
@@ -67,8 +96,9 @@ class Anim(object):
         self.bone_base = u(0x58)
         self.key_base = u(0x5c)
         self.part_base, self.part_sub = u(0x44), u(0x48)
+        self.ref_base = u(0x4c)
         self.spr_base = u(0x60)
-        for o in (0x44, 0x48, 0x50, 0x54, 0x58, 0x5c, 0x60, 0x64):
+        for o in (0x44, 0x48, 0x4c, 0x50, 0x54, 0x58, 0x5c, 0x60, 0x64):
             if not 0 < u(o) <= self.size:
                 raise AnimError('bo cuc khong phai ban .xml (0x%02X ngoai file)' % o)
 
@@ -123,9 +153,13 @@ class Anim(object):
                 nm = self._name_at(a)
                 if not nm or nm == 'None':
                     continue
+                nFrames = self.u(a + 8)
+                nDur = self.u(a + 0x10)
                 anims.append(collections.OrderedDict([
                     ('name', nm),
-                    ('frames', self.u(a + 8)),
+                    ('frames', nFrames),
+                    ('duration', nDur if nDur >= nFrames else nFrames),
+                    ('loop', self.u(a + 0x14) == 1),
                     ('bones', self.bones(self.u(a + 0x20), self.u(a + 0x24))),
                 ]))
             if anims:
@@ -138,7 +172,15 @@ class Anim(object):
         for i in range(self.u(0x20)):
             r = self.part_base + i * 0x10
             sub_off, sub_n = self.u(r + 8), self.u(r + 0xc)
-            kids = [self._name_at(self.part_sub + sub_off + k * 0x10) for k in range(sub_n)]
+            kids = []
+            for k in range(sub_n):
+                p = self.part_sub + sub_off + k * 0x10
+                ref_off, ref_n = self.u(p + 8), self.u(p + 0xc)
+                kids.append(collections.OrderedDict([
+                    ('name', self._name_at(p)),
+                    ('sprites', [self._name_at(self.ref_base + ref_off + j * REF_REC)
+                                 for j in range(ref_n)]),
+                ]))
             out.append(collections.OrderedDict([
                 ('name', self._name_at(r)), ('children', kids)]))
         return out
