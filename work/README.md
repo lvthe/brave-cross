@@ -396,6 +396,37 @@ cùng góc xoay đều được lưu hai lần. Đã **thử và loại** giả 
 chứa thêm mô tả chuỗi thứ hai/thứ ba — đọc như vậy cho ra rác (`'D'`, `'n'`,
 `'De'`) và 332 trường hợp hỏng.
 
+### Nền cảnh (`work/scenes.py`)
+
+Nền sân **không** nằm trong atlas như nhân vật, mà là từng file `.pkm` rời
+trong `assets/png/scene/<cảnh>/`.
+
+`BattleField_<cảnh>_960_640.xgg` mô tả sân ghép từ ~45 mảnh nhỏ cộng một atlas
+`Scene_<cảnh>.plist`. **Texture của atlas đó không có** — không trong APK,
+không trong OBB. Đã kiểm: OBB có 9874 mục, 16 file `Scene_*` đều chỉ là
+`.plist`, và không có file nào tên `Scene_*.png`/`.pkm`. Chúng được tải về lúc
+chạy từ máy chủ vá. Nên phần nền ghép từ 45 mảnh thì **dựng lại không được**.
+
+Bù lại, các lớp **nền đầy màn** thì còn đủ và dùng được ngay: 24 ảnh trên 9
+cảnh, 1024×768 đến 1665×768, vẽ tay.
+
+```bash
+python scenes.py --list
+python scenes.py --all --out <thư mục>
+```
+
+| cảnh | ảnh |
+|---|---|
+| plain | 4 (1024×768) |
+| lava | 5 |
+| siege | 3 |
+| zizhulin | 3 |
+| CBZZ, devil, arena, main3 | 2 mỗi cảnh |
+| tongtianta | 1 (1665×768) |
+
+Cùng mẹo alpha như atlas nhân vật: ETC1 không có kênh trong suốt nên game xếp
+đôi chiều cao, nửa trên là màu, nửa dưới là độ trong.
+
 ### Cắt sprite ra PNG (`work/sprites.py`)
 
 Mảnh cuối: pixel. Texture là `.pkm` — **ETC1**, định dạng nén của GPU di động,
