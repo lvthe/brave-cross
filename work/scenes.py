@@ -82,8 +82,31 @@ def main():
     ap.add_argument('--out', help='thu muc ket qua')
     ap.add_argument('--all', action='store_true')
     ap.add_argument('--list', action='store_true')
+    ap.add_argument('--raw', metavar='THU_MUC',
+                    help='xuat MOI .pkm trong mot thu muc, khong loc theo kich '
+                         'thuoc — dung cho assets/png/background (art giao dien)')
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
+
+    if a.raw:
+        if not a.out:
+            sys.exit('thieu --out')
+        files = sorted(glob.glob(os.path.join(a.raw, '*.pkm')))
+        if not files:
+            sys.exit('khong co .pkm trong %s' % a.raw)
+        os.makedirs(a.out, exist_ok=True)
+        n_ok = n_fail = 0
+        for p in files:
+            name = safe(os.path.splitext(os.path.basename(p))[0]) + '.png'
+            try:
+                rgba, w, h = decode(p)
+                write_png(os.path.join(a.out, name), w, h, rgba)
+                n_ok += 1
+            except (SpriteError, OSError, ValueError) as e:
+                print('  %-34s LOI: %s' % (name, e))
+                n_fail += 1
+        print('xong: %d anh, %d loi  ->  %s' % (n_ok, n_fail, a.out))
+        return 1 if n_fail else 0
 
     if not os.path.isdir(a.scenes):
         sys.exit('khong thay %s' % a.scenes)

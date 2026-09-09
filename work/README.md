@@ -427,6 +427,31 @@ python scenes.py --all --out <thư mục>
 Cùng mẹo alpha như atlas nhân vật: ETC1 không có kênh trong suốt nên game xếp
 đôi chiều cao, nửa trên là màu, nửa dưới là độ trong.
 
+### Art giao diện
+
+Cùng `scenes.py`, thêm `--raw` để xuất trọn một thư mục `.pkm`:
+
+```bash
+python scenes.py --raw vn/decrypted/assets/png/background --out <thư mục>
+```
+
+86 ảnh: khung gỗ, cuộn giấy, bản đồ thế giới, và **16 bản đồ chương**
+(`ui_background_chapter_*`).
+
+Cũng như nền cảnh, các atlas `Background_*.plist` mà file bố cục UI tham chiếu
+thì **không có texture** — chỉ có `.plist`. Phần dùng được là các ảnh rời này.
+
+### Xem nhanh cả một thư mục ảnh (`work/contact.py`)
+
+Thư mục art của bản gốc có hàng trăm file tên kiểu `ui_background135.pkm`; mở
+từng cái để tìm một cái khung thì mất cả buổi.
+
+```bash
+python contact.py <thư mục> --out tấm.png --cell 130 --cols 9
+```
+
+Dán tất cả thành một tấm lưới, nền ô cờ xám để phân biệt vùng trong suốt.
+
 ### Cắt sprite ra PNG (`work/sprites.py`)
 
 Mảnh cuối: pixel. Texture là `.pkm` — **ETC1**, định dạng nén của GPU di động,
