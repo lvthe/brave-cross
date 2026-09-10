@@ -264,9 +264,67 @@ Bên game mới: đã có đủ ba bản (`sim/equipment.py`, `server/modules/eq
 `lEquipmentRefineUI` của bản gốc. Nguồn tinh hoa tạm thời: **món đồ thừa bị
 phân giải** — đúng ý bản gốc, và vừa khớp chỗ trống trong vòng lặp hiện có.
 
+### Chỉ số chính — công thức thật, đã đọc
+
+Đây là thứ quan trọng nhất trong cả mảng, và trước đây chưa đọc:
+`share_EquipmentPropertyLogic:getMainPropertyValWithCoefficient`.
+
+```
+Ap        : 20 * (L + 10 + Q*6)^1.45 / (60 - J*6)
+HpLimit   : 30 * (L + 10 + Q*5)^1.5  / (20 + J*10)
+DpAddtion : 5  * (L + 10 + Q*6)^1.45 / (20 + J*8)
+```
+
+- `Q` phẩm chất, `J` hệ số nghề (Warrior 1 → Archer 5)
+- `L` **không phải cấp món đồ** mà là hệ số cấp: `getEquipLevelCoefficient` trả
+  về đúng cột `HeroLevel` của bảng ghép đồ. Tức **bảng ghép đồ vừa là bảng giá,
+  vừa là thang sức mạnh**.
+
+`EquipmentType = LOẠI Ô × 10 + NGHỀ` (`Protocol.lua:322`): vũ khí 1–5, giáp
+21–25, giày 31–35, dây chuyền 41–45, nhẫn 51–55. Ô nào cho chỉ số gì:
+vũ khí → Ap, giáp → DpAddtion, giày/dây chuyền → HpLimit, nhẫn → DpAddtion.
+
+Hệ số chỉ số: `HpLimit 30`, `DpAddtion 5`, `Ap 20`, `CriticalStrike 0.0025`.
+
+**Chí mạng không có nhánh nào** trong hàm gốc — nhánh thứ tư là bản sao của
+`DpAddtion`, rõ ràng là lỗi gõ. Nên ngựa/cánh không sinh được chỉ số chính.
+Khớp với chuyện bảng cường hoá cũng chỉ có ba loại đó.
+
+### Ghép đồ — đã đọc, đã hiện thực
+
+`share_EquipmentLogic:SynthesisEquipment` — ghép đồ là **nâng cấp món đồ lên
+một cấp**: trừ vàng, trừ nguyên liệu, rồi `EquipLevel + 1`. Vì hệ số cấp chính
+là cột `HeroLevel`, lên một cấp là **mạnh lên thật**, không chỉ đổi icon.
+
+Bảng `KDBGameEquipmentSynthesisConfig`: 25 loại × 10 cấp = 250 bản ghi, mỗi
+bản ghi có `HeroLevel`, `GoldCost`, và tối đa 5 cặp `(MaterialID, Count)`.
+Vũ khí chiến binh chẳng hạn:
+
+| Cấp | Cần tướng cấp | Vàng | Nguyên liệu |
+|---:|---:|---:|---|
+| 2 | 10 | 110 | 24×1, 51×2 |
+| 3 | 20 | 3 700 | 25×3, 52×5 |
+| 5 | 40 | 32 000 | 27×6, 54×14 |
+| 10 | 90 | 10 000 000 | 32×120, 59×680, 82×100 |
+
+**Một lỗi trong bản gốc**: điều kiện cấp tướng có đọc nhưng **không bao giờ
+chạy** — nó viết `if HeroLevel < need then if ProcessError(bRecode) ... end end`,
+mà `bRecode` lúc đó đang `true` nên thân lệnh câm. Bên game mới **có chặn**:
+một điều kiện nằm trong bảng mà không ai kiểm thì bảng đó vô nghĩa.
+
+Bên game mới: đủ ba bản, RPC `bx.synthesize`, và tab ghép dùng đúng khối
+`lEquipmentForgeUI` — kể cả việc bản gốc có sẵn **ba biến thể khung theo số
+nguyên liệu** (2/3/4 món) và chọn đúng cái theo bảng. Nguyên liệu hiện ra để
+biết bản gốc đòi gì nhưng **chưa trừ được** (chưa có hệ vật phẩm); máy chủ chỉ
+trừ vàng và đòi cấp tướng.
+
+**Cần biết**: giá vàng là của bản gốc, nơi vòng vàng lớn hơn nhiều. Game mới
+mỗi chương cho 60 vàng, nên cấp 3 (3 700) đã là rất xa. Giữ nguyên số theo
+quyết định nền, nhưng đây là chỗ sẽ phải cân lại khi có thêm nguồn vàng.
+
 ### Chưa đọc trong mảng này
 
-Luật ghép đồ (`SynthesisEquipment`) và trang bị chuyên thuộc (`ExclusiveEquip`).
+Trang bị chuyên thuộc (`ExclusiveEquip`) và tẩy luyện (`AlterEquip`).
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
