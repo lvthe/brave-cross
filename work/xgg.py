@@ -53,13 +53,17 @@ DA KIEM CHUNG tren toan bo 580 file cua ca hai ban (CN + VN):
   - noi dung dung mot kieu: B toan .plist (16299), C toan .png (10934),
     D .png (1262) + .jpg (44)
 
-SECTION G — CAY NODE (bo cuc that su). F la bang offset uint32 tro vao G,
-tang dan; moi ban ghi node dai thay doi nhung phan dau den 0xA0 co dinh:
-ten lop, ten instance, tai nguyen, x, y, scaleX, scaleY, w, h.
-Xem Xgg.nodes(). Kiem tren 580 file: 65935 node, 0 hong.
+SECTION G — CAY NODE, tuc bo cuc that su cua man hinh.
+
+F la bang offset uint32 tro vao G, tang dan. Moi ban ghi node dai thay doi
+(216..352 byte) nhung cac truong can dung deu o vi tri co dinh: ten lop, ten
+instance, tai nguyen, x, y, scale, rotation, anchor, w, h, va SO CON o +0xB4.
+Node luu duyet THEO TANG — xem Xgg.nodes() va Xgg.tree().
+
+Kiem tren toan bo 580 file: 65935 node, 2146 goc, sau nhat 12 tang, 0 HONG.
 
 CON LAI: y nghia tung float trong section A (nhin ra 1024.0 / 768.0 / 0.8 —
-kich thuoc canh va he so ti le), va cac truong sau 0xA0 cua ban ghi node.
+kich thuoc canh va he so ti le), va cac truong con lai cua ban ghi node.
 
     python xgg.py <file>                 # doc header + noi dung
     python xgg.py <file> --json          # xuat JSON
@@ -175,9 +179,12 @@ class Xgg(object):
             +0x60  str_off, str_len   ten lop      spXxx / clXxx / lXxx / g_Xxx
             +0x68  str_off, str_len   ten instance
             +0x70  str_off, str_len   tai nguyen (sprite, hieu ung), co the rong
-            +0x7C  float x, y
+            +0x7C  float x, y            toa do, TUONG DOI VOI CHA
             +0x84  float scaleX, scaleY
+            +0x8C  float rotation        do
+            +0x90  float anchorX, anchorY  CCSprite luon 0.5; layer thuong 0
             +0x98  float w, h
+            +0xB4  uint32 so con         (xem tree())
 
         Doi chieu: node nen cua BattleField_Cavern_02 ra w=1665 h=768, dung
         bang gia tri section D cua chinh anh do; va g_GameUILayer cua HUD ra
@@ -193,6 +200,8 @@ class Xgg(object):
                 raise XggError('ban ghi node %d chi %d byte' % (i, end - a))
             u = lambda p: struct.unpack_from('<I', self.data, a + p)[0]
             x, y, sx, sy = struct.unpack_from('<4f', self.data, a + 0x7C)
+            rot, = struct.unpack_from('<f', self.data, a + 0x8C)
+            ax, ay = struct.unpack_from('<2f', self.data, a + 0x90)
             w, h = struct.unpack_from('<2f', self.data, a + 0x98)
             out.append(collections.OrderedDict([
                 ('cls', self.string(u(0x60), u(0x64))),
@@ -200,10 +209,49 @@ class Xgg(object):
                 ('res', self.string(u(0x70), u(0x74))),
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
+                ('rot', round(rot, 3)),
+                ('anchorX', round(ax, 4)), ('anchorY', round(ay, 4)),
                 ('w', round(w, 3)), ('h', round(h, 3)),
                 ('bytes', end - a),
             ]))
         return out
+
+    def tree(self):
+        """Dung lai cay tu danh sach phang.
+
+        Moi ban ghi mang SO CON o +0xB4, va node duoc luu DUYET THEO TANG
+        (BFS): node i lay k[i] node ke tiep chua ai nhan lam con.
+
+        Da thu duyet truoc (preorder) — tong so con van khop nhung cay ra sai
+        han: lUILeftLayer, lUITopLayer, clGameReviveDlg thanh long nhau thay vi
+        anh em. Duyet theo tang moi ra cay Cocos2d that: clGameReviveDlg chua
+        Board + lMessageBox voi okButton/cancelButton, leftHeroInfoBox chua
+        icon1/2/3 moi cai 96x96.
+
+        Toa do x,y la TUONG DOI VOI CHA (Cocos2d), khong phai toa do man hinh.
+        """
+        nds = self.nodes()
+        G, offs = self.offsets['G'], self.node_offsets()
+        kids = [struct.unpack_from('<I', self.data, G + o + 0xB4)[0] for o in offs]
+        for nd, k in zip(nds, kids):
+            nd['children'] = []
+            nd['nKids'] = k
+
+        nxt = 0
+        for i, nd in enumerate(nds):
+            if nxt <= i:
+                nxt = i + 1
+            for _ in range(nd['nKids']):
+                if nxt >= len(nds):
+                    raise XggError('node %d doi %d con, het node' % (i, nd['nKids']))
+                nd['children'].append(nds[nxt])
+                nxt += 1
+
+        seen = set()
+        for nd in nds:
+            for c in nd['children']:
+                seen.add(id(c))
+        return [nd for nd in nds if id(nd) not in seen]
 
     def to_dict(self):
         return collections.OrderedDict([
