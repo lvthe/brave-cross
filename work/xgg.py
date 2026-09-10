@@ -212,6 +212,12 @@ class Xgg(object):
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
                 ('rot', round(rot, 3)),
+                # +0xA1: co hien/an. SUY RA chu chua doc tu libgame.so, nhung
+                # khop voi moi node kiem duoc: cac hop thoai (clGameReviveDlg,
+                # clBattlePause, clGuickGameFinish), khung mach nuoc va nut
+                # test deu =0; con lUITopLayer, ttfLeaderShip, g_GameUILayer
+                # deu =1. Toan file: 540 hien / 89 an.
+                ('visible', bool(self.data[a + 0xA1])),
                 ('anchorX', round(ax, 4)), ('anchorY', round(ay, 4)),
                 ('w', round(w, 3)), ('h', round(h, 3)),
                 ('bytes', end - a),

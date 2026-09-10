@@ -30,7 +30,7 @@ from xgg import load, XggError
 DEFAULT_CONF = os.path.join('vn', 'decrypted', 'assets', 'conf')
 
 KEEP = ('cls', 'name', 'res', 'x', 'y', 'scaleX', 'scaleY',
-        'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom')
+        'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom', 'visible')
 
 
 def trim(node):
