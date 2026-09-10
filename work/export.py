@@ -69,11 +69,69 @@ def index(assets):
     return out, sorted(set(xml) - set(out))
 
 
-def export_one(name, paths, outdir):
+def _entry(fr, png, w, h):
+    """Mot muc spriteFiles.
+
+    offX/offY la DO LECH XEN VIEN: atlas cat bo vien trong suot de tiet kiem
+    cho, nen tam cua anh da cat khong con trung tam cua khung goc. Thieu so
+    nay thi rap xuong lai se lech tung manh. srcW/srcH la kich thuoc khung
+    truoc khi cat."""
+    ox, oy = fr.get('offsetXY', [0.0, 0.0])
+    sw, sh = fr.get('sourceWH', [w, h])
+    return collections.OrderedDict([
+        ('png', png), ('w', w), ('h', h),
+        ('offX', round(ox, 4)), ('offY', round(oy, 4)),
+        ('srcW', round(sw, 4)), ('srcH', round(sh, 4)),
+    ])
+
+
+def _rewrite_json(name, xml_p, plist_p, sub):
+    """Dung lai <Ten>.json tu .xml + .plist, giu nguyen PNG cua lan xuat truoc."""
+    jp = os.path.join(sub, name + '.json')
+    if not os.path.isfile(jp):
+        raise OSError('chua xuat lan nao, khong dung duoc --json-only')
+    with open(jp, encoding='utf-8') as fp:
+        prev = json.load(fp)
+
+    doc = Anim(open(xml_p, 'rb').read(), os.path.basename(xml_p)).to_dict()
+    # Duong dan PNG lay lai tu lan xuat truoc; do lech xen vien doc tuoi tu
+    # .plist — buoc nay khong dung toi pixel nen khong phai giai lai ETC1.
+    geo = {}
+    for fr in Atlas(plist_p).frames():
+        geo[fr['name']] = fr
+    merged = collections.OrderedDict()
+    for n in doc['sprites']:
+        old_e = prev['spriteFiles'].get(n)
+        if old_e is None:
+            merged[n] = None
+            continue
+        fr = geo.get(n) or geo.get(n + '.png') or {}
+        merged[n] = _entry(fr, old_e['png'], old_e['w'], old_e['h'])
+    doc['spriteFiles'] = merged
+    doc['exported'] = prev['exported']
+
+    with open(jp, 'w', encoding='utf-8') as fp:
+        json.dump(doc, fp, ensure_ascii=False, indent=1)
+
+    nanim = sum(len(g['animations']) for g in doc['groups'])
+    nkey = sum(len(b['keys']) for g in doc['groups']
+               for an in g['animations'] for b in an['bones'])
+    e = doc['exported']
+    return (e['pngCount'], e['placeholders'], e['outOfBounds'], nanim, nkey,
+            sum(1 for v in doc['spriteFiles'].values() if v), len(doc['sprites']))
+
+
+def export_one(name, paths, outdir, json_only=False):
     xml_p, plist_p, _ = paths
     sub = os.path.join(outdir, name)
     spr_dir = os.path.join(sub, 'sprites')
     os.makedirs(spr_dir, exist_ok=True)
+
+    if json_only:
+        # Chi dung lai bo xuong tu .xml, giu nguyen PNG da cat va khoi
+        # spriteFiles/exported cua lan xuat truoc. Dung khi anim.py giai
+        # them duoc truong moi ma pixel khong doi — khoi cat lai 12820 PNG.
+        return _rewrite_json(name, xml_p, plist_p, sub)
 
     # --- pixel
     atlas = Atlas(plist_p)
@@ -92,8 +150,7 @@ def export_one(name, paths, outdir):
             continue
         fn = safe(fr['name']) + '.png'
         write_png(os.path.join(spr_dir, fn), w, h, rgba)
-        files[fr['name']] = collections.OrderedDict([
-            ('png', 'sprites/' + fn), ('w', w), ('h', h)])
+        files[fr['name']] = _entry(fr, 'sprites/' + fn, w, h)
 
     # --- bo xuong + hoat anh
     a = Anim(open(xml_p, 'rb').read(), os.path.basename(xml_p))
@@ -129,6 +186,8 @@ def main():
     ap.add_argument('--out', help='thu muc ket qua')
     ap.add_argument('--all', action='store_true', help='xuat tat ca')
     ap.add_argument('--list', action='store_true', help='liet ke atlas xuat duoc')
+    ap.add_argument('--json-only', action='store_true',
+                    help='chi dung lai JSON tu .xml, giu nguyen PNG da cat')
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -160,7 +219,7 @@ def main():
             fail.append((n, 'khong co, hoac thieu file'))
             continue
         try:
-            np_, em, ob, na, nk, matched, nspr = export_one(n, idx[n], a.out)
+            np_, em, ob, na, nk, matched, nspr = export_one(n, idx[n], a.out, a.json_only)
             tp += np_; te += em; to += ob; ta += na; tk += nk
             print('  [%3d/%3d] %-26s %4d PNG, %2d dong tac, %6d keyframe, sprite khop %d/%d'
                   % (i, len(todo), n[:26], np_, na, nk, matched, nspr))

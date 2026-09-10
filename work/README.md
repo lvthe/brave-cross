@@ -315,7 +315,9 @@ Lớp cuối của định dạng. `sngxml.py` đọc bộ xương, tên động
 ```
 bản ghi động tác (0x28), ở mảng con của mảng 2:
   +0x00  str_off, str_len    "Walk", "Fight", "Death"...
-  +0x08  uint32              số khung
+  +0x08  uint32              số keyframe
+  +0x10  uint32              độ dài động tác, tính bằng khung
+  +0x14  uint32              cờ lặp: 1 = lặp vô hạn, 0 = chạy một lần
   +0x20  uint32  bone_off    offset vào mảng ở header 0x58
   +0x24  uint32  bone_count  số xương tham gia
 
@@ -346,6 +348,42 @@ LegLeft   góc: 27.00° → 35.47° →  16.80° →  24.33°   (chân bước)
 **Đã kiểm chứng trên 418/418 file bản VN, 0 lỗi:** 8207 động tác, 131029
 xương, **641538 keyframe**.
 
+#### Hai trường giải thêm ở bản ghi động tác
+
+Quét 7995 bản ghi của 411 file:
+
+* `+0x10` **bằng** số keyframe ở 7715 bản ghi, **lớn hơn** ở 136. Ví dụ
+  `Archer/Hang` có 2 keyframe nhưng dài 10 khung — giữ tư thế 5 khung mỗi
+  keyframe. Đây là *độ dài*, không phải số khoá.
+* `+0x14` chỉ nhận 0 hoặc 1, và chia đúng theo nghĩa động tác:
+
+  | cờ | các động tác |
+  |---|---|
+  | 1 (lặp) | Walk, Standby, Run, WalkBack, Walk2, Defend, DefendBack, Hang, Fire |
+  | 0 (một lần) | Fight, Death, Hit, Wake, Fight2, Jump, Down, Fight3 |
+
+  Không có động tác một-lần nào bị đánh dấu lặp và ngược lại.
+
+#### Liên kết xương → ảnh (mảng ở header `0x4c`)
+
+Bản ghi bộ phận dài 16 byte, trước chỉ đọc 8 byte đầu (tên). 8 byte sau là
+`(ref_off, ref_count)` trỏ vào một mảng bản ghi 20 byte ở header `0x4c`, và
+8 byte đầu của mỗi bản ghi đó là **tên ảnh** mà bộ phận dùng:
+
+```
+Archer/Head    -> Head1, Head3, Head2, Head4, Head5   (5 nét mặt)
+CaoCao/LeftArm -> CaoCao_res-RightArm                 (dùng lại ảnh tay phải)
+CaoCao/Head    -> CaoCao_mc_Head                      (một rig lồng nhau)
+```
+
+Đây là chỗ **bắt buộc** phải đọc, không suy ra từ tên được: `CaoCao` đặt tên
+ảnh là `face1`, `touguan`, `toufa0013_instant`. **Đã kiểm chứng: 829 file,
+65989 tham chiếu, 0 lỗi, 0 tham chiếu rỗng** — 64004 trỏ tới ảnh trong atlas,
+1985 trỏ tới rig lồng nhau (`<Tên>_mc_...`, là một biến thể khác trong chính
+file đó).
+
+**Chưa rõ:** 12 byte cuối của bản ghi 20 byte này.
+
 ```bash
 python anim.py <file.xml>                # tóm tắt
 python anim.py <file.xml> --anim Fight   # đổ chi tiết một động tác
@@ -357,6 +395,62 @@ python anim.py vn/decrypted/assets --scan
 cùng góc xoay đều được lưu hai lần. Đã **thử và loại** giả thuyết bản ghi con
 chứa thêm mô tả chuỗi thứ hai/thứ ba — đọc như vậy cho ra rác (`'D'`, `'n'`,
 `'De'`) và 332 trường hợp hỏng.
+
+### Nền cảnh (`work/scenes.py`)
+
+Nền sân **không** nằm trong atlas như nhân vật, mà là từng file `.pkm` rời
+trong `assets/png/scene/<cảnh>/`.
+
+`BattleField_<cảnh>_960_640.xgg` mô tả sân ghép từ ~45 mảnh nhỏ cộng một atlas
+`Scene_<cảnh>.plist`. **Texture của atlas đó không có** — không trong APK,
+không trong OBB. Đã kiểm: OBB có 9874 mục, 16 file `Scene_*` đều chỉ là
+`.plist`, và không có file nào tên `Scene_*.png`/`.pkm`. Chúng được tải về lúc
+chạy từ máy chủ vá. Nên phần nền ghép từ 45 mảnh thì **dựng lại không được**.
+
+Bù lại, các lớp **nền đầy màn** thì còn đủ và dùng được ngay: 24 ảnh trên 9
+cảnh, 1024×768 đến 1665×768, vẽ tay.
+
+```bash
+python scenes.py --list
+python scenes.py --all --out <thư mục>
+```
+
+| cảnh | ảnh |
+|---|---|
+| plain | 4 (1024×768) |
+| lava | 5 |
+| siege | 3 |
+| zizhulin | 3 |
+| CBZZ, devil, arena, main3 | 2 mỗi cảnh |
+| tongtianta | 1 (1665×768) |
+
+Cùng mẹo alpha như atlas nhân vật: ETC1 không có kênh trong suốt nên game xếp
+đôi chiều cao, nửa trên là màu, nửa dưới là độ trong.
+
+### Art giao diện
+
+Cùng `scenes.py`, thêm `--raw` để xuất trọn một thư mục `.pkm`:
+
+```bash
+python scenes.py --raw vn/decrypted/assets/png/background --out <thư mục>
+```
+
+86 ảnh: khung gỗ, cuộn giấy, bản đồ thế giới, và **16 bản đồ chương**
+(`ui_background_chapter_*`).
+
+Cũng như nền cảnh, các atlas `Background_*.plist` mà file bố cục UI tham chiếu
+thì **không có texture** — chỉ có `.plist`. Phần dùng được là các ảnh rời này.
+
+### Xem nhanh cả một thư mục ảnh (`work/contact.py`)
+
+Thư mục art của bản gốc có hàng trăm file tên kiểu `ui_background135.pkm`; mở
+từng cái để tìm một cái khung thì mất cả buổi.
+
+```bash
+python contact.py <thư mục> --out tấm.png --cell 130 --cols 9
+```
+
+Dán tất cả thành một tấm lưới, nền ô cờ xám để phân biệt vùng trong suốt.
 
 ### Cắt sprite ra PNG (`work/sprites.py`)
 
