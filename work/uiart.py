@@ -100,7 +100,16 @@ def main():
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
+    # Duong dan mac dinh la TUONG DOI: chay tu thu muc khac thi khong thay gi
+    # ma van chay tiep, ghi ra mot index.json rong. Chan ngay o day.
+    if not os.path.isdir(a.assets):
+        raise SystemExit('khong co thu muc %s\n'
+                         'chay tu brave-cross/work, hoac dua --assets tro toi '
+                         '<giai nen>/assets' % os.path.abspath(a.assets))
     pkm = find_pkm(a.assets)
+    if not pkm:
+        raise SystemExit('khong thay file .pkm nao trong %s'
+                         % os.path.abspath(a.assets))
     if a.only:
         pkm = collections.OrderedDict((k, v) for k, v in pkm.items() if k in set(a.only))
     print('file .pkm: %d' % len(pkm))

@@ -105,7 +105,19 @@ def main():
     sys.stdout.reconfigure(encoding='utf-8')
 
     if a.all:
+        # Duong dan mac dinh la duong dan TUONG DOI, nen chay tu thu muc khac
+        # se tro vao mot cho khong co gi. Truoc day cho do bao "xong: 0 man
+        # hinh" roi thoat 0 — im lang khong lam gi ma van coi la thanh cong,
+        # con te hon la bao loi.
+        if not os.path.isdir(a.conf):
+            raise SystemExit('khong co thu muc %s\n'
+                             'chay tu brave-cross/work, hoac dua --conf tro '
+                             'toi <giai nen>/assets/conf'
+                             % os.path.abspath(a.conf))
         paths = sorted(glob.glob(os.path.join(a.conf, '*.xgg')))
+        if not paths:
+            raise SystemExit('khong thay file .xgg nao trong %s'
+                             % os.path.abspath(a.conf))
     else:
         if not a.names:
             raise SystemExit('cho ten man hinh, hoac --all')
