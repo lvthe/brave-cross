@@ -196,6 +196,26 @@ trăm.
 `ClientPromoteQualityEquipment`, `ClientSynthesisEquipment`,
 `ClientAutoIntensifyEquipment` — tra đầy đủ trong `server-spec-vn/SERVER_API.md`.
 
+### Đã hiện thực bên game mới
+
+Ba bản đối chiếu nhau từng ca, y như cách mô hình chiến đấu đang được kiểm:
+
+```
+bravecross-game/sim/equipment.py               mô hình gốc + 168 ca đối chiếu
+bravecross-game/server/modules/equipment.lua   bản máy chủ (module luật thuần)
+bravecross-game/battle/equipment.gd            bản client
+```
+
+**Một phát hiện khi đọc**: `GetIntensifiedIncrementWithLevel` — hàm duy nhất
+dùng **cấp** cường hoá — chỉ được gọi từ `GetIntensifiedIncrement`, mà hàm đó
+**bị comment toàn bộ** trong bản phát hành. Tức ở client bản gốc, cường hoá
+**không** làm đổi lực chiến hiển thị; đường tăng thật nằm bên máy chủ họ, thứ
+ta không có. Nên bản mới giữ cả hai đường và ghi rõ: `capacity()` theo công
+thức gốc của tác giả, `capacity_as_original()` đúng ý bản phát hành.
+
+Còn thiếu: chưa nối vào bản lưu và RPC (`bx.equipment`, `bx.intensify`), nên
+trang bị chưa ảnh hưởng tới chỉ số tướng trong trận.
+
 ### Chưa đọc trong mảng này
 
 Công thức tinh luyện (`RefineLevel`) và bảng `KDBGameNormalEquipRefineConfig`
