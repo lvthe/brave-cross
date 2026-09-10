@@ -440,9 +440,47 @@ bày sẵn để so.
 Đến đây **cả năm bảng hành động của màn trang bị đều có luật**: cường hoá,
 tinh luyện (kèm chế độ rèn chuyên thuộc), ghép đồ, tẩy luyện, nâng phẩm.
 
-### Chưa đọc trong mảng này
+### Kỹ năng vũ khí chuyên thuộc — đã đọc, đã hiện thực một phần
 
-Kỹ năng vũ khí chuyên thuộc theo từng tướng (`GetExclusiveWeaponSkillConfig`).
+Bản gốc **có gọi** `GetExclusiveWeaponSkillConfig(heroID)` nhưng bảng
+`ExclusiveWeaponSkillConfig` **không tồn tại** trong bản phát hành — hàm luôn
+trả `nil`. Ánh xạ thật nằm bên **engine**, ở hai file `assets/map/`:
+
+```
+heroex_config.xml    <tên>Exclus  ->  lsSkill        13 tướng
+quality_config.xml   định nghĩa từng kỹ năng, mục <exclusive>
+```
+
+| Tướng | Kỹ năng | Nội dung |
+|---|---|---|
+| ZhaoYun | ShenQiangLongDan | phản đòn 22% |
+| LvBu | ShenJiFangTian | phản đòn toàn đội |
+| XiaoQiao | ShenQinRaoLiang | phá giáp 10%, +35 nộ |
+| HuangYueYing | YueShiYinSuoJinLing | +13 nộ mỗi 5 giây |
+| GuanYu | ShenMaoQingLongYanYue | hút máu 250% **khi dưới 20% máu** |
+| SunShangXiang | BingJianGongShu | đánh nhanh hơn 50% |
+| BuLianShi | FengBaoZhiLi | hồi sinh |
+| PoJun | BingJianTianShu | đánh nhanh +25%, sát thương chí mạng +1 |
+| CaoZhi | JiuXian | (không có trong `quality_config`) |
+| SunWuKong | QiTianDaSheng | biến hình |
+| DiaoChan | ChenYuLuoYan | gây debuff lên tướng địch |
+| ZhouYu | GeMingZhiYue | chuỗi trạng thái nhiều tầng |
+| MaChao | ShaFaZhiWu | đổi hình dạng đội |
+
+**Chỉ ba kỹ năng quy được về chỉ số** mà mô hình chiến đấu bên game mới có
+chỗ nhận: `ShenQinRaoLiang`, `BingJianTianShu`, `BingJianGongShu`. Số còn lại
+là **máy trạng thái của engine** (phản đòn, hồi sinh, debuff, đổi hình) hoặc
+có **điều kiện/nhịp** đi kèm — áp thẳng vào là sai hẳn, ví dụ hút máu của Quan
+Vũ chỉ có tác dụng khi dưới 20% máu.
+
+Cách xử: **ghi tên kỹ năng lên món đồ** (người chơi vẫn thấy mình đang có gì)
+và đánh dấu `modelled = false` — không bịa hành vi. Ba kênh mới đã thêm vào cả
+ba mô hình: `pierce`, `anger`, `interval_pct`.
+
+### Mảng trang bị: xong
+
+Cả năm bảng hành động và cả hai nhánh chuyên thuộc đều có luật. Còn lại trong
+`GAMEPLAY.md` là các mảng khác: vật phẩm/kho, thành tựu, gacha, cửa hàng.
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
