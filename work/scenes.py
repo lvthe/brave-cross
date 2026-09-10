@@ -25,7 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from sprites import read_pkm, write_png, safe, SpriteError
 
-DEFAULT_SCENES = os.path.join('vn', 'decrypted', 'assets', 'png', 'scene')
+DEFAULT_SCENES = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'png', 'scene')
 ## Nen day man: rong it nhat 960 va cao (sau khi tach alpha) it nhat 600.
 MIN_W, MIN_H = 960, 600
 

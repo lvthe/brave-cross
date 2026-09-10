@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from extract_api import read, strip_comments
 
-DEFAULT_SC = os.path.join('vn', 'decrypted', 'assets', 'sc')
+DEFAULT_SC = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'sc')
 
 FUNC = re.compile(r'^function\s+([A-Za-z_][\w.]*)[:.]([A-Za-z_]\w*)\s*\(([^)]*)\)', re.M)
 CONST = re.compile(r'^\s*self\.([A-Za-z_]\w*)\s*=\s*([-\d][\d.]*)\s*(?:--\s*(.*))?$', re.M)

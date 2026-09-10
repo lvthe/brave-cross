@@ -30,7 +30,7 @@ sys.path.insert(0, HERE)
 
 from sprites import read_pkm, write_png, SpriteError
 
-DEFAULT_ASSETS = os.path.join('vn', 'decrypted', 'assets')
+DEFAULT_ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
 
 
 def find_pkm(assets):

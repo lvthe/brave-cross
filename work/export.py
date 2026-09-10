@@ -46,7 +46,7 @@ sys.path.insert(0, HERE)
 from anim import Anim, AnimError
 from sprites import Atlas, SpriteError, write_png, safe
 
-DEFAULT_ASSETS = os.path.join('vn', 'decrypted', 'assets')
+DEFAULT_ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
 
 
 def index(assets):
@@ -191,6 +191,12 @@ def main():
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
+    # Thu muc sai thi index() tra ve rong, --all thanh danh sach rong, va
+    # truoc day script bao "cho ten nhan vat" — nghe nhu goi sai cu phap
+    # trong khi that ra la tro sai cho. Da ton mot buoi vi cau do.
+    if not os.path.isdir(a.assets):
+        sys.exit('khong thay thu muc tai nguyen %s — dung --assets <...>/vn/decrypted/assets'
+                 % a.assets)
     idx, missing = index(a.assets)
     if a.list:
         print('%d atlas du ca ba file (.xml + .plist + .pkm):' % len(idx))
