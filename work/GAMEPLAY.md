@@ -404,10 +404,45 @@ Bên game mới: đủ ba bản, RPC `bx.recast`, và tab tẩy dùng đúng kh�
 `lEquipmentAlterUI` — kể cả sáu dòng thuộc tính và sáu dòng **giá trị tối đa**
 mà bản gốc bày sẵn. Tẩy cao cấp (kim cương) và đá tẩy thì ẩn: chưa có hệ.
 
+### Nâng phẩm chất — đã đọc, đã hiện thực
+
+Nguồn: `PromoteQualityEquipment`, `GetEquipQualityPromotionConfig`, và bảng
+`KDBGameCommonConfig` mục `GameEquipQualityPromotionConfig`.
+
+Phẩm chất **1 → 6**, mỗi bậc một dòng trong bảng:
+
+| Lên phẩm | Cần tướng cấp | Vàng | Nguyên liệu |
+|---:|---:|---:|---|
+| 2 | 1 | 0 | — |
+| 3 | 1 | 10 | 86 ×1 |
+| 4 | 1 | 20 000 | 87 ×1 |
+| 5 | **35** | 40 000 | 88 ×1 |
+| 6 | **40** | 93 000 | 89 ×1 |
+
+Điều kiện cấp tướng ở đây **có được kiểm thật** (khác ghép đồ, nơi câu kiểm là
+mã chết). Phẩm chất ăn vào **hai chỗ** nên lên một bậc là mạnh cả hai đường:
+
+```
+chỉ số chính    (L + 10 + Q*6)^1.45
+thuộc tính phụ  (base * Q - 0.3)
+```
+
+Nên khi nâng phẩm, **cả hai đều phải tính lại** — nhưng `base` của thuộc tính
+phụ **giữ nguyên**: nâng phẩm không phải bốc lại, đó là việc của tẩy luyện.
+
+**Một chỉnh sửa**: phẩm cao nhất là **6** (bảng lên tới 6, và art
+`equipment_b_2..6` cũng vậy). Trước đây bên game mới chặn ở 5 — sai.
+
+Bên game mới: đủ ba bản, RPC `bx.promote_quality`, và tab phẩm chất dùng đúng
+khối `lEquipmentUpgradeQualityUI` — kể cả **hai khối trước/sau** mà bản gốc
+bày sẵn để so.
+
+Đến đây **cả năm bảng hành động của màn trang bị đều có luật**: cường hoá,
+tinh luyện (kèm chế độ rèn chuyên thuộc), ghép đồ, tẩy luyện, nâng phẩm.
+
 ### Chưa đọc trong mảng này
 
-Kỹ năng vũ khí chuyên thuộc theo từng tướng, và nâng phẩm chất
-(`PromoteQualityEquipment`).
+Kỹ năng vũ khí chuyên thuộc theo từng tướng (`GetExclusiveWeaponSkillConfig`).
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
