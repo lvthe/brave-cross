@@ -225,11 +225,53 @@ kho — chưa hệ nào trong số đó tồn tại bên game mới, nên tạm 
 thẳng từ trận ra (35% khi thắng) và gắn luôn vào tướng, món mạnh hơn thì giữ.
 Khi có hệ vật phẩm và kho thì thay chỗ đó, không phải thay công thức.
 
+### Tinh luyện — đã đọc, đã hiện thực
+
+Nguồn: `share_EquipmentPropertyLogic:getMainPropertyVal`, bảng
+`KDBGameCommonConfig` mục `ConfigName = "EquipRefineConfig"`,
+`HeroLogic:GetUpgradeRefineCost`, `CUIEquipment_Refine.lua`.
+
+Tinh luyện **cộng phần trăm vào chỉ số chính**, không cộng thẳng một lượng:
+
+```
+val = val + val * AddPrecent / 100
+```
+
+Bảng đầy đủ (5 ô × 5 bậc), lấy nguyên từ `EquipRefineConfig`:
+
+| Bậc | Cộng | Tinh hoa (vũ khí) | Tinh hoa (ô khác) |
+|---:|---:|---:|---:|
+| 1 | +5% | 40 | 30 |
+| 2 | +10% | 80 | 60 |
+| 3 | +15% | 160 | 120 |
+| 4 | +20% | 320 | 240 |
+| 5 | +25% | 640 | 480 |
+
+Giá nhân đôi mỗi bậc, vũ khí đắt hơn các ô khác đúng một bậc. **VIP 10 trở lên
+được giảm 20%**, làm tròn lên (`GetUpgradeRefineCost`).
+
+Tiền tệ là **tinh hoa** (`Concentrate`, `ResourceType = 8`) — một tài nguyên
+riêng, không phải vàng. Bản gốc cho tinh hoa từ việc **phân giải vật phẩm**
+(RPC `ClientRefineItem`; mỗi vật phẩm một giá trị `Concentrate` trong bảng đồ).
+RPC tinh luyện là `ClientRefineEquip`.
+
+Vì tinh luyện nhân vào chỉ số chính **ngay trong `getMainPropertyVal`**, mọi
+thứ tính sau đó — kể cả cường hoá — đều dựa trên con số đã nhân. Hai trục nhân
+nhau chứ không cộng rời.
+
+Bên game mới: đã có đủ ba bản (`sim/equipment.py`, `server/modules/equipment.lua`,
+`battle/equipment.gd`), RPC `bx.refine`, và tab tinh luyện dùng đúng khối bố cục
+`lEquipmentRefineUI` của bản gốc. Nguồn tinh hoa tạm thời: **món đồ thừa bị
+phân giải** — đúng ý bản gốc, và vừa khớp chỗ trống trong vòng lặp hiện có.
+
 ### Chưa đọc trong mảng này
 
-Công thức tinh luyện (`RefineLevel`) và bảng `KDBGameNormalEquipRefineConfig`
-(275 bản ghi, có sẵn cột `AddCapacity`, `CostGold`, `CostResource`); luật ghép
-đồ (`SynthesisEquipment`) và trang bị chuyên thuộc (`ExclusiveEquip`).
+Luật ghép đồ (`SynthesisEquipment`) và trang bị chuyên thuộc (`ExclusiveEquip`).
+
+**Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
+ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
+StarLevel)` và chỉ có `SBDataManager` dùng, tức thuộc hệ **thần binh** (神兵),
+không phải hệ tinh luyện trang bị.
 
 ## Còn chưa đọc
 
