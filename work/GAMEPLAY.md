@@ -1,0 +1,122 @@
+# Bản đồ hệ thống của bản gốc
+
+Tài liệu này tồn tại để **không phải lần ngược vào 973 file Lua mỗi lần làm một
+tính năng**. Đọc một lần, ghi lại, rồi viết game mới dựa trên nó.
+
+Nguồn: `vn/decrypted/assets/sc/` — **139 module luật, 64 507 dòng**, còn nguyên
+comment tiếng Trung của tác giả. Đây là mã nguồn thật, không phải suy đoán.
+
+Sinh lại bảng tra:
+
+```bash
+python systems.py                    # bảng tóm tắt mọi module
+python systems.py --detail Arena     # đổ chi tiết một hệ thống
+python systems.py --json out.json    # bản máy đọc được
+```
+
+## Quyết định nền: giữ nguyên luật và thang số của bản gốc
+
+Game mới **dùng lại công thức và con số** của bản gốc, không tự cân bằng lại.
+Lý do: đó là thang số đã qua người chơi thật nhiều năm, và repo `bravecross-game`
+đã đi theo hướng này từ đầu (`AddGrowthFactor`, hệ thế trận giữ nguyên số liệu).
+
+## 139 module chia theo mảng
+
+| Mảng | Module | Dòng | Nội dung chính |
+|---|---:|---:|---|
+| Nền tảng | 25 | 13 448 | `class`, `EventManager`, `CDataManager`, `configManager`, `Protocol`, `error` |
+| Màn chơi | 22 | 12 653 | chương, hang động, vô tận, bang hội, đấu trường, giải đấu |
+| Nhân vật | 23 | 10 399 | tướng, tinh hồn, trang phục, thú cưng, thiên mệnh, tu luyện |
+| Người chơi | 23 | 10 125 | tài khoản, thành tựu, nhiệm vụ ngày, điểm danh, thư, thống kê |
+| Vật phẩm | 17 | 7 427 | trang bị, đan dược, pháp bảo, kho, thuộc tính |
+| Kinh tế | 16 | 5 350 | cửa hàng, gacha, nạp thẻ, vòng quay, cổ phiếu |
+| Chiến đấu | 7 | 3 800 | `FightLogic`, `SkillLogic`, `ArmyLogic`, `FormationLogic` |
+
+Năm module lớn nhất, đọc trước nếu cần hiểu sâu:
+
+```
+share_ChapterLogic.lua      5964 dòng    luật chương, mở khoá, thưởng
+share_configManager.lua     5064 dòng    nạp và tra mọi bảng số liệu
+share_HeroLogic.lua         3788 dòng    chỉ số tướng, cấp, phẩm, sao
+UserLogic.lua               3408 dòng    dữ liệu người chơi, cấp, EXP
+AchieveLogic.lua            1777 dòng    thành tựu, nhiệm vụ ngày, 7 ngày
+```
+
+## Hằng số cân bằng nằm ngay trong `ctor`
+
+126 hằng số rải trong 139 module, khai báo thẳng dạng `self.X = <số>` kèm
+comment. Đây là **luật chơi thật**, không phải cấu hình ngoài:
+
+```lua
+-- Pet/share_PetLogic.lua
+MaxPetLevel            = 80    -- cấp thú cưng
+MaxFishBeSpeededCount  = 2     -- số lần được tăng tốc nuôi cá
+MaxPetHelpCount        = 5     -- số lần chủ động giúp người khác
+
+-- StarSoul/share_StarSoulLogic.lua
+CONJURE_ZIWEN_PRICE      = 50  -- giá triệu hồi
+MAX_CONJURE_ZIWEN_COUNT  = 20  -- lượt thường
+VIP_EXTRA_ZIWEN_COUNT    = 20  -- VIP 14+ được thêm
+MAX_STAR_SOUL_QUALITY    = 7
+
+-- EndlessChapterLogic.lua
+FreeChallengesCount = 2    MaxChallengesCount = 7
+PayChallengesCost   = 50   MaxInspireCount    = 3
+```
+
+`python systems.py --detail <tên>` in đủ hằng số + hàm + RPC của một hệ thống.
+
+## Game mới đang ở đâu
+
+`bravecross-game` hiện có **10 RPC** trên 614 của bản gốc:
+
+```
+bx.chapters   bx.fight      bx.set_roster   bx.level_up
+bx.formations bx.set_formation bx.upgrade_formation bx.set_placement
+bx.selftest   bx.fieldtest
+```
+
+Tức đã xong **vòng lặp lõi**: chọn chương → dàn trận → đánh → lên cấp → thế trận.
+Ba bản cài đặt của mô hình chiến đấu (Python, GDScript, Lua) đối chiếu nhau
+từng trận.
+
+Khoảng trống lớn nhất, theo thứ tự nên làm:
+
+1. **Trang bị** — `share_EquipmentLogic` (1638 dòng) + `share_EquipmentPropertyLogic`
+   (640). Sức mạnh tướng hiện chỉ đến từ cấp; thiếu hẳn một trục nuôi.
+2. **Vật phẩm và kho** — `share_ItemLogic` (1088), `share_warehouse`. Là nền cho
+   mọi thứ rơi ra từ trận.
+3. **Thành tựu và nhiệm vụ ngày** — `AchieveLogic` (1777) + `AchieveCheckLogic`
+   (1121). Đây là thứ giữ người chơi quay lại, và luật kiểm đã viết sẵn.
+4. **Gacha** — `LotteryLogic` (1043). Tỉ lệ đã có trong `KDBGameLotteryConfig`
+   và **giống hệt giữa hai bản**, không cần cân lại.
+5. **Cửa hàng** — `ShopLogic`, `MysteriousStoreLogic`, `ScoreStroeLogic`.
+
+## Kiến trúc cần biết trước khi viết
+
+**Node UI là biến toàn cục.** Engine nạp `.xgg` xong thì bơm mọi node vào `_G`
+theo tên instance — `CUIPublic:GetRootUI()` chỉ làm `_G[self.RootUIName]`. Nhờ
+vậy Lua gọi thẳng `g_btnAutoCombat:setVisible(...)`. Bên Godot, `XggLayout` gắn
+bảng tên tương đương lên node gốc.
+
+**Ảnh gán lúc chạy, không lưu sẵn.** `node:setDisplayFrame(spriteFrameByName(tên))`
+— 573 chỗ gọi, tên thường tính tại chỗ (`"battle_medicine0"..i..".png"`). Không
+có bảng tĩnh node→ảnh để trích. `UiFrames.set_frame()` dựng lại đúng cơ chế đó.
+
+**Một màn hình = một lớp `CUIPublic` + một hoặc vài `.xgg`.** Mỗi lớp khai
+`ResourceXggList` và `RootUIName`, rồi tìm node qua tên. Muốn port một màn thì
+đọc đúng lớp đó, không phải cả cây.
+
+**HUD chứa nhiều trạng thái chồng nhau.** `Game_UI_Control_Panel` có 20 lớp:
+`lUITopLayer` (HUD trong trận) có 13 con, mỗi con một chế độ chơi
+(`lUINormal`, `lUIEndless`, `lUIArena`, `lUIJFZY`…), tất cả ẩn sẵn và Lua bật
+đúng một cái. Bật hết cùng lúc thì màn hình thành một đống chồng chéo.
+
+**Client và server dùng chung luật.** `sc/share/` được cả hai nạp. Đó là lý do
+`server/modules/battle.lua` bên game mới tái hiện được nguyên mô hình chiến đấu.
+
+## Còn chưa đọc
+
+Tài liệu này mới là **bản đồ**, chưa phải đặc tả từng hệ thống. Cần đọc sâu
+tiếp, theo thứ tự ưu tiên ở trên, và mỗi lần đọc thì bổ sung một mục vào đây —
+công thức, thang số, và các RPC liên quan.
