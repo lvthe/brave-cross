@@ -322,9 +322,47 @@ trừ vàng và đòi cấp tướng.
 mỗi chương cho 60 vàng, nên cấp 3 (3 700) đã là rất xa. Giữ nguyên số theo
 quyết định nền, nhưng đây là chỗ sẽ phải cân lại khi có thêm nguồn vàng.
 
+### Trang bị chuyên thuộc — đã đọc, đã hiện thực
+
+Nguồn: `KDBGameExclusiveEquipConfig.xgg` (4 bảng), `IsExclusiveEquip`,
+`HasGetExclusiveEquipSkillList`, `getMainPropertyVal`, và `quality_config.xml`
+cho hiệu ứng kỹ năng.
+
+Món đồ thường **tinh luyện tới bậc 5 (+25%)** thì rèn lên được thành đồ chuyên
+thuộc — nếu tướng nằm trong danh sách **22 tướng** có đồ riêng. Từ đó nó đổi
+sang **đường tẩy riêng: 21 bậc (0–20)**, bắt đầu **ngay ở +25%** và lên tới
+**+125%**.
+
+Hai đường **nối liền nhau ở đúng +25%** — nên lúc rèn xong, lực chiến không
+đổi; cái được là **trần nhà cao gấp năm** và **kỹ năng** món đồ cho.
+
+| Ô | Kỹ năng | Hiệu ứng |
+|---|---|---|
+| 2 giáp | `ZhuanShuYiFu` | 10% miễn hẳn một đòn **thường** |
+| 3 giày | `ZhuanShuXieZi` | chịu ít hơn 15% đòn **kỹ năng** |
+| 4 dây chuyền | `ZhuanShuXiangLian` | +10% chí mạng |
+| 5 nhẫn | `ZhuanShuJieZhi` | +0,25 hệ số sát thương chí mạng |
+
+Ô 1 (vũ khí) không dùng bảng chung — nó có **kỹ năng riêng theo từng tướng**
+(`GetExclusiveWeaponSkillConfig`), ví dụ `ShenQiangLongDan` của Triệu Vân.
+
+Giá tẩy (tinh hoa): vũ khí 100/200/400/800/1600 rồi +400 mỗi bậc; các ô khác
+rẻ hơn một bậc. Rèn thì tốn **nguyên liệu** (`ItemList`), chưa trừ được bên
+game mới.
+
+**Một điều chỉnh về thứ tự ô**: `HeroEquipPart` của bản gốc là 1 vũ khí,
+2 giáp, **3 giày, 4 dây chuyền, 5 nhẫn**, 6 ô phụ. Trước đây bên game mới đặt
+3 dây chuyền / 5 giày — sai, và đã sửa. Việc này quan trọng vì bảng kỹ năng
+chuyên thuộc khoá theo đúng số ô đó.
+
+Bên game mới: đủ ba bản, RPC `bx.forge_exclusive`, và **không mở tab thứ tư** —
+bản gốc đổi *chế độ* của chính bảng tinh luyện khi đạt bậc 5
+(`EquipRefineType.OpenExclusive`), nên làm đúng vậy. Hai kỹ năng cần cơ chế mới
+(`immune_normal`, `taken_skill`) đã thêm vào cả ba bản mô hình chiến đấu.
+
 ### Chưa đọc trong mảng này
 
-Trang bị chuyên thuộc (`ExclusiveEquip`) và tẩy luyện (`AlterEquip`).
+Tẩy luyện (`AlterEquip`) và kỹ năng vũ khí chuyên thuộc theo từng tướng.
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
