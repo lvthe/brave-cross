@@ -36,8 +36,8 @@ BO CUC
     off_C  section C   [uint32 count][count * 16 byte]   sprite + toa do
     off_D  section D   [uint32 count][count * 16 byte]   anh roi + toa do
     off_E  section E   8 byte (vi off_G luon = off_E + 8)
-    off_G  section G   nhi phan, chua giai
-    off_F  section F   nhi phan, chua giai
+    off_G  section G   cay node — bo cuc man hinh (xem Xgg.nodes())
+    off_F  section F   bang offset uint32 tro vao G, tang dan
     off_H  section H   kho chuoi, toi cuoi file
 
     ban ghi B  (8 byte):  uint32 str_off, uint32 str_len
@@ -53,8 +53,13 @@ DA KIEM CHUNG tren toan bo 580 file cua ca hai ban (CN + VN):
   - noi dung dung mot kieu: B toan .plist (16299), C toan .png (10934),
     D .png (1262) + .jpg (44)
 
+SECTION G — CAY NODE (bo cuc that su). F la bang offset uint32 tro vao G,
+tang dan; moi ban ghi node dai thay doi nhung phan dau den 0xA0 co dinh:
+ten lop, ten instance, tai nguyen, x, y, scaleX, scaleY, w, h.
+Xem Xgg.nodes(). Kiem tren 580 file: 65935 node, 0 hong.
+
 CON LAI: y nghia tung float trong section A (nhin ra 1024.0 / 768.0 / 0.8 —
-kich thuoc canh va he so ti le), va noi dung nhi phan cua section G va F.
+kich thuoc canh va he so ti le), va cac truong sau 0xA0 cua ban ghi node.
 
     python xgg.py <file>                 # doc header + noi dung
     python xgg.py <file> --json          # xuat JSON
@@ -151,6 +156,55 @@ class Xgg(object):
             out.append(rec)
         return out
 
+    NODE_MIN = 0xA0        # phan dau co dinh cua mot ban ghi node
+
+    def node_offsets(self):
+        """Section F la bang offset uint32 tro vao G, tang dan."""
+        a, b = self.offsets['F'], self.offsets['H']
+        if b <= a or (b - a) % 4:
+            raise XggError('section F khong phai bang offset')
+        n = (b - a) // 4
+        return struct.unpack_from('<%dI' % n, self.data, a)
+
+    def nodes(self):
+        """Cay node cua man hinh — bo cuc that su.
+
+        Moi ban ghi dai thay doi (216..352 byte tren mau da xem), nhung phan
+        dau den 0xA0 thi co dinh:
+
+            +0x60  str_off, str_len   ten lop      spXxx / clXxx / lXxx / g_Xxx
+            +0x68  str_off, str_len   ten instance
+            +0x70  str_off, str_len   tai nguyen (sprite, hieu ung), co the rong
+            +0x7C  float x, y
+            +0x84  float scaleX, scaleY
+            +0x98  float w, h
+
+        Doi chieu: node nen cua BattleField_Cavern_02 ra w=1665 h=768, dung
+        bang gia tri section D cua chinh anh do; va g_GameUILayer cua HUD ra
+        960x640, dung do phan giai thiet ke cua game.
+        """
+        G, lenG = self.offsets['G'], self.offsets['F'] - self.offsets['G']
+        offs = self.node_offsets()
+        out = []
+        for i, o in enumerate(offs):
+            a = G + o
+            end = G + (offs[i + 1] if i + 1 < len(offs) else lenG)
+            if end - a < self.NODE_MIN:
+                raise XggError('ban ghi node %d chi %d byte' % (i, end - a))
+            u = lambda p: struct.unpack_from('<I', self.data, a + p)[0]
+            x, y, sx, sy = struct.unpack_from('<4f', self.data, a + 0x7C)
+            w, h = struct.unpack_from('<2f', self.data, a + 0x98)
+            out.append(collections.OrderedDict([
+                ('cls', self.string(u(0x60), u(0x64))),
+                ('name', self.string(u(0x68), u(0x6C))),
+                ('res', self.string(u(0x70), u(0x74))),
+                ('x', round(x, 3)), ('y', round(y, 3)),
+                ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
+                ('w', round(w, 3)), ('h', round(h, 3)),
+                ('bytes', end - a),
+            ]))
+        return out
+
     def to_dict(self):
         return collections.OrderedDict([
             ('file', self.name),
@@ -164,6 +218,7 @@ class Xgg(object):
                          for r in self.records('C')]),
             ('images', [{'name': r['name'], 'x': r['x'], 'y': r['y']}
                         for r in self.records('D')]),
+            ('nodes', self.nodes()),
         ])
 
 
@@ -216,6 +271,18 @@ def cmd_show(path, limit):
                 print('    %-44s  x=%-9.1f y=%.1f' % (r['name'] or '(rong)', r['x'], r['y']))
             else:
                 print('    %s' % r['name'])
+
+    nodes = xf.nodes()
+    if nodes:
+        print()
+        print('  section G — cay node, %d muc%s:'
+              % (len(nodes), '' if len(nodes) <= limit else ' (hien %d dau)' % limit))
+        print('    %-24s %-26s %9s %9s %8s %8s'
+              % ('lop', 'ten', 'x', 'y', 'w', 'h'))
+        for nd in nodes[:limit]:
+            print('    %-24s %-26s %9.1f %9.1f %8.1f %8.1f'
+                  % (nd['cls'][:24] or '(rong)', nd['name'][:26], nd['x'], nd['y'],
+                     nd['w'], nd['h']))
 
 
 def cmd_json(path):
