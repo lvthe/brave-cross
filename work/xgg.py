@@ -190,6 +190,8 @@ class Xgg(object):
         bang gia tri section D cua chinh anh do; va g_GameUILayer cua HUD ra
         960x640, dung do phan giai thiet ke cua game.
         """
+        if getattr(self, '_nodes', None) is not None:
+            return self._nodes
         G, lenG = self.offsets['G'], self.offsets['F'] - self.offsets['G']
         offs = self.node_offsets()
         out = []
@@ -214,7 +216,61 @@ class Xgg(object):
                 ('w', round(w, 3)), ('h', round(h, 3)),
                 ('bytes', end - a),
             ]))
+        # Nho lai: tree() va node_image() deu dua tren CHINH cac dict nay, neu
+        # dung lai moi lan mot danh sach moi thi khong the gan them truong.
+        self._nodes = out
         return out
+
+    # Offset cua cap (str_off, str_len) chua TEN ANH, theo tung co ban ghi.
+    # CHUA doc tu libgame.so — do bang thong ke roi tu kiem chung, nen phai
+    # coi la PHONG DOAN cho toi khi doc duoc ham nap that su:
+    #
+    #   co 244 -> +0xEC   90% node sprite suy ra dung kich thuoc
+    #   co 260 -> +0xF4   97%
+    #   co 248 -> +0xF0    4%  <- khong dung duoc, bo han
+    #
+    # Cac co khac (216, 220, 320, 352) khong co ten anh nao — dung, vi chung
+    # la layer va label.
+    IMG_FIELD = {244: 0xEC, 260: 0xF4, 256: 0xEC, 324: 0xF0}
+
+    def node_image(self, i):
+        """(ten anh, do tin cay) cua node thu i.
+
+        do tin cay:
+            'verified'  ten co trong section C cua chinh man nay VA kich thuoc
+                        khop w/h cua node — coi nhu chac chan dung
+            'guess'     giai ra chuoi hop le nhung khong tu kiem chung duoc
+            ''          khong co ten anh
+        """
+        nds = self.nodes()
+        if not 0 <= i < len(nds):
+            return '', ''
+        nd = nds[i]
+        off = self.IMG_FIELD.get(nd['bytes'])
+        if off is None or off + 8 > nd['bytes']:
+            return '', ''
+        a = self.offsets['G'] + self.node_offsets()[i]
+        so, sl = struct.unpack_from('<2I', self.data, a + off)
+        if not sl or sl > 200 or so + sl > self.size - self.offsets['H']:
+            return '', ''
+        try:
+            name = self.data[self.offsets['H'] + so:
+                             self.offsets['H'] + so + sl].decode('utf-8')
+        except UnicodeDecodeError:
+            return '', ''
+        if not name or any(ord(c) < 32 for c in name):
+            return '', ''
+
+        if not hasattr(self, '_csize'):
+            self._csize = {}
+            for r in self.records('C'):
+                if r['name']:
+                    self._csize[r['name']] = (round(r['x']), round(r['y']))
+                    self._csize[r['name'].lstrip('@')] = (round(r['x']), round(r['y']))
+        want = (round(nd['w']), round(nd['h']))
+        if self._csize.get(name) == want or self._csize.get(name.lstrip('@')) == want:
+            return name, 'verified'
+        return name, 'guess'
 
     def tree(self):
         """Dung lai cay tu danh sach phang.

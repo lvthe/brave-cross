@@ -30,7 +30,7 @@ from xgg import load, XggError
 DEFAULT_CONF = os.path.join('vn', 'decrypted', 'assets', 'conf')
 
 KEEP = ('cls', 'name', 'res', 'x', 'y', 'scaleX', 'scaleY',
-        'rot', 'anchorX', 'anchorY', 'w', 'h')
+        'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom')
 
 
 def trim(node):
@@ -45,6 +45,21 @@ def trim(node):
 def doc_for(path):
     x = load(path)
     roots = x.tree()
+    # Gan ten anh + do tin cay. node_image() tu kiem chung bang section C nen
+    # 'verified' la chac chan; 'guess' thi phai coi la phong doan.
+    order = {id(nd): i for i, nd in enumerate(x.nodes())}
+
+    def tag(nd):
+        i = order.get(id(nd))
+        if i is not None:
+            nd['img'], nd['imgFrom'] = x.node_image(i)
+        else:
+            nd['img'], nd['imgFrom'] = '', ''
+        for c in nd['children']:
+            tag(c)
+
+    for r in roots:
+        tag(r)
     return collections.OrderedDict([
         ('file', os.path.basename(path)),
         ('design', {'w': 960, 'h': 640}),
