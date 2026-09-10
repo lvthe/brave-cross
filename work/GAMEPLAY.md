@@ -68,11 +68,15 @@ PayChallengesCost   = 50   MaxInspireCount    = 3
 
 ## Game mới đang ở đâu
 
-`bravecross-game` hiện có **10 RPC** trên 614 của bản gốc:
+`bravecross-game` hiện có **23 RPC** trên 614 của bản gốc:
 
 ```
 bx.chapters   bx.fight      bx.set_roster   bx.level_up
 bx.formations bx.set_formation bx.upgrade_formation bx.set_placement
+bx.equipment  bx.intensify  bx.refine       bx.synthesize
+bx.forge_exclusive bx.recast bx.promote_quality
+bx.items      bx.sell_item  bx.dismantle_item
+bx.tasks      bx.claim_task bx.claim_liveness
 bx.selftest   bx.fieldtest
 ```
 
@@ -82,12 +86,10 @@ từng trận.
 
 Khoảng trống lớn nhất, theo thứ tự nên làm:
 
-1. **Trang bị** — `share_EquipmentLogic` (1638 dòng) + `share_EquipmentPropertyLogic`
-   (640). Sức mạnh tướng hiện chỉ đến từ cấp; thiếu hẳn một trục nuôi.
-2. **Vật phẩm và kho** — `share_ItemLogic` (1088), `share_warehouse`. Là nền cho
-   mọi thứ rơi ra từ trận.
-3. **Thành tựu và nhiệm vụ ngày** — `AchieveLogic` (1777) + `AchieveCheckLogic`
-   (1121). Đây là thứ giữ người chơi quay lại, và luật kiểm đã viết sẵn.
+1. ~~**Trang bị**~~ — xong, xem mục "Trang bị" bên dưới.
+2. ~~**Vật phẩm và kho**~~ — xong, xem mục "Vật phẩm và kho".
+3. ~~**Thành tựu và nhiệm vụ ngày**~~ — xong phần đo được, xem mục "Thành tựu
+   và nhiệm vụ ngày".
 4. **Gacha** — `LotteryLogic` (1043). Tỉ lệ đã có trong `KDBGameLotteryConfig`
    và **giống hệt giữa hai bản**, không cần cân lại.
 5. **Cửa hàng** — `ShopLogic`, `MysteriousStoreLogic`, `ScoreStroeLogic`.
@@ -528,6 +530,119 @@ Còn lại trong `GAMEPLAY.md`: thành tựu, gacha, cửa hàng.
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
 StarLevel)` và chỉ có `SBDataManager` dùng, tức thuộc hệ **thần binh** (神兵),
 không phải hệ tinh luyện trang bị.
+
+## Thành tựu và nhiệm vụ ngày — đã đọc, đã hiện thực
+
+Nguồn: `AchieveLogic.lua` (1777 dòng), `AchieveCheckLogic.lua` (1121),
+`share_achievement.lua`, `CUIAchieve.lua`, `CUIDailyTask.lua`; bảng
+`KDBGameAchieveConfig.xgg` (357 dòng), `KDBGamePrizeConfig.xgg` (2341 phần
+thưởng), `KDBGameCommonConfig.xgg` (`DailyTaskLiveness`, `LivenessPrizeConfig`).
+
+### Một bảng, năm họ nhiệm vụ
+
+`AchieveType` chia khoảng (hằng số trong `AchieveLogic:ctor`):
+
+| khoảng | họ |
+|---|---|
+| 0 | điểm danh — `Award` là 12 phần thưởng, mỗi tháng một cái |
+| 1–99 | thành tựu |
+| 100–999 | nhiệm vụ ngày |
+| 1000–1999 | nhiệm vụ hướng dẫn |
+| 2000–2999 | nhiệm vụ bảy ngày |
+
+Mỗi loại là một **chuỗi bước** `AchieveIndex` 1..n. Người chơi giữ một bản ghi
+cho mỗi loại: đang ở bước nào, trạng thái gì (`AchieveState`: 1 đang làm, 2 đã
+đạt, 3 đã nhận hết). Nhận xong thì sang bước sau, hết bước thì "đã nhận hết" —
+và `Init()` mở lại chuỗi đã hết nếu bảng số có thêm bước mới.
+
+**Bẫy khi đọc bảng**: cột `AchieveCondition` không có ở các dòng điểm danh, mà
+dòng đầu tiên của bảng lại là điểm danh — đọc tên cột từ dòng đầu sẽ tưởng bảng
+không có điều kiện. Đã nhầm đúng thế một lần.
+
+### Điều kiện: một hàm kiểm cho mỗi loại
+
+`GetProgressFuncNameMap` gắn mỗi loại với một hàm trong `AchieveCheckLogic`, trả
+về `(đang có, cần)`. Những loại game mới đo được:
+
+| loại | hàm | điều kiện |
+|---|---|---|
+| 6 | `getChapterPassProgress` | qua màn `L_N_<chương>_<màn>` (72 mốc, 4 mỗi chương) |
+| 9 | `getHeroLevelCountProgress` | `HeroCount` tướng đạt cấp `Level` |
+| 11 | `getEquipQualityProgress` | phẩm chất trang bị cao nhất **từng đạt** ≥ 3..6 |
+| 14 | `getSomeHeroLevelToProgress` | 5 tướng đạt cấp 5, 10, … 90 |
+| 16/17/18 | `get{Weapon,Defender,Jewelry}LevelCountProgress` | 5 món ở ô vũ khí / giáp+giày / dây chuyền+nhẫn đạt cấp 1..10 |
+| 103 | `getChapterPassCountProgress` | thắng 10 trận trong ngày (`AnyChapterPassCountDaily`) |
+| 113 | `getPracticeHeroProgress` | luyện tướng 1 lần trong ngày (`PracticeHeroCountDaily`) |
+
+Loại 11 đọc một **thống kê** (`MaxEquipQuality`) chứ không đếm lại từ đồ đang
+có: thay hay phân giải món đồ thì thành tựu đã đạt không mất.
+
+### Hai bước: đạt rồi mới nhận
+
+`ReachAchieve` kiểm điều kiện → đã đạt; `AwardAchieve` trao thưởng → bước sau
+hoặc đã nhận hết. Nhiệm vụ ngày khi nhận còn cộng **điểm năng động**
+(`DailyTaskLiveness`, mỗi loại 1 điểm; loại 107 — thể lực miễn phí lúc ăn —
+không cộng). Đủ điểm thì mở rương (`LivenessPrizeConfig`: 5 điểm, từ cấp 34 là
+6 điểm; một rương mỗi ngày).
+
+### Phần thưởng
+
+`Award` là danh sách `PrizeID`. Mỗi phần thưởng có `PrizeResType`
+(`Protocol.lua`): 2 vật phẩm, 3 tài nguyên (`CurrencyType` 1 vàng, 8 tinh hoa,
+20 kim cương), 4 thuộc tính người chơi (`UserEx` kinh nghiệm tài khoản,
+`AddGoldInLevel` vàng × cấp người chơi, `AddFatigue` thể lực). Icon:
+`item_<id>.png`, vàng `v6/ui_jinbi02.png`, tinh hoa `v6/ui_ronglujingyan02.png`
+(`CUIPrizeResHelper`).
+
+Phần thưởng thành tựu chương (loại 6) **chỉ toàn** đan kinh nghiệm (4), đan
+phẩm chất (14) và 脑白金 (13) — hệ tướng của bản gốc lên cấp bằng kinh nghiệm,
+còn game mới lên cấp bằng vàng.
+
+### Đã hiện thực bên game mới
+
+Bảy chuỗi thành tựu (6, 9, 11, 14, 16, 17, 18 — 93 bước) và sáu nhiệm vụ ngày,
+cùng điểm năng động và rương. RPC: `bx.tasks`, `bx.claim_task`,
+`bx.claim_liveness`. Máy chủ kiểm lại điều kiện lúc nhận — gộp `ReachAchieve`
+và `AwardAchieve` làm một.
+
+Nhiệm vụ ngày: hai loại của bản gốc (103, 113) và **bốn loại của game mới**.
+Chỉ hai trong mười ba loại gốc đo được bằng hệ thống đã có, nên rương năng động
+(5 điểm) không bao giờ với tới; người dùng chọn thêm nhiệm vụ dựa trên hệ đã có:
+
+| loại | việc | lần | căn cứ |
+|---|---|---|---|
+| 151 | cường hoá trang bị | 3 | biến đếm gốc `IntensifyEquipmentCountDaily` (`Statistics.lua`) và hàm kiểm gốc `getIntensifyEquipmentCountProgress` — bản gốc từng gắn cho loại 106 rồi bỏ khỏi bảng; phần thưởng `PrizeID` 10601 |
+| 152 | tinh luyện | 1 | tự đặt; phần thưởng `PrizeID` 11301 |
+| 153 | phân giải vật phẩm | 1 | tự đặt; phần thưởng `PrizeID` 11301 |
+| 154 | ghép đồ | 1 | tự đặt; phần thưởng `PrizeID` 11301 |
+
+Số lần là của ta; phần thưởng là đúng phần thưởng nhiệm vụ ngày gốc. Đặt ở
+khoảng 151.. để không đụng loại nào của bản gốc — sau này làm đúng loại 106
+(hang động) thì không vướng. Sáu nhiệm vụ đủ cho cả hai bậc rương (5 điểm, và 6
+điểm từ cấp 34).
+
+Chỗ lệch có chủ ý:
+
+- **Chương**: game mới có 12 chương, mỗi chương một trận. Qua chương N nghĩa là
+  đạt cả 4 mốc của chương N bên bản gốc. Bỏ 24 mốc của chương 13–18.
+- **Cấp tướng**: tối đa 40, bỏ 8 bước đòi cấp 45–90 của loại 14.
+- **Cấp người chơi**: game mới chưa có cấp tài khoản; "vàng theo cấp" và bậc
+  rương dùng cấp tướng cao nhất.
+- **Luyện tướng** (113): game mới chưa có khu luyện tướng; nâng cấp tướng đếm
+  thay.
+- **Phần thưởng không có chỗ chứa** (kim cương, kinh nghiệm tài khoản, thể lực)
+  ghi vào "chưa trao", không đổi bừa sang thứ khác. Vật phẩm thì trao đúng như
+  bản gốc, kể cả đan kinh nghiệm / đan phẩm chất chưa có công dụng.
+- **Ngày cắt theo UTC+7.**
+
+Còn mở: rương năng động cần 5 điểm mà mới có 2 nhiệm vụ ngày làm được, nên hiện
+chưa với tới.
+
+### Chưa làm trong mảng này
+
+Điểm danh (loại 0, có ngày nhân đôi theo VIP), nhiệm vụ hướng dẫn, bảy ngày, và
+11 loại nhiệm vụ ngày cần hệ thống game mới chưa có (đấu trường, hang động,
+doanh trại, phái cử, điểm vàng, bang hội, chia sẻ).
 
 ## Còn chưa đọc
 
