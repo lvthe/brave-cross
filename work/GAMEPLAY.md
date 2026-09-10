@@ -479,8 +479,50 @@ ba mô hình: `pierce`, `anger`, `interval_pct`.
 
 ### Mảng trang bị: xong
 
-Cả năm bảng hành động và cả hai nhánh chuyên thuộc đều có luật. Còn lại trong
-`GAMEPLAY.md` là các mảng khác: vật phẩm/kho, thành tựu, gacha, cửa hàng.
+Cả năm bảng hành động và cả hai nhánh chuyên thuộc đều có luật.
+
+## Vật phẩm và kho — đã đọc, đã hiện thực
+
+Nguồn: `share_ItemLogic.lua` (1088 dòng), `share_ItemDataManager.lua`,
+`share_warehouse.lua`, bảng `KDBGameItemConfig.xgg` (619 vật phẩm).
+
+Bảng vật phẩm mỗi dòng có: `ItemID`, `ItemName`, `ItemType`, `MaxCount`,
+`Price` (giá bán ra vàng), `Quality`, `Value`, và **`Concentrate`** — số tinh
+hoa thu được khi phân giải.
+
+Loại (`Protocol.lua`): 1 tiêu hao, 2 nguyên liệu, 3 đan dược, 4 gói quà,
+5 rương, 6 nguyên liệu thần binh, 8 gói chọn, 9 ảnh đại diện.
+
+Luật lõi rất gọn:
+
+```
+AddItem      cộng vào rồi CẮT ở MaxCount của từng loại
+IsEnoughResourceForSynthesis   thiếu MỘT thứ là hỏng cả
+UseMaterialResourceForSynthesis trừ từng món, cuộn lại nếu giữa chừng thất bại
+GetItemSalePrice               chính là cột Price
+GetWareHouseCurrentCount       đếm TỔNG SỐ LƯỢNG, không phải số loại
+```
+
+**Đây là mảnh còn thiếu của ba hệ trước**: ghép đồ, nâng phẩm và rèn chuyên
+thuộc đều gọi đúng cặp `IsEnough…` / `UseMaterial…` này. Bên game mới trước
+đây chỉ **hiện** nguyên liệu mà không trừ; giờ trừ thật, và báo lỗi nói rõ
+thiếu thứ gì bao nhiêu trên bao nhiêu.
+
+Bên game mới: bản lưu có túi đồ (`items`), RPC `bx.items` / `bx.sell_item` /
+`bx.dismantle_item`, và **thắng chương thì rơi nguyên liệu** hợp với bậc của
+chương đó. Phân giải vật phẩm giờ là nguồn tinh hoa **thật** như bản gốc, bên
+cạnh nguồn tạm cũ (đồ thừa bị phân giải).
+
+Màn hình: mỗi ô nguyên liệu hiện **đang có / cần**, thiếu thì tô đỏ, và nút bị
+làm mờ kèm dòng "Thiếu nguyên liệu".
+
+### Chưa đọc trong mảng này
+
+Dùng vật phẩm (`UseItem` với ~15 nhánh `useItem_*`: đan dược, gói quà, rương,
+ảnh đại diện), mua bán trong cửa hàng, và giới hạn kho (`WarehouseCap`, thư
+báo kho đầy).
+
+Còn lại trong `GAMEPLAY.md`: thành tựu, gacha, cửa hàng.
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
