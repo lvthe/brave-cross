@@ -30,6 +30,38 @@ Khung, 80 byte, o goc header[0x5c]:
     +0x18  float sx, float sy           ti le
     +0x20..+0x50                        0 tren toan bo mau da xem
 
+Muc con cua BO PHAN, 16 byte, o goc header[0x48]:
+
+    +0x00  uint32  str_off, str_len     ten xuong
+    +0x08  uint32  ref_off              offset vao mang o header 0x4c
+    +0x0c  uint32  ref_count            so sprite ma xuong nay ve
+
+Tham chieu SPRITE, 20 byte, o goc header[0x4c]:
+
+    +0x00  uint32  str_off, str_len     ten sprite
+    +0x08  float   x, y                 diem neo rieng cua xuong
+    +0x10  uint32  0
+
+Day la ANH XA XUONG -> SPRITE, thu quyet dinh moi xuong ve cai gi. Truoc
+day header[0x4c] khong ai dung va muc con cua bo phan chi doc moi ten, nen
+JSON xuat ra khong he co thong tin nay — bo nap rig ben Godot doi
+children = [{name, sprites}] ma chi nhan duoc mot danh sach ten tran.
+
+Doi chieu tren Cavalry, ten xuong trung duoi ten sprite nen khong the nham:
+
+    HandLeft   -> Cavalry_res-HandLeft
+    ArmLeft    -> Cavalry_res-ArmLeft
+    ThighLeft  -> Cavalry_res-ThighLeft
+    ATail      -> CavalryAlpaca_res-ATail
+
+Ban ghi SPRITE, 40 byte, o goc header[0x60] — doc duoc nhung chua dung:
+
+    +0x00  uint32  str_off, str_len     ten sprite
+    +0x08  float   w, h                 kich thuoc khung
+    +0x10  float   px, py               tam
+    +0x18  0, 0
+    +0x20  float   atlasX, atlasY       vi tri trong atlas
+
 Vi du Cavalry.xml, dong tac Walk:
 
     ArmLeft   goc:  0.00 ->  8.48 -> -10.20 ->  -2.51    (tay vung)
@@ -49,6 +81,7 @@ MAGIC = b'sngXml\x00'
 ANIM_REC = 0x28
 BONE_REC = 24
 KEY_REC = 80
+REF_REC = 20
 
 
 class AnimError(Exception):
@@ -68,7 +101,8 @@ class Anim(object):
         self.key_base = u(0x5c)
         self.part_base, self.part_sub = u(0x44), u(0x48)
         self.spr_base = u(0x60)
-        for o in (0x44, 0x48, 0x50, 0x54, 0x58, 0x5c, 0x60, 0x64):
+        self.ref_base = u(0x4c)
+        for o in (0x44, 0x48, 0x4c, 0x50, 0x54, 0x58, 0x5c, 0x60, 0x64):
             if not 0 < u(o) <= self.size:
                 raise AnimError('bo cuc khong phai ban .xml (0x%02X ngoai file)' % o)
 
@@ -133,12 +167,40 @@ class Anim(object):
                     ('variant', self._name_at(r)), ('animations', anims)]))
         return out
 
+    def sprite_refs(self, off, count):
+        """Danh sach ten sprite ma mot xuong ve ra.
+
+        Moi ban ghi 20 byte o goc header[0x4c]:
+
+            +0x00  uint32 str_off, str_len   ten sprite
+            +0x08  float  x, y               diem neo cua rieng xuong nay
+            +0x10  uint32 0
+
+        Doi chieu tren Cavalry: HandLeft -> Cavalry_res-HandLeft,
+        ArmLeft -> Cavalry_res-ArmLeft, ATail -> CavalryAlpaca_res-ATail —
+        ten xuong trung duoi ten sprite, nen anh xa nay chac chan dung.
+        """
+        out = []
+        for j in range(count):
+            p = self.ref_base + off + j * REF_REC
+            if p + REF_REC > self.size:
+                raise AnimError('tham chieu sprite vuot cuoi file')
+            out.append(self._name_at(p))
+        return out
+
     def parts(self):
         out = []
         for i in range(self.u(0x20)):
             r = self.part_base + i * 0x10
             sub_off, sub_n = self.u(r + 8), self.u(r + 0xc)
-            kids = [self._name_at(self.part_sub + sub_off + k * 0x10) for k in range(sub_n)]
+            kids = []
+            for k in range(sub_n):
+                q = self.part_sub + sub_off + k * 0x10
+                ref_off, ref_n = self.u(q + 8), self.u(q + 0xc)
+                kids.append(collections.OrderedDict([
+                    ('name', self._name_at(q)),
+                    ('sprites', self.sprite_refs(ref_off, ref_n)),
+                ]))
             out.append(collections.OrderedDict([
                 ('name', self._name_at(r)), ('children', kids)]))
         return out
