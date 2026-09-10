@@ -213,8 +213,17 @@ dùng **cấp** cường hoá — chỉ được gọi từ `GetIntensifiedIncre
 ta không có. Nên bản mới giữ cả hai đường và ghi rõ: `capacity()` theo công
 thức gốc của tác giả, `capacity_as_original()` đúng ý bản phát hành.
 
-Còn thiếu: chưa nối vào bản lưu và RPC (`bx.equipment`, `bx.intensify`), nên
-trang bị chưa ảnh hưởng tới chỉ số tướng trong trận.
+Đã nối suốt dây: bản lưu giữ `equipment` (tên tướng → tối đa 6 món), hai RPC
+`bx.equipment` và `bx.intensify` (máy chủ tính giá và trừ vàng), và trang bị
+**đổi kết quả trận thật** — đối chiếu từng trận giữa cả ba bản.
+
+Trang bị đi đúng kênh buff mà thế trận đang dùng, gộp chung một bảng rồi áp
+một lần, nên thứ tự áp dụng không thể làm ba bản lệch nhau.
+
+Chỗ còn tạm: **nguồn ra trang bị**. Bản gốc lấy từ rơi đồ, ghép đồ, cửa hàng,
+kho — chưa hệ nào trong số đó tồn tại bên game mới, nên tạm thời món đồ rơi
+thẳng từ trận ra (35% khi thắng) và gắn luôn vào tướng, món mạnh hơn thì giữ.
+Khi có hệ vật phẩm và kho thì thay chỗ đó, không phải thay công thức.
 
 ### Chưa đọc trong mảng này
 
