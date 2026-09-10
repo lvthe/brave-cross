@@ -360,9 +360,54 @@ bản gốc đổi *chế độ* của chính bảng tinh luyện khi đạt b�
 (`EquipRefineType.OpenExclusive`), nên làm đúng vậy. Hai kỹ năng cần cơ chế mới
 (`immune_normal`, `taken_skill`) đã thêm vào cả ba bản mô hình chiến đấu.
 
+### Tẩy luyện — đã đọc, đã hiện thực
+
+Nguồn: `RecastEquipment`, `getAppendPropertyValue`, `updateAppendProperty`,
+`CalcEquipFightingCapacity`, `AppendPropertyCoefficient`, `AppendPropertyValue`.
+
+Thuộc tính phụ mở từ **cấp 4**, giá trị tính bằng:
+
+```
+value = coef * (base * quality - 0.3) * (levelCoef / 20)
+```
+
+- `base` là số **bốc ra** trong dải 0,8–1,3 — **tẩy luyện chính là bốc lại nó**
+- `coef` từ `AppendPropertyCoefficient`: HpLimit 40, ApMax 11,8, ApMin 2,7,
+  DpAddtion 2,5, CriticalStrike 0,1, CriticalMultiplier 50…
+- `levelCoef` vẫn là cột `HeroLevel` của bảng ghép đồ
+
+Tẩy luyện **giữ nguyên loại chỉ số**, chỉ bốc lại con số
+(`updateAppendProperty` tính lại `Value` từ `BaseValue`). Giá: **10 000 vàng**,
+hoặc 100 kim cương, hoặc **một viên đá tẩy luyện** (vật phẩm 97) thì miễn tiền.
+
+**Điểm quan trọng nhất, và là chỗ tôi từng làm sai**: thuộc tính phụ **không**
+quy ra lực chiến bằng giá trị × trọng số. `CalcEquipFightingCapacity` chấm nó
+theo **dải bốc được**:
+
+| base > | điểm |
+|---:|---:|
+| 0,8 | 10 |
+| 0,9 | 20 |
+| 1,0 | 30 |
+| 1,1 | 40 |
+| 1,2 | 60 |
+
+Nên hai món cùng loại, cùng giá trị hiển thị, mà `base` khác nhau thì lực
+chiến khác nhau — và vì thế **`base` phải được lưu trên món đồ**, không chỉ lưu
+giá trị. Đó cũng là lý do tẩy luyện là một canh bạc thật.
+
+Một điều về **đơn vị**: chí mạng và hệ số sát thương chí mạng của thuộc tính
+phụ tính theo **điểm phần trăm** (`CriticalStrikeBase = 1` nghĩa là 1%), khác
+chỉ số chính. Nhầm là sai 100 lần.
+
+Bên game mới: đủ ba bản, RPC `bx.recast`, và tab tẩy dùng đúng khối
+`lEquipmentAlterUI` — kể cả sáu dòng thuộc tính và sáu dòng **giá trị tối đa**
+mà bản gốc bày sẵn. Tẩy cao cấp (kim cương) và đá tẩy thì ẩn: chưa có hệ.
+
 ### Chưa đọc trong mảng này
 
-Tẩy luyện (`AlterEquip`) và kỹ năng vũ khí chuyên thuộc theo từng tướng.
+Kỹ năng vũ khí chuyên thuộc theo từng tướng, và nâng phẩm chất
+(`PromoteQualityEquipment`).
 
 **Đính chính**: bảng `KDBGameNormalEquipRefineConfig` (275 bản ghi) trước đây
 ghi ở đây là bảng tinh luyện — **sai**. Nó khoá theo `(HeroJob, EquipPart,
