@@ -115,6 +115,93 @@ có bảng tĩnh node→ảnh để trích. `UiFrames.set_frame()` dựng lại 
 **Client và server dùng chung luật.** `sc/share/` được cả hai nạp. Đó là lý do
 `server/modules/battle.lua` bên game mới tái hiện được nguyên mô hình chiến đấu.
 
+## Trang bị — đã đọc, đủ để hiện thực
+
+Nguồn: `share_EquipmentLogic.lua` (1638 dòng), `share_EquipmentPropertyLogic.lua`
+(640), `share_EquipmentDataManager.lua` (462). Bảng số: `KDBGameEquipmentSynthesisConfig`
+(250 bản ghi), `KDBGameNormalEquipRefineConfig` (275), `KDBGameScrollSynthesisConfig` (30).
+
+### Một món trang bị gồm
+
+```
+HeroID, EquipPartID          6 ô: vũ khí, giáp, dây chuyền, nhẫn, giày, ô phụ
+Level                        cấp món đồ
+IntensifyLevel               cấp cường hoá
+Quality                      phẩm chất
+RefineLevel                  cấp tinh luyện
+MainProperty  {PropertyType, Value}
+IntensifyProperty {PropertyType, Value}
+AppendProperty[]             thuộc tính phụ, ngẫu nhiên
+```
+
+### Bốn trục nuôi, bốn công thức
+
+**1. Cường hoá** — mỗi cấp nhân thêm `2.4^(1/200)` ≈ 1,004385; qua 200 cấp thì
+gấp 2,4 lần:
+
+```
+increment(level, Val) = (Val / 25) * (2.4^(1/200))^level
+```
+
+Giá trị cộng thêm phụ thuộc LOẠI chỉ số, mỗi loại một mẫu số và một mốc riêng:
+
+```
+Ap        : main/35 * (2.4^(1/200))^10
+HpLimit   : main/25 * (2.4^(1/200))^50
+DpAddtion : main/30 * (2.4^(1/200))^50
+```
+
+**2. Chi phí cường hoá** — nhân đôi mỗi 4,5 cấp lúc đầu, giãn ra 6,5 cấp sau
+cấp 31:
+
+```
+level-1 > 30 :  140 * (2^(1/6.5))^(level-1)
+ngược lại    :   25 * (2^(1/4.5))^(level-1)
+```
+
+**3. Phẩm chất** — dải giá trị theo phẩm:
+
+```
+range(baseVal, coefficient, quality) = (baseVal/coefficient + 0.3) / quality
+```
+
+**4. Thuộc tính phụ** — mở từ **cấp 4**, giá trị ngẫu nhiên trong dải
+**0,8–1,3** lần gốc. Tẩy lại (洗练) tốn **đá tẩy luyện, vật phẩm id 97**.
+
+### Lực chiến của một món
+
+```
+capacity =   MainProperty.Value      * W[MainProperty.PropertyType]
+           + intensifyPropertyVal    * W[MainProperty.PropertyType]
+           + tổng đóng góp của AppendProperty
+```
+
+`W` là bảng trọng số theo loại chỉ số, ở `share_configManager.lua:3221`:
+
+| Chỉ số | Trọng số |
+|---|---:|
+| `HpLimit` | 0.1 |
+| `Ap` | 0.9 |
+| `DpAddtion` | 1 |
+| `FireResistence` / `IceResistence` / `ThunderResistence` | 18 |
+| `CriticalStrike` | 50 |
+
+Trọng số nói lên thang của từng chỉ số: 1 điểm chí mạng đáng 50 điểm lực chiến,
+còn 1 điểm máu chỉ đáng 0,1 — tức máu đi theo hàng nghìn còn chí mạng theo phần
+trăm.
+
+### RPC liên quan bên bản gốc
+
+`ClientIntensifyEquipment`, `ClientAutoIntensifyEquipment`, `ClientRecastEquipment`,
+`ClientPromoteQualityEquipment`, `ClientSynthesisEquipment`,
+`ClientAutoIntensifyEquipment` — tra đầy đủ trong `server-spec-vn/SERVER_API.md`.
+
+### Chưa đọc trong mảng này
+
+Công thức tinh luyện (`RefineLevel`) và bảng `KDBGameNormalEquipRefineConfig`
+(275 bản ghi, có sẵn cột `AddCapacity`, `CostGold`, `CostResource`); luật ghép
+đồ (`SynthesisEquipment`) và trang bị chuyên thuộc (`ExclusiveEquip`).
+
 ## Còn chưa đọc
 
 Tài liệu này mới là **bản đồ**, chưa phải đặc tả từng hệ thống. Cần đọc sâu
