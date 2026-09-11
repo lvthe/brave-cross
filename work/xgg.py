@@ -212,14 +212,18 @@ class Xgg(object):
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
                 ('rot', round(rot, 3)),
-                # +0xA4: tag so nguyen cua Cocos — thu ma Lua goi nhieu
-                # nhat (getChildByTag: 9529 lan). Tim ra bang cach doi
-                # chieu voi chinh ma Lua: gom moi '<ten toan cuc>:
-                # getChildByTag(n)' roi do xem truong nao chua du bo n
-                # do. 0xA4 an dut phan con lai (191 diem, ke sau 85).
-                # Vi du tu tay: trong lEquipUpgradeQualityMainUI thi
-                # CCLayer1 mang tag 1, CCLayer2 mang tag 2.
-                ('tag', struct.unpack_from('<i', self.data, a + 0xA4)[0]),
+                # +0xA4: CHUA RO LA GI. Da tung ghi o day la 'tag so nguyen
+                # cua Cocos' — SAI, va chinh minh bac bo sau do. Cach kiem:
+                # gom moi '<ten toan cuc>:getChildByTag(n)' lam moc, chi giu
+                # ten nao xuat hien o DUNG MOT man de khong lan, roi quet het
+                # ban ghi. Khong offset nao vuot 31% — 0x038, 0x0A4, 0x03C xap
+                # xi nhau, tuc la khong cai nao dung. Gia thuyet 'tag = thu tu
+                # con' cung sai: 33/52 moc doi tag lon hon ca so con.
+                # Ket luan: tag KHONG nam trong ban ghi node. Muon biet that
+                # thi phai doc bo nap .xgg trong libgame.so.
+                # Van giu truong nay vi no co that va co the con dung, nhung
+                # DUNG coi no la tag.
+                ('u_a4', struct.unpack_from('<i', self.data, a + 0xA4)[0]),
                 # +0xA1: co hien/an. SUY RA chu chua doc tu libgame.so, nhung
                 # khop voi moi node kiem duoc: cac hop thoai (clGameReviveDlg,
                 # clBattlePause, clGuickGameFinish), khung mach nuoc va nut
