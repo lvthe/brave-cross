@@ -236,18 +236,36 @@ class Xgg(object):
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
                 ('rot', round(rot, 3)),
-                # +0xA4: CHUA RO LA GI. Da tung ghi o day la 'tag so nguyen
-                # cua Cocos' — SAI, va chinh minh bac bo sau do. Cach kiem:
-                # gom moi '<ten toan cuc>:getChildByTag(n)' lam moc, chi giu
-                # ten nao xuat hien o DUNG MOT man de khong lan, roi quet het
-                # ban ghi. Khong offset nao vuot 31% — 0x038, 0x0A4, 0x03C xap
-                # xi nhau, tuc la khong cai nao dung. Gia thuyet 'tag = thu tu
-                # con' cung sai: 33/52 moc doi tag lon hon ca so con.
-                # Ket luan: tag KHONG nam trong ban ghi node. Muon biet that
-                # thi phai doc bo nap .xgg trong libgame.so.
-                # Van giu truong nay vi no co that va co the con dung, nhung
-                # DUNG coi no la tag.
-                ('u_a4', struct.unpack_from('<i', self.data, a + 0xA4)[0]),
+                # +0xA4: zOrder cua Cocos — thu tu ve va thu tu cham.
+                #
+                # Da tung ghi o day la 'tag', roi bac bo; nay do duoc that.
+                # Cach doi chieu: CUIManager.lua dat zOrder cho tung lop che
+                # bang HANG SO VIET RO TRONG MA, va ten lop che thi biet san.
+                # Doc truong nay tren UI_NormalDlg_960_640 roi so:
+                #
+                #     lNormalDlgMask       20    maskZorder = 20      (d.1534)
+                #     lNormalDlgTouchMask  21    maskZorder + 1       (d.1972)
+                #     lSubDialogMask      100    maskZorder = 100     (d.1846)
+                #     lSubDialogTouchMask 101    maskZorder + 1
+                #     lMessageBoxMask    2000    maskZorder = 2000    (d.2225)
+                #     lMessageBoxTouchMask 2001  maskZorder + 1
+                #     lSystemMask        4000    maskZorder = 4000    (d.2126)
+                #     lNetWorkMask       6000    maskZorder = 6000    (d.2171)
+                #     lDebugBoxMask      9000    maskZorder = 9000    (d.2336)
+                #
+                # 10/12 trung khit. Hai cho lech la lToolTipMask (2800 trong
+                # file, 2500 trong ma) va lFeedsDlgMask (2401 / 2400) — do la
+                # so nguoi thiet ke dat trong trinh sua, con ma thi ghi de luc
+                # chay, nen lech la binh thuong.
+                #
+                # Them mot moi doi chieu doc lap: goc cua tung man hinh ra
+                # 30..53 va 100, dung tam OpenZorder ma hop thoai duoc dat
+                # (CUINormalDlg.OpenZorder = 50); rieng g_LoginUIScene ra dung
+                # 50.
+                #
+                # Quan trong vi THU TU VE phu thuoc no: nen canh (z=1) phai
+                # nam duoi lop giao dien (z=200), khong thi anh nen de len het.
+                ('zOrder', struct.unpack_from('<i', self.data, a + 0xA4)[0]),
                 # +0xA1: co hien/an. SUY RA chu chua doc tu libgame.so, nhung
                 # khop voi moi node kiem duoc: cac hop thoai (clGameReviveDlg,
                 # clBattlePause, clGuickGameFinish), khung mach nuoc va nut
@@ -258,6 +276,30 @@ class Xgg(object):
                 ('w', round(w, 3)), ('h', round(h, 3)),
                 ('bytes', end - a),
             ]))
+            # +0xE6: MAU cua CCLayerColorRoundRect, bon byte R,G,B,A.
+            #
+            # Cach kiem (574 node loai 4 tren toan bo 287 man):
+            #   * 0xEA/0xEB LUON la cd cd — dem duoc 574/574. Do la byte don
+            #     cua vung chua ghi, nen truong ket thuc dung o 0xE9.
+            #   * byte thu tu ra toan so do mo hop ly va TRON: 200 (181 lan),
+            #     0 (130), 255 (90), 150 (72), 128, 100, 120, 125, 60. Byte
+            #     ngau nhien thi khong ra phan bo nhu vay.
+            #   * node ten *Mask* thi 15/19 la den (0,0,0) — dung cai ta mong
+            #     doi o mot lop che. Bon cai con lai la *TouchMask*, tuc lop
+            #     bat cham khong bao gio ve, va ca bon deu co A = 0.
+            #
+            # Doi chieu voi ma goc: CPublic:SetMaskIsEnable chay
+            # S_CCFadeTo(0.2, 179) tren lop che. Trong file, lNormalDlgMask
+            # ghi (0,0,0,0) — den, trong suot han — dung nhu mot lop cho ma
+            # goc lam mo dan len. Neu doc sai truong nay thi lop che hoac
+            # luon den kit hoac khong bao gio hien.
+            #
+            # Chi doc cho loai 4. Cac loai khac ban ghi ngan hon va chua biet
+            # o do co gi.
+            if t == 4 and end - a >= 0xEC:
+                out[-1]['color'] = [self.data[a + 0xE6], self.data[a + 0xE7],
+                                    self.data[a + 0xE8]]
+                out[-1]['opacity'] = self.data[a + 0xE9]
         # Nho lai: tree() va node_image() deu dua tren CHINH cac dict nay, neu
         # dung lai moi lan mot danh sach moi thi khong the gan them truong.
         self._nodes = out

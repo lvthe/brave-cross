@@ -29,13 +29,19 @@ from xgg import load, XggError
 
 DEFAULT_CONF = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'conf')
 
-KEEP = ('type', 'typeName', 'cls', 'name', 'u_a4', 'res', 'x', 'y', 'scaleX', 'scaleY',
+KEEP = ('type', 'typeName', 'cls', 'name', 'zOrder', 'res', 'x', 'y', 'scaleX', 'scaleY',
         'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom', 'visible')
+
+# Chi co o CCLayerColorRoundRect, nen khong nam trong KEEP.
+KEEP_MAYBE = ('color', 'opacity')
 
 
 def trim(node):
     """Bo cac truong noi bo (nKids, bytes), de quy xuong con."""
     out = collections.OrderedDict((k, node[k]) for k in KEEP)
+    for k in KEEP_MAYBE:
+        if k in node:
+            out[k] = node[k]
     kids = [trim(c) for c in node['children']]
     if kids:
         out['children'] = kids
