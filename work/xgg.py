@@ -78,6 +78,18 @@ COUNTED = ('B', 'C', 'D')
 REC_FIELDS = {'B': 8, 'C': 16, 'D': 16}
 
 
+# Loai node cua .xgg, theo dung thu tu trong sngXggParser cua libgame.so.
+# Truong +0x00 cua moi ban ghi node la CHI SO trong bang nay.
+NODE_TYPES = (
+    'CCNode', 'CCButton', 'CCSprite', 'CCLayer', 'CCLayerColorRoundRect',
+    'CCParticleSystemQuad', 'CCParallaxNode', 'CCScrollLayer',
+    'CCProgressTimer', 'CCInclude', 'CCScene', 'CCSpriteBatchNode',
+    'CCLayerGradientEx', 'CCNormalModule', 'ModuleItemMark', 'CCGroupItem',
+    'CCLabelBMFont', 'CCLabelTTF', 'CCProgressWithClock', 'CCWheelDisk',
+    'CCScale9Sprite', 'CCEditBox', 'CCControlSlider', 'CCRichLabel',
+)
+
+
 class XggError(Exception):
     pass
 
@@ -205,7 +217,19 @@ class Xgg(object):
             rot, = struct.unpack_from('<f', self.data, a + 0x8C)
             ax, ay = struct.unpack_from('<2f', self.data, a + 0x90)
             w, h = struct.unpack_from('<2f', self.data, a + 0x98)
+            t = struct.unpack_from('<i', self.data, a)[0]
             out.append(collections.OrderedDict([
+                # +0x00: ma LOAI node. Doc thang tu libgame.so chu khong
+                # doan: trong sngXggParser co mot chuoi if-else so ten
+                # lop, ket thuc bang 'sngXggParser find type error'
+                # (0x47f346). Thu tu cac ten do chinh la bang NODE_TYPES
+                # duoi day. Doi chieu voi 17.744 node co ten lop ghi ro:
+                # 17.679 khop, 65 lech, khong node nao ra ngoai bang —
+                # 65 cho lech la nguoi thiet ke dat ten mot dang roi doi
+                # loai, ma loai moi la that.
+                ('type', t),
+                ('typeName', NODE_TYPES[t] if 0 <= t < len(NODE_TYPES)
+                 else 'type%d' % t),
                 ('cls', self.string(u(0x60), u(0x64))),
                 ('name', self.string(u(0x68), u(0x6C))),
                 ('res', self.string(u(0x70), u(0x74))),
