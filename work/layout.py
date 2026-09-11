@@ -29,7 +29,7 @@ from xgg import load, XggError
 
 DEFAULT_CONF = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'conf')
 
-KEEP = ('cls', 'name', 'res', 'x', 'y', 'scaleX', 'scaleY',
+KEEP = ('cls', 'name', 'tag', 'res', 'x', 'y', 'scaleX', 'scaleY',
         'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom', 'visible')
 
 

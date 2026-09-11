@@ -212,6 +212,14 @@ class Xgg(object):
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
                 ('rot', round(rot, 3)),
+                # +0xA4: tag so nguyen cua Cocos — thu ma Lua goi nhieu
+                # nhat (getChildByTag: 9529 lan). Tim ra bang cach doi
+                # chieu voi chinh ma Lua: gom moi '<ten toan cuc>:
+                # getChildByTag(n)' roi do xem truong nao chua du bo n
+                # do. 0xA4 an dut phan con lai (191 diem, ke sau 85).
+                # Vi du tu tay: trong lEquipUpgradeQualityMainUI thi
+                # CCLayer1 mang tag 1, CCLayer2 mang tag 2.
+                ('tag', struct.unpack_from('<i', self.data, a + 0xA4)[0]),
                 # +0xA1: co hien/an. SUY RA chu chua doc tu libgame.so, nhung
                 # khop voi moi node kiem duoc: cac hop thoai (clGameReviveDlg,
                 # clBattlePause, clGuickGameFinish), khung mach nuoc va nut
@@ -281,33 +289,35 @@ class Xgg(object):
     def tree(self):
         """Dung lai cay tu danh sach phang.
 
-        Moi ban ghi mang SO CON o +0xB4, va node duoc luu DUYET THEO TANG
-        (BFS): node i lay k[i] node ke tiep chua ai nhan lam con.
+        Moi ban ghi mang SO CON o +0xB4 va CHI SO CON DAU TIEN o +0xB8 (tinh
+        bang byte, chia 4 ra chi so node). Nen cay khong phai doan.
 
-        Da thu duyet truoc (preorder) — tong so con van khop nhung cay ra sai
-        han: lUILeftLayer, lUITopLayer, clGameReviveDlg thanh long nhau thay vi
-        anh em. Duyet theo tang moi ra cay Cocos2d that: clGameReviveDlg chua
-        Board + lMessageBox voi okButton/cancelButton, leftHeroInfoBox chua
-        icon1/2/3 moi cai 96x96.
+        Truoc day cho la node luu theo tang (BFS) roi lay k node ke tiep chua
+        ai nhan. Doan the ra sai: lAchieveTemplate (760x105) nuot mot node
+        840x520. Doc thang 0xB8 thi ra dung — lAchieveTemplate chua canget va
+        noget cung 760x105 (hai trang thai cua mot dong) va rewardList2 chua
+        reward1/2/3.
+
+        Kiem tren ca 284 bo cuc: khong node nao vuot bien, khong node nao co
+        hai cha. Doan thu tu thi khong the bao dam duoc hai dieu do.
 
         Toa do x,y la TUONG DOI VOI CHA (Cocos2d), khong phai toa do man hinh.
         """
         nds = self.nodes()
         G, offs = self.offsets['G'], self.node_offsets()
         kids = [struct.unpack_from('<I', self.data, G + o + 0xB4)[0] for o in offs]
+        first = [struct.unpack_from('<I', self.data, G + o + 0xB8)[0] // 4
+                 for o in offs]
         for nd, k in zip(nds, kids):
             nd['children'] = []
             nd['nKids'] = k
 
-        nxt = 0
         for i, nd in enumerate(nds):
-            if nxt <= i:
-                nxt = i + 1
-            for _ in range(nd['nKids']):
-                if nxt >= len(nds):
-                    raise XggError('node %d doi %d con, het node' % (i, nd['nKids']))
-                nd['children'].append(nds[nxt])
-                nxt += 1
+            a, b = first[i], first[i] + nd['nKids']
+            if b > len(nds):
+                raise XggError('node %d doi con %d..%d, chi co %d node'
+                               % (i, a, b, len(nds)))
+            nd['children'] = nds[a:b]
 
         seen = set()
         for nd in nds:
