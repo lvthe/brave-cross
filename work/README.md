@@ -646,3 +646,47 @@ python build_spec.py --assets vn/decrypted/assets --out server-spec-vn
 cd server-spec && python build_page.py && python build_page.py ../server-spec-vn
 cd .. && python diff_api.py server-spec server-spec-vn
 ```
+
+## Dịch ngược libgame.so — tìm cái tag
+
+Công cụ: `armdis.py` (dịch Thumb-2 bền, gặp dữ liệu thì nhảy qua),
+`xref.py` (tìm chuỗi và từ 4 byte), `findstr.py` (giải tham chiếu chuỗi kiểu
+PIC), `picmap.py` (bảng tham chiếu chéo toàn bộ `.text`, nhớ vào `picmap.pkl`).
+
+### Đã xác định được
+
+| Thứ | Địa chỉ / giá trị |
+|---|---|
+| `CCNode::getChildByTag` | `0x4adaa8` — duyệt mảng con ở `[this+0xB8]`, so `[con+0xC0]` |
+| Trường tag trong `CCNode` | `+0xC0` |
+| `CCNode::setTag` | `0x4acffa` (`str r1,[r0,#0xc0]; bx lr`) |
+| `CCNode::addChild(con,z,tag)` | `0x4ae494`, tag vào qua `r3` |
+| Bảng loại node `.xgg` | trong `sngXggParser`, kết thúc ở `0x47f346` |
+
+Bảng phương thức cho Lua nằm trong `.data`, mỗi mục 12 byte
+`{tên, giá trị, cờ}`; cờ `1` nghĩa là hàm ảo và giá trị là độ lệch trong
+bảng ảo. Các ô đó trỏ tới **lớp bọc Lua**, lớp bọc mới gọi hàm C++ thật:
+`getChildByTag` bọc ở `+0x248` → thật ở `+0xfc`; `addChild` bọc ở `+0x224`
+→ thật ở `+0xf0`/`+0xf4`/`+0xf8` tuỳ số tham số.
+
+### Kết luận: tag KHÔNG nằm trong .xgg
+
+Ba lối chứng minh độc lập, cùng một kết quả:
+
+1. Quét toàn bộ `.text` tìm lệnh ghi vào `[x+0xC0]`: 133 chỗ, không chỗ nào
+   thuộc vùng mã `.xgg`; phần lớn nằm trong openssl/json (trùng offset).
+2. Không có lời gọi nào tới `addChild(con, z, tag)` (`+0xf8`) từ vùng `.xgg`
+   — bộ nạp chỉ dùng bản 1 và 2 tham số.
+3. Bản ghi node = **phần chung 216 byte + phần riêng theo loại** (CCNode 216,
+   CCSprite 244, CCScale9Sprite 248, CCButton 260, CCLabelTTF 352). Quét hết
+   phần chung, mọi độ rộng: không trường nào chứa đủ bộ tag mà Lua đòi.
+
+Nên `tUIItem` trong `RefleshItem` **không phải** bản sao thuần của node
+`.xgg`. Tag phải do thứ dựng ra ô danh sách gán — nghi `G_CTableViewMgr::
+CreateTableViewCell`, chưa lần ra.
+
+### Cách duy nhất còn lại để biết chắc
+
+Chạy bản gốc rồi đọc tag thật. Game nạp Lua từ thư mục `sc/` nên chèn được
+một đoạn Lua tự viết để duyệt cây và in `node:getTag()`. Đó là sự thật trực
+tiếp, không phải suy luận.
