@@ -230,6 +230,7 @@ def main():
     ap.add_argument('--screens', type=int, default=3)
     ap.add_argument('--all', action='store_true')
     ap.add_argument('--list', action='store_true')
+    ap.add_argument('--match', default='', help='chi do man co ten chua chuoi nay')
     ap.add_argument('--out', default=str(HERE / 'tags_that.json'))
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
@@ -237,6 +238,8 @@ def main():
     if not ADB:
         raise SystemExit('khong thay adb')
     items = screens()
+    if a.match:
+        items = [x for x in items if a.match in x[0]]
     if a.list:
         for fn, names in items[:40]:
             print('%-44s %d node co ten' % (fn, len(names)))
