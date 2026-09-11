@@ -25,58 +25,106 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 LAYOUT = HERE.parent.parent / 'bravecross-game' / 'layout_ref'
 DO = HERE / 'tags_that.json'
-GAN = 0.51          # sai lech vi tri cho phep (px)
+GAN = 0.51          # khop khit: sai lech vi tri cho phep (px)
+NOI = 24.0          # khop gan dung, khi engine da doi node theo co anh that
 
 
 def ten(n):
     return n.get('name') or n.get('cls') or ''
 
 
-def tim_theo_ten(node, muon):
+def moi_ten(node, muon, ra):
+    """Mọi node mang tên này — bố cục có thể có nhiều node trùng tên."""
     if ten(node) == muon:
-        return node
+        ra.append(node)
     for c in node.get('children', []):
-        r = tim_theo_ten(c, muon)
-        if r is not None:
-            return r
-    return None
+        moi_ten(c, muon, ra)
+
+
+def chon_ung_vien(ung_vien, con_engine):
+    """Chọn node nào trong số trùng tên, bằng cách so vị trí các con.
+
+    Bố cục có node trùng tên thật — ví dụ `lAchieveTemplateTop` có hai bản,
+    một ở gốc và một lồng trong `lAchieveLayer`, với thứ tự con khác hẳn
+    nhau. Lấy bừa cái đầu tiên thì tag của bản này bị đổ sang bản kia, và
+    trong cùng một node lại có hai con cùng tag — `getChildByTag(7)` trả về
+    nil và dòng đầu tiên của danh sách đã hỏng.
+    """
+    if len(ung_vien) == 1:
+        return ung_vien[0]
+    tot, diem_tot = None, -1
+    for uv in ung_vien:
+        vi_tri = {(round(c['x'], 1), round(c['y'], 1))
+                  for c in uv.get('children', [])}
+        diem = sum(1 for o in con_engine
+                   if (round(o['x'], 1), round(o['y'], 1)) in vi_tri)
+        if diem > diem_tot:
+            tot, diem_tot = uv, diem
+    return tot
 
 
 def chon_con(cha, o, da_dung):
-    """Con nào của `cha` ứng với node engine báo ở vị trí o."""
-    ung = [c for c in cha.get('children', [])
-           if abs(c['x'] - o['x']) <= GAN and abs(c['y'] - o['y']) <= GAN]
-    if not ung:
+    """Con nào của `cha` ứng với node engine báo ở vị trí o.
+
+    Khớp trước bằng vị trí đúng khít, không được thì mới nới ra gần đúng.
+    Phải có bước nới: với sprite, engine nạp ảnh THẬT rồi dời node theo cỡ
+    ảnh mới, nên vị trí lệch vài px so với file — hai icon trạng thái của
+    `canget` file ghi @686.5 và @688 mà engine báo @681 và @674. Khít 0,5 px
+    thì trượt cả hai, và dòng đầu của danh sách hỏng ngay.
+    """
+    con = cha.get('children', [])
+    if not con:
         return None
-    # Uu tien cai chua bi gan, va cai khop ca kich thuoc.
-    chua = [c for c in ung if id(c) not in da_dung]
-    for bo in (chua, ung):
-        khop = [c for c in bo
+    chua = [c for c in con if id(c) not in da_dung]
+
+    def hop(bo, nguong):
+        gan = [c for c in bo
+               if abs(c['x'] - o['x']) <= nguong and abs(c['y'] - o['y']) <= nguong]
+        if not gan:
+            return None
+        # Cùng vị trí thì lấy cái khớp cả kích thước.
+        khop = [c for c in gan
                 if abs(c['w'] - o['w']) <= 1.0 and abs(c['h'] - o['h']) <= 1.0]
         if khop:
             return khop[0]
-    return chua[0] if chua else ung[0]
+        # Không thì lấy cái gần nhất.
+        return min(gan, key=lambda c: (c['x'] - o['x']) ** 2 + (c['y'] - o['y']) ** 2)
+
+    for nguong in (GAN, NOI):
+        for bo in (chua, con):
+            r = hop(bo, nguong)
+            if r is not None:
+                return r
+    return None
 
 
 def ghep_mot_man(doc, cay):
     """Trả về (số khớp, số không khớp). Gắn thẳng 'tag' vào node của doc."""
     goc = {}
-    for r in doc.get('roots', []):
-        pass
     da_dung = set()
+    da_giai = set()          # node bo cuc da duoc mot duong engine nhan
     khop = truot = 0
     # Sap theo do sau de cha luon duoc giai truoc con.
     for duong in sorted(cay, key=lambda d: d.count('/')):
         o = cay[duong]
         phan = duong.split('/')
         if len(phan) == 1:                       # node goc, tra theo ten
-            nut = None
+            ung_vien = []
             for r in doc.get('roots', []):
-                nut = tim_theo_ten(r, phan[0])
-                if nut is not None:
-                    break
-            if nut is not None:
-                goc[duong] = nut
+                moi_ten(r, phan[0], ung_vien)
+            if not ung_vien:
+                continue
+            con_engine = [cay[d] for d in cay
+                          if d.startswith(duong + '/')
+                          and d.count('/') == 1]
+            nut = chon_ung_vien(ung_vien, con_engine)
+            # Node nay da duoc mot duong khac nhan roi thi bo — hai duong
+            # engine cung tro ve mot node bo cuc se ghi de len nhau va sinh
+            # ra tag trung trong cung mot cha.
+            if nut is None or id(nut) in da_giai:
+                continue
+            da_giai.add(id(nut))
+            goc[duong] = nut
             continue
         cha = goc.get('/'.join(phan[:-1]))
         if cha is None:
@@ -88,8 +136,17 @@ def ghep_mot_man(doc, cay):
             continue
         con['tag'] = int(phan[-1])
         da_dung.add(id(con))
-        goc[duong] = con
         khop += 1
+        # Node nay da duoc mot duong khac nhan thi KHONG di tiep xuong con
+        # cua no theo duong nay. Cung mot node runtime thuong den qua hai
+        # duong — vi du `lAchieveTemplateTop` (theo ten) va `lAchieveLayer/2`
+        # (theo tag) — va neu ca hai cung phat tag cho con thi lan sau se
+        # vo phai nhung con chua dung, dat nham tag, roi sinh ra hai con
+        # cung tag trong mot cha.
+        if id(con) in da_giai:
+            continue
+        da_giai.add(id(con))
+        goc[duong] = con
     return khop, truot
 
 
