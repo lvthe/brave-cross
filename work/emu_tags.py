@@ -56,8 +56,7 @@ PKG = 'com.cmn.buatanew'
 REMOTE = '/data/data/com.cmn.buatanew/files/download'
 SC = HERE.parent.parent / 'bravecross-game' / 'sc'
 LAYOUT = HERE.parent.parent / 'bravecross-game' / 'layout_ref'
-TAG_MAX = 30
-DEPTH_MAX = 4
+DEPTH_MAX = 8
 
 
 def adb_path():
@@ -112,9 +111,13 @@ do
 		if ok2 and c then x, y = c, (d or 0) end
 		return string.format("%%g|%%g|%%g|%%g", w, h, x, y)
 	end
+	-- Chi hoi DUNG nhung tag ma ma goc that su dung, khong quet dai. Ban goc
+	-- co 135 gia tri tag khac nhau, phu 100%% so luot getChildByTag — trong
+	-- khi quet dai 0..60 chi phu 92%% ma van ton 61 luot hoi moi node.
+	local TAGS = %(tags)s
 	local function quet(man, duong, node, sau)
 		if node == nil or sau > %(depth)d then return end
-		for tg = -1, %(tagmax)d do
+		for _, tg in ipairs(TAGS) do
 			local ok, c = pcall(function() return node:getChildByTag(tg) end)
 			if ok and c ~= nil then
 				local d = duong .. "/" .. tg
@@ -140,6 +143,23 @@ do
 	print("DOXONG")
 end
 '''
+
+
+def cac_tag():
+    """Moi gia tri tag ma ma goc that su hoi, lay tu chinh ma Lua.
+
+    Do duoc: 135 gia tri khac nhau, phu 100% so luot goi getChildByTag. Hoi
+    dung chung thi vua phu kin vua khoi ton luot hoi cho nhung so khong ai
+    dung — tag di tu 0 den 63535 nhung phan lon la thua.
+    """
+    import collections
+    pat = re.compile(r'getChildByTag(?:InAllChildren)?\s*\(\s*(\d+)\s*\)')
+    c = collections.Counter()
+    for f in SC.rglob('*.lua'):
+        c.update(int(m) for m in pat.findall(f.read_text('utf-8', 'ignore')))
+    # Them 0..16 cho day: day la vung dac, va co node mang tag ma ma goc
+    # khong hoi truc tiep (no hoi qua bien cuc bo).
+    return sorted(set(c) | set(range(0, 17)))
 
 
 def lua_list(items):
@@ -187,8 +207,9 @@ def build_overrides(items, out_dir):
         if '\n' + tim in g:
             g = g.replace('\n' + tim,
                           '\nprint("CHEN|truoc %s")\n' % tim[:34] + tim, 1)
+    tags = cac_tag()
     probe = PROBE_HEAD % {'list': lua_list(items), 'depth': DEPTH_MAX,
-                          'tagmax': TAG_MAX}
+                          'tags': '{' + ','.join(str(t) for t in tags) + '}'}
     # PHAI neo vao cho GOI, khong phai cho DINH NGHIA: game.lua co ca
     # 'function sngHttMgr:createInstance()' (dong 163) lan loi goi (dong 488).
     # Neo nham thi probe roi vao giua mot dinh nghia ham, game.lua hong cu
