@@ -275,6 +275,44 @@ class Xgg(object):
     # la layer va label.
     IMG_FIELD = {244: 0xEC, 260: 0xF4, 256: 0xEC, 324: 0xF0}
 
+    def _anh_theo_co(self, nd):
+        """Khop anh ROI (section D) theo kich thuoc node.
+
+        Nhieu node khong ghi ten anh trong ban ghi — nhat la nhung tam nen to.
+        Nhung section D liet ke ANH ROI cua chinh man do kem kich thuoc, va
+        danh sach nay rat ngan (man thanh tuu: 3 anh). Khop dung mot ban thi
+        gan nhu chac chan: tam nen 946x567 cua man thanh tuu ra dung
+        ../png/background/v6/ui_background003.png.
+
+        Chi nhan khi khop DUY NHAT. Trung kich thuoc (man thanh tuu co hai
+        anh cung 407x127) thi bo, vi doan bua se gan nham.
+        """
+        w, h = nd.get('w', 0), nd.get('h', 0)
+        if w <= 0 or h <= 0:
+            return '', ''
+        try:
+            ds = self.records('D')
+        except XggError:
+            return '', ''
+        khop = [r for r in ds
+                if abs(r.get('x', -1) - w) < 0.5 and abs(r.get('y', -1) - h) < 0.5]
+        if len(khop) == 1:
+            return khop[0]['name'], 'size'
+        # Roi sang bang SPRITE cua man (section C). Cung chi nhan khi khop
+        # duy nhat: TitleBoard 453x86 cua man thanh tuu ra dung
+        # v6/ui_background011.png. Nhieu tam nen la CCScale9Sprite, ma loai
+        # nay hau nhu khong ghi ten anh trong ban ghi (13/2599).
+        try:
+            cs = self.records('C')
+        except XggError:
+            return '', ''
+        khop = [r for r in cs
+                if r.get('name')
+                and abs(r.get('x', -1) - w) < 0.5 and abs(r.get('y', -1) - h) < 0.5]
+        if len(khop) == 1:
+            return khop[0]['name'], 'size'
+        return '', ''
+
     def node_image(self, i):
         """(ten anh, do tin cay) cua node thu i.
 
@@ -290,11 +328,11 @@ class Xgg(object):
         nd = nds[i]
         off = self.IMG_FIELD.get(nd['bytes'])
         if off is None or off + 8 > nd['bytes']:
-            return '', ''
+            return self._anh_theo_co(nd)
         a = self.offsets['G'] + self.node_offsets()[i]
         so, sl = struct.unpack_from('<2I', self.data, a + off)
         if not sl or sl > 200 or so + sl > self.size - self.offsets['H']:
-            return '', ''
+            return self._anh_theo_co(nd)
         try:
             name = self.data[self.offsets['H'] + so:
                              self.offsets['H'] + so + sl].decode('utf-8')
