@@ -45,3 +45,6 @@ __pycache__/
 
 # Bản trung gian cũ, đã sai (488 API) — server-spec-vn/server_api.json thay thế
 work/vn_api.json
+
+# Bảng tham chiếu chéo sinh từ libgame.so — sinh lại bằng: python work/picmap.py
+work/picmap.pkl
