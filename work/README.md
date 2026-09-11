@@ -690,3 +690,64 @@ CreateTableViewCell`, chưa lần ra.
 Chạy bản gốc rồi đọc tag thật. Game nạp Lua từ thư mục `sc/` nên chèn được
 một đoạn Lua tự viết để duyệt cây và in `node:getTag()`. Đó là sự thật trực
 tiếp, không phải suy luận.
+
+### Chạy bản gốc trong máy ảo — và tag thật
+
+Dựng được máy ảo chạy bản gốc, và **đo được tag thật từ chính engine**.
+
+**Máy ảo.** Máy ảo Android đời mới (37.x) đã bỏ hẳn ảnh ARM trên nền
+Windows/Intel — cả `armeabi-v7a` lẫn `arm64-v8a` đều báo "not supported".
+Cửa duy nhất là ảnh **x86_64 API 30** (`system-images;android-30;google_apis;
+x86_64`): chỉ ảnh đó khai báo `armeabi-v7a` trong `ro.product.cpu.abilist`,
+tức có `libndk_translation`. Ảnh API 33 trở lên KHÔNG có.
+
+**Chèn mã không cần đóng gói lại.** Game in ra thứ tự tìm tệp:
+
+```
+search = /storage/emulated/0/assets/          <- ngoài, tìm TRƯỚC
+search = /data/user/0/com.cmn.buatanew/files/download/
+search = /data/user/0/com.cmn.buatanew/files/assets/
+search = assets/                               <- trong APK
+```
+
+Nên chỉ cần `adb push` file Lua vào `/storage/emulated/0/assets/sc/` là đè
+được bản trong APK. Không sửa APK, không ký lại. (Thử gỡ thư viện khỏi APK
+thì hỏng: `libgame.so` phụ thuộc cứng vào `libCrasheyeNDK.so` và
+`libBugly.so`.)
+
+**Ba chỗ phải vá** vì bản dịch ARM gục ở mỗi biên thư viện gốc:
+`UMEvent:Init()` (Umeng), `loadBackgroundBank`/`loadEffectBank` (FMOD), và
+dừng trước `sngHttMgr:createInstance()` (HTTP). Cũng KHÔNG được gọi
+`getChildrenCount` — tra khoá đó trên userdata làm bản dịch chết ngay.
+
+Bật lại log bằng cách hạ `KDebug.OnlineLevel`; game vốn rải sẵn mốc
+"game.lua 1", "game.lua 2"... nên biết ngay nó chết ở đâu.
+
+**Kết quả.** Nạp `UI_AchievementTask_960_640.xgg` rồi hỏi
+`getChildByTag` từng số, `lAchieveTemplate` trả về:
+
+| tag | node | mã gốc dùng làm gì |
+|---|---|---|
+| 0 | `label` 60x30 | |
+| 1 | `name` 200x40 | tên thành tựu |
+| 2 | `CCLabelTTF` 330x40 | dòng mô tả |
+| 4 | `canget` 760x105 | nút nhận |
+| 6 | `rewardList2` 420x50 | khung phần thưởng |
+| 7, 8 | hai `CCSprite` 76x77 | ảnh phần thưởng |
+| 10 | `noget` 760x105 | khung trạng thái |
+
+Khớp đúng từng cái với những gì `CUIAchieve.lua` mong đợi.
+
+**Và nó đóng lại câu hỏi tag.** Có tag thật rồi thì dò ngược được: không
+trường nào trong bản ghi node khớp. Chặt nhất là ba nhãn cùng loại, cùng cỡ
+bản ghi 352 byte, tag thật 2/0/1 — quét cả 352 byte, mọi độ rộng: **không
+một offset nào** cho ra 2/0/1. Tag do engine sinh lúc nạp, không nằm trong
+file.
+
+Thứ tự trong file cũng không suy ra được: `canget` ở vị trí 5 mang tag 4,
+`noget` ở vị trí 8 mang tag 10, `rewardList2` ở vị trí 6 lại đúng tag 6.
+
+**Nên hướng đi là ĐO chứ không suy.** `emu_tags.py` sinh mã chèn, đẩy sang
+máy ảo, chạy, rồi gom `getChildByTag` của mọi node thành bảng dữ liệu. Bộ
+này chạy được cho một màn; quét cả 287 màn thì máy ảo còn hay gục giữa
+chừng (bản dịch ARM chết ở chỗ khác nhau mỗi lần), cần chia mẻ và chạy lại.
