@@ -34,10 +34,18 @@ DEFAULT_ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
 
 
 def find_pkm(assets):
-    """{ten khong duoi: duong dan}. Trung ten thi giu cai gap dau tien."""
+    """{duong dan tuong doi khong duoi: duong dan that}.
+
+    PHAI giu ca duong dan, khong duoc rut ve ten tep. Co 26 cho trung ten ma
+    khac anh — vi du `ui_background176` co hai ban: `png/book/` (152x155) va
+    `sngSplitData/v6/` (76x77). Bo cuc ghi ro la ban nao (`v6/...`), nen rut
+    ve ten tep roi giu cai gap truoc la lay nham anh: o thanh tuu phinh gap
+    doi, tran ra ngoai dong va de len ca nhan ten ben canh.
+    """
     out = collections.OrderedDict()
     for p in sorted(glob.glob(os.path.join(assets, '**', '*.pkm'), recursive=True)):
-        out.setdefault(os.path.basename(p)[:-4], p)
+        rel = os.path.relpath(p, assets).replace('\\', '/')[:-4]
+        out[rel] = p
     return out
 
 
@@ -122,8 +130,19 @@ def main():
     index = collections.OrderedDict()
     ok = fail = copied = reused = 0
     fails = []
+
+    # Ten tep PNG: giu ten TRAN khi khong trung, de chay lai van dung duoc
+    # anh da giai lan truoc (6.248 anh, giai lai rat lau). Chi cho nao trung
+    # ten moi phai dat theo ca duong dan.
+    dem_ten = collections.Counter(k.rsplit('/', 1)[-1] for k in pkm)
+
+    def ten_png(khoa):
+        base = khoa.rsplit('/', 1)[-1]
+        if dem_ten[base] == 1:
+            return base + '.png'
+        return khoa.replace('/', '_') + '.png'
     for i, (name, path) in enumerate(pkm.items(), 1):
-        fn = name.replace('/', '_') + '.png'
+        fn = ten_png(name)
         dst = os.path.join(a.out, fn)
         # Chay lai duoc nhieu lan: anh da giai va moi hon nguon thi dung lai,
         # chi doc kich thuoc tu header PNG. Nho vay --only khong lam mat chi
@@ -155,12 +174,25 @@ def main():
         if i % 400 == 0:
             print('  ... %d/%d' % (i, len(pkm)), flush=True)
 
+    # Bi danh: ten tran -> khoa day du, CHI khi ten do khong trung. Bo cuc
+    # phan lon ghi ten tran, nen tra cuu nhanh; con cho nao ghi ca duong dan
+    # ("v6/ui_background176.png") thi UiFrames doi chieu duoi khoa.
+    alias = collections.OrderedDict()
+    for k in index:
+        base = k.rsplit('/', 1)[-1]
+        if dem_ten[base] == 1:
+            alias[base] = k
+
     with open(os.path.join(a.out, 'index.json'), 'w', encoding='utf-8') as fp:
         json.dump(collections.OrderedDict([
-            ('note', 'ten -> PNG. Tra cuu y het spriteFrameByName cua ban goc.'),
+            ('note', 'khoa = duong dan tuong doi khong duoi. '
+                     '"alias" la ten tran, chi co khi khong trung ten.'),
             ('count', len(index)),
             ('frames', index),
+            ('alias', alias),
         ]), fp, ensure_ascii=False, indent=1)
+    print('%d ten trung phai dat theo ca duong dan'
+          % sum(1 for b, n in dem_ten.items() if n > 1))
 
     print('xong: %d anh -> %s' % (ok, a.out))
     if reused:
