@@ -144,10 +144,29 @@ function CallLocal(strObj, strFunc, szArgs)
 	Mock.calls[#Mock.calls + 1] = { obj = strObj, func = strFunc, args = args }
 	local obj = (strObj ~= nil and strObj ~= "") and _G[strObj] or nil
 	local fn = obj and obj[strFunc] or _G[strFunc]
+	-- table.unpack chi co tu Lua 5.2; game chay LuaJIT (5.1) chi co unpack.
+	local up = table.unpack or unpack
 	if type(fn) == "function" then
-		if obj then fn(obj, table.unpack(args)) else fn(table.unpack(args)) end
+		if obj then fn(obj, up(args)) else fn(up(args)) end
 	end
 	return ""
+end
+
+--[[ ConfigManager giả, chỉ đủ cho bootstrap đọc giá trị khởi tạo. Số CHÉP
+	ĐÚNG từ KDBGameCommonConfig của bản gốc (GameUserBaseInfoReset,
+	GameUserHeroReset — rút bớt trường), để test giữ đúng các số đó. ]]
+Mock.config = {
+	GameUserBaseInfoReset = {
+		Level = 1, Gold = 50000, Diamond = 0, LeaderShip = 6,
+		FatigueValue = 120, HeroID = 25, IsGetLoginReward = false,
+	},
+	GameUserHeroReset = {
+		["25"] = { UserHeroID = 25, HeroLevel = 1, IsFighting = true, MaxLevel = 40 },
+	},
+}
+G_ConfigManager = {}
+function G_ConfigManager:GetCommonConfigWithName(strName)
+	return Mock.config[strName]
 end
 
 S_CCSchedule = {}

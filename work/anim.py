@@ -39,7 +39,25 @@ Khung, 80 byte, o goc header[0x5c]:
     +0x08  float x, float y             cung vi tri, da lam tron
     +0x10  float rot, float rot         goc xoay (do), lap lai
     +0x18  float sx, float sy           ti le
-    +0x20..+0x50                        0 tren toan bo mau da xem
+    +0x2C  int32  d    CHI SO ANH dang hien: vi tri trong danh sach sprite cua
+                       xuong (header 0x4c); -1 = AN
+    +0x40  uint32 dur  so khung keyframe nay GIU truoc khi sang keyframe sau
+    +0x20, +0x24, +0x28, +0x30..+0x3C, +0x44..+0x4C   chua giai (+0x28 hang
+                       so theo xuong; +0x44..+0x4C co ve la bien doi mau)
+
+Truoc day ghi "+0x20..+0x50 luon 0 tren mau da xem" — SAI: mau cu toan nhan
+vat thuong. Do tren 418 file / 641.538 keyframe cua ca hai ban:
+
+  d    nam trong [-1, so sprite cua xuong - 1] o 641.525 keyframe; so sprite
+       lay tu bang RIENG (header 0x4c), khong phai tu khung. -1 gap 23.840 lan.
+       13 cho lech deu o BingYing.xml va XSJiYouHeTiJi.xml (gia tri rac: 100,
+       so thuc) — hai file do bo cuc khung khac, chua giai.
+  dur  tren moi xuong >= 2 keyframe, tong dur = do dai dong tac o 95.416 /
+       95.431 xuong; 15 cho lech deu o BingYing.xml.
+
+Nghia doc duoc tren Player000M03W: eff010 cua Fight la (-1,8) (0,3) (0,1)
+(-1,2) — an 8 khung, hien anh 0 bon khung, an 2; eff010 cua YinHuo_Standby
+chay anh 2 -> 3 -> 4 — hoat hinh doi anh tung khung.
 
 Muc con cua BO PHAN, 16 byte, o goc header[0x48]:
 
@@ -158,6 +176,8 @@ class Anim(object):
                 ('x', round(v[0], 4)), ('y', round(v[1], 4)),
                 ('rot', round(v[4], 4)),
                 ('sx', round(v[6], 4)), ('sy', round(v[7], 4)),
+                ('d', struct.unpack_from('<i', self.d, q + 0x2C)[0]),
+                ('dur', struct.unpack_from('<I', self.d, q + 0x40)[0]),
             ]))
         return out
 

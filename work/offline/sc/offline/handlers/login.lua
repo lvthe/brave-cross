@@ -36,13 +36,18 @@ local R = OfflineRouter
 	ClientLogin:OnServerLogin(tData) chỉ đọc tData.fun rồi phát sự kiện cùng
 	tên (sc/user/Logical/ClientLogin.lua:14), nên tData phải mang đúng tên sự
 	kiện trong EventManagerLogicEvent.Login. ]]
+--
+-- Tên trường lấy từ chỗ client ĐỌC: tData.uid và tData.session viết thường
+-- (CUILogin2.lua:3208 và :3211, CUIGameRPCManager.lua:255 và :259). uid thành
+-- LoginLogicUid, rồi __sngLoginGame đưa nó vào SetRPCUid — là số mà
+-- g_CUIGameRPCManager:GetUid() trả về, và CUIMain.lua:1336 in ra. Bản trước
+-- gửi Uid / UserName / SessionId viết hoa, tên KHÔNG chỗ nào đọc.
 local function loginOK(ctx, strEvent)
 	ctx:call("G_Login", "OnServerLogin", {
 		err = 0,
 		fun = strEvent,
-		Uid = OfflineBootstrap.UID,
-		UserName = OfflineBootstrap.NAME,
-		SessionId = "offline-session",
+		uid = OfflineBootstrap.UID,
+		session = "offline-session",
 	})
 end
 
@@ -56,18 +61,24 @@ R:onAll({
 	--[[ Danh sách máy chủ. Chỉ có một "máy chủ" và nó nằm ngay trong máy;
 		địa chỉ là giả, StartRPC đã bị chặn nên không ai quay số cả. ]]
 	ClientGetRecomendServers = function(ctx)
+		-- Client đọc danh sách ở RecomendList (CUILoginServerList.lua:490);
+		-- 'serverlist' giữ lại vì mã test của chính bản gốc đọc nó
+		-- (test/TestLogin.lua). Mỗi mục là tServer của CUILogin:setSelectServer
+		-- (CUILogin2.lua:1402): id, ip, name, state. state = 1 là
+		-- SERVER_STATE.IDLE "流畅" (user_global.lua:25) — __sngLoginGame chỉ chặn
+		-- 0 (bảo trì) và 4 (sắp mở).
+		local tServer = {
+			id = 1,
+			ip = "127.0.0.1:1",
+			name = "Offline",
+			state = 1,
+			IsRecommend = 1,
+		}
 		ctx:call("G_Login", "OnServerLogin", {
 			err = 0,
 			fun = "OnClientGetRecomendServers",
-			serverlist = {
-				{
-					id = 1,
-					ip = "127.0.0.1:1",
-					name = "Offline",
-					state = 1,
-					IsRecommend = 1,
-				},
-			},
+			RecomendList = { tServer },
+			serverlist = { tServer },
 		})
 	end,
 })
@@ -99,6 +110,17 @@ local function serverConfig()
 	}
 end
 
+--[[ Giờ server. ClientGameWorld:EnterGame gọi cái này TRƯỚC ClientEnterGame
+	(ClientGameWorld.lua:259); không có thì GetServerTime() lấy mốc 0.
+
+	Chỉ gửi giờ, KHÔNG gửi múi giờ: client chỉ dùng iTimeZone qua
+	os.dateSetServerTimeZone — phần mở rộng của engine gốc (ClientGameWorld
+	.lua:223) — và không có chỗ nào khác ghi múi giờ của server VN, nên không
+	có con số nào để gửi mà không bịa. ]]
+R:on("ClientUpdateServerTimeEx", function(ctx)
+	ctx:call("G_GameWorld", "OnUpdateServerTimeEx", os.time())
+end)
+
 R:on("ClientEnterGame", function(ctx)
 	local bNew = OfflineBootstrap:ensure()
 	local tUserData = OfflineStore:all()
@@ -113,10 +135,24 @@ end)
 
 R:on("ClientCreateCharacter", function(ctx, szName)
 	if szName and szName ~= "" then
-		OfflineStore:set("GameUserBaseInfo", "UserName", szName)
+		-- Client đọc tên ở CharacterName (UserLogicDataManager.lua:209).
+		OfflineStore:set("GameUserBaseInfo", "CharacterName", szName)
 		OfflineStore:save()
 	end
 	ctx:reply({ err = 0 })      -- -> OnCreateCharacter
+end)
+
+--[[ Danh sách hoạt động — bước cuối của chuỗi vào game.
+
+	CUILogin:sngEnterGame -> G_ActivityLogic:CallGetActivityList -> đây. Hàm
+	client nhận nó đặt dữ liệu rồi gọi g_CSceneManager:RepaleceScene("Main")
+	(ClientActivitiesLogic.lua:99-104): đây là cửa vào cảnh chính.
+
+	Không có server thì không có hoạt động nào đang chạy: hai bảng rỗng. Phải
+	chỉ tên hàm tay — client viết sai chính tả 'OnGetAcvitityList', nên
+	cách dò tên của ctx:reply không ra. ]]
+R:on("ClientGetActivityList", function(ctx)
+	ctx:call("G_ActivityLogic", "OnGetAcvitityList", {}, {})
 end)
 
 ---------------------------------------------------------------- nuốt lặng lẽ

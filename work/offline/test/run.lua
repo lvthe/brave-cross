@@ -64,6 +64,9 @@ check(G_Login.tLast ~= nil, "OnServerLogin duoc goi")
 check(G_Login.tLast and G_Login.tLast.err == 0, "err = 0")
 check(G_Login.tLast and G_Login.tLast.fun == "OnClientLogin",
       "dinh tuyen bang truong fun", G_Login.tLast and G_Login.tLast.fun)
+-- Client doc tData.uid / tData.session viet thuong (CUILogin2.lua:3208, :3211).
+check(G_Login.tLast and G_Login.tLast.uid == OfflineBootstrap.UID,
+      "phan hoi dang nhap mang uid (viet thuong)", G_Login.tLast and G_Login.tLast.uid)
 
 print("\n=== 2. danh sach may chu ===")
 Mock:reset()
@@ -72,6 +75,10 @@ Mock:tick(1)
 local sl = G_Login.tLast and G_Login.tLast.serverlist
 check(sl ~= nil and #sl == 1, "tra ve 1 may chu")
 check(sl and sl[1].name == "Offline", "ten may chu", sl and sl[1].name)
+-- Client doc danh sach o RecomendList (CUILoginServerList.lua:490).
+local rl = G_Login.tLast and G_Login.tLast.RecomendList
+check(rl ~= nil and #rl == 1 and rl[1].state == 1,
+      "RecomendList co 1 may chu, trang thai IDLE (1)")
 
 print("\n=== 3. ket noi + bat tay + vao game ===")
 Mock:reset()
@@ -91,7 +98,19 @@ local ud = G_GameWorld.tUserData
 check(type(ud) == "table", "co khoi userData")
 check(ud and ud.GameUserBaseInfo ~= nil, "co bang GameUserBaseInfo")
 check(ud and ud.GameUserBaseInfo and ud.GameUserBaseInfo.Level == 1, "Level = 1")
-check(ud and ud.GameUserBaseInfo and ud.GameUserBaseInfo.Gold == 50000, "Gold = 50000")
+local bi = ud and ud.GameUserBaseInfo or {}
+check(bi.Gold == 50000, "Gold = 50000 (GameUserBaseInfoReset)", bi.Gold)
+-- Hai so ban truoc tu dat (5000 va 10); cau hinh goc ghi 0 va 6.
+check(bi.Diamond == 0, "Diamond lay tu cau hinh goc, khong tu dat", bi.Diamond)
+check(bi.LeaderShip == 6, "LeaderShip lay tu cau hinh goc", bi.LeaderShip)
+check(bi.Uid == OfflineBootstrap.UID, "danh tinh do lop offline cap", bi.Uid)
+-- Client doc ten o CharacterName; thieu thi CUILogin:OnServerEnterGame dung.
+check(bi.CharacterName == OfflineBootstrap.NAME, "ten nhan vat o truong CharacterName",
+      bi.CharacterName)
+local h = ud and ud.GameUserHero and ud.GameUserHero["25"]
+check(h ~= nil and h.UserHeroID == 25, "tuong khoi dau tu GameUserHeroReset")
+check(ud and ud.GameUserMail and next(ud.GameUserMail) == nil,
+      "bang khong co muc Reset thi de rong, khong bia")
 check(ud and ud.GameUserSessionData ~= nil, "co bang GameUserSessionData")
 
 local nTables = 0
@@ -183,6 +202,24 @@ for i = nBefore + 1, #Mock.logs do
 	if Mock.logs[i]:find("khong tim thay handler") then bWarn = true end
 end
 check(bWarn, "khong tim duoc handler nao thi phai keu, khong duoc im")
+
+print("\n=== 10. gia tri khoi tao la BAN CHEP cua cau hinh ===")
+-- Muc 4 da sua Gold trong kho thanh 12000; cau hinh goc phai con nguyen.
+check(Mock.config.GameUserBaseInfoReset.Gold == 50000,
+      "sua kho khong sua lay cau hinh goc", Mock.config.GameUserBaseInfoReset.Gold)
+
+print("\n=== 11. danh sach hoat dong -> cua vao canh chinh ===")
+G_ActivityLogic = {}
+function G_ActivityLogic:OnGetAcvitityList(tState, tConfig)
+	self.tGot = { tState, tConfig }
+end
+Mock:reset()
+CallServer(5, "G_ActivityLogic", "ClientGetActivityList")
+Mock:tick(1)
+local ga = G_ActivityLogic.tGot
+check(ga ~= nil, "OnGetAcvitityList (ten sai chinh ta cua ban goc) duoc goi")
+check(ga and type(ga[1]) == "table" and type(ga[2]) == "table",
+      "hai danh sach rong: khong co may chu thi khong co hoat dong")
 
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

@@ -233,6 +233,23 @@ class Xgg(object):
                 ('cls', self.string(u(0x60), u(0x64))),
                 ('name', self.string(u(0x68), u(0x6C))),
                 ('res', self.string(u(0x70), u(0x74))),
+                # +0x0C / +0x14: TEN CHAM va TEN DOI TUONG NHAN CHAM — hai
+                # tham so ma engine dua cho setLuaTouchName va
+                # setCallbackLuaObject khi nap bo cuc. Engine goi
+                # <doi tuong>:onTouchEnd_<ten cham>(node, bTrongO) (chuoi
+                # 'onTouchEnd_%s' o 0x7b10fd trong libgame.so).
+                #
+                # Do chu khong doan: tren UI_AchievementTask_960_640 ca ba
+                # nut 'canget' deu tro +0x0C vao 'OnAhchieveButtonClick' va
+                # +0x14 vao 'g_CUIAchieve', dung cap ham xu ly
+                # CUIAchieve:onTouchEnd_OnAhchieveButtonClick (CUIAchieve.lua
+                # d.791). Tren ca 296 file doc duoc: 2.005 node co ten cham,
+                # 1.204 cap khac nhau, 1.021 cap co ham xu ly dung lop cua
+                # doi tuong. Phan con lai la lop dat ten G_ viet hoa, doi
+                # tuong rong (gan luc chay bang setCallbackLuaObject), hoac
+                # ten mac dinh cua trinh sua ('CCScrollLayer1') khong ai bat.
+                ('touch', self.string(u(0x0C), u(0x10))),
+                ('touchObj', self.string(u(0x14), u(0x18))),
                 ('x', round(x, 3)), ('y', round(y, 3)),
                 ('scaleX', round(sx, 4)), ('scaleY', round(sy, 4)),
                 ('rot', round(rot, 3)),
@@ -274,6 +291,18 @@ class Xgg(object):
                 ('visible', bool(self.data[a + 0xA1])),
                 ('anchorX', round(ax, 4)), ('anchorY', round(ay, 4)),
                 ('w', round(w, 3)), ('h', round(h, 3)),
+                # +0x30 / +0x34: HE SO PARALLAX x / y. Con cua mot
+                # CCParallaxNode (g_BattleFieldLayer cua Game_UI_960_640) troi
+                # theo camera nhan he so nay. Do tren 18 file BattleField_*:
+                # lop nen gb<tang>_<o> ra 1,4 (gb0, tien canh) / 1,0 (gb1, mat
+                # dat) roi giam dan theo tang, MOI o cua mot tang cung mot so;
+                # g_BattleField (noi quan dung) luon 1,0; troi
+                # (CCLayerGradientEx) 0,001 — dung yen, khop voi viec no chi
+                # rong 2000. Truc y luon 1,0. Man giao dien: 1,0 o gan het node
+                # (Game_UI_Control_Panel 629/629), rieng thanh pho cua UI_Main
+                # co 0,05 / 0,75 / 1,2.
+                ('parallax', [round(v, 4) for v in
+                              struct.unpack_from('<2f', self.data, a + 0x30)]),
                 ('bytes', end - a),
             ]))
             # +0xE6: MAU cua CCLayerColorRoundRect, bon byte R,G,B,A.
@@ -300,6 +329,53 @@ class Xgg(object):
                 out[-1]['color'] = [self.data[a + 0xE6], self.data[a + 0xE7],
                                     self.data[a + 0xE8]]
                 out[-1]['opacity'] = self.data[a + 0xE9]
+            # DAI CHUYEN MAU cua CCLayerGradientEx (troi cua canh Main va cac
+            # chien truong). Ban ghi LUON dai 312 byte, mang co dinh 7 o:
+            #   +0xF4  uint32  so diem mau dang dung, n (0..7)
+            #   +0xF8  7 x (R,G,B)          +0x110  7 x A
+            #   +0x118 7 x float vi tri     +0x134  float 0,5 (chua ro)
+            # Do tren ca 18 node cua moi file: n tu 0 den 7, n vi tri dau luon
+            # nam trong 0..1 va giam dan, float cuoi luon 0,5. Mau dau luon la
+            # mau TROI (xanh dam, hay tim o canh dem) va nam o vi tri CAO nhat,
+            # nen vi tri tinh tu DUOI len — dung chieu truc y cua Cocos. Chieu
+            # doc la SUY tu mau, khong doc duoc tu engine.
+            if out[-1]['typeName'] == 'CCLayerGradientEx' and end - a >= 0x138:
+                n_mau = struct.unpack_from('<I', self.data, a + 0xF4)[0]
+                if 0 < n_mau <= 7:
+                    vi_tri = struct.unpack_from('<7f', self.data, a + 0x118)
+                    out[-1]['gradient'] = [
+                        {'rgb': list(self.data[a + 0xF8 + 3 * k: a + 0xFB + 3 * k]),
+                         'a': self.data[a + 0x110 + k],
+                         'pos': round(vi_tri[k], 4)}
+                        for k in range(n_mau)]
+            # CHU cua nhan (CCLabelTTF): cap (str_off, str_len) o +0x138.
+            # '#Khoa' la khoa tra bang chu (text_<ngon ngu>.xgg), khong co '#'
+            # la chu viet thang. +0x130 la font ('#FONT_TTF').
+            # Do tren moi file: 8.968 CCLabelTTF; 4.253 co khoa '#', 4.237 cai
+            # o dung +0x138 (vai chuc cai o +0x148 / +0x158 la truong phu), va
+            # 4.228/4.253 khoa co trong bang chu tieng Viet. Chu thang cung o
+            # +0x138: '99999999', 'TEST'... Truoc day truong nay khong ai doc,
+            # nen moi nhan tinh tren moi man deu trong chu — vd bien nha cua
+            # canh Main ('#MainUI_Unlock_Arena').
+            if out[-1]['typeName'] == 'CCLabelTTF' and end - a >= 0x140:
+                chu = self.string(u(0x138), u(0x13C))
+                if chu and not chu.startswith('#FONT'):
+                    out[-1]['text'] = chu
+            # CAN CHU cua nhan: +0x100 ngang, +0x104 doc — thu tu enum cua
+            # Cocos (CCTextAlignment Left/Center/Right = 0/1/2,
+            # CCVerticalTextAlignment Top/Center/Bottom = 0/1/2). Do tren 8.669
+            # ban ghi 352 byte: ngang {1: 5.042, 0: 3.293, 2: 334}, doc
+            # {1: 8.214, 0: 270, 2: 185}. Doi chieu bang chu: nhom 0 la 'HP:',
+            # 'x5899', ten nguoi choi (dau dong); nhom 1 la chu tren nut
+            # ('Tiep Tuc', 'Can Quet'); nhom 2 la chu dung truoc con so ('Gia',
+            # 'Lv chien dich: '). Thieu truong nay thi Godot can trai trong o
+            # rong 200 px ma Cocos can giua — chu lech, sat mep thi bi cat.
+            if out[-1]['typeName'] == 'CCLabelTTF' and end - a == 352:
+                h_can = struct.unpack_from('<I', self.data, a + 0x100)[0]
+                v_can = struct.unpack_from('<I', self.data, a + 0x104)[0]
+                if h_can <= 2 and v_can <= 2:
+                    out[-1]['alignH'] = h_can
+                    out[-1]['alignV'] = v_can
         # Nho lai: tree() va node_image() deu dua tren CHINH cac dict nay, neu
         # dung lai moi lan mot danh sach moi thi khong the gan them truong.
         self._nodes = out

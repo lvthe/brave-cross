@@ -18,6 +18,10 @@ require("offline.net")
 
 -- các nhóm handler; thêm file mới thì require thêm ở đây
 require("offline.handlers.login")
+require("offline.handlers.chapter")
+require("offline.handlers.achieve")
+require("offline.handlers.statewar")
+require("offline.handlers.mysterious")
 
 Offline = {}
 Offline.VERSION = "0.1"

@@ -1,0 +1,93 @@
+{
+ "ghi_chu": [
+  "TAG SUY RA bang doi chieu, KHONG phai tag do tu may ao (tags_that.json).",
+  "Dung khi may ao khong do toi duoc: 40 con cua lMainToolbarRightTop khong co duong nao trong tags_that.json.",
+  "Ba nguon doc lap: (ma) nhan chu thich '-- <tinh nang> begin' dung ngay tren getChildByTag(n) trong CUIMainTopTool:initUI,",
+  "va nhan cua iosApproveHelper:ShieldTopBarEntry; (cau-hinh) ten pinyin cua tung tag trong GameMainTopConfig",
+  "(KDBGameCommonConfig); (nut) ten lop cua nut con trong .xgg — do nguoi thiet ke dat bang ten tinh nang.",
+  "40 nut danh so dung 1..40, moi tag mot nut: ban than viec do la bang chung cau truc.",
+  "do_tin: khop = nhan trung ten nut; gan = nhan la mot phan ten nut (hoac nguoc lai);",
+  "cau-hinh = chi co ten trong GameMainTopConfig; loai-tru = nut duy nhat con lai.",
+  "emu_join.py ap bang nay SAU tag do duoc, chi cho node chua co tag, va danh dau tagFrom = 'nhan'."
+ ],
+ "man": {
+  "UI_Main_ControlPanel_960_640.xgg": {
+   "lMainToolbarRightTop": [
+    {"tag": 1,  "con": "首充",       "do_tin": "gan",      "ma": "CUIMainTopTool.lua:113 首冲奖励按钮; iosApproveHelper.lua:46 首充礼包", "cau_hinh": "shouchonglibao"},
+    {"tag": 2,  "con": "七日大礼包", "do_tin": "gan",      "ma": "CUIMainTopTool.lua:273 七日奖励; iosApproveHelper.lua:50 七日礼包", "cau_hinh": "qirilibao"},
+    {"tag": 3,  "con": "时装领取",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:217 时装领取; iosApproveHelper.lua:54 时装领取", "cau_hinh": "shizhuanglinqu"},
+    {"tag": 4,  "con": "翅膀领取",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:142 翅膀领取按钮; iosApproveHelper.lua:58 翅膀领取", "cau_hinh": "chiban"},
+    {"tag": 5,  "con": "限时神将",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:179 限时神将", "cau_hinh": "xianshishenjiang"},
+    {"tag": 6,  "con": "营地摇钱树", "do_tin": "cau-hinh", "ma": "CUIMainTopTool.lua:1282 onTouchEnd_OnGetCampTreeReward '营地摇钱树'", "cau_hinh": "yaoqianshu"},
+    {"tag": 7,  "con": "营地篝火",   "do_tin": "cau-hinh", "ma": "", "cau_hinh": "yindigouhuo"},
+    {"tag": 8,  "con": "游戏宝典",   "do_tin": "khop",     "ma": "CGuideScheme.lua:2994 btnBook", "cau_hinh": "youxibaodian"},
+    {"tag": 9,  "con": "lQuestButton", "do_tin": "khop",   "ma": "CGuideScheme.lua:2933 btnQuest (nut lQuestButton, lop 英雄修炼)", "cau_hinh": "yingxiongxiulian"},
+    {"tag": 10, "con": "新手特权",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:301 新手特权; iosApproveHelper.lua:62 新手特权", "cau_hinh": "xishoutequan"},
+    {"tag": 11, "con": "虎符争夺",   "do_tin": "loai-tru", "ma": "CUIMainTopTool.lua:317 军团", "cau_hinh": "juntuannianhuodong"},
+    {"tag": 12, "con": "网页活动",   "do_tin": "cau-hinh", "ma": "CUIMainTopTool.lua:333 (khoi chu thich) ActivityType.WebActivity", "cau_hinh": "wangyehuodong"},
+    {"tag": 13, "con": "七日目标",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:363 七日目标", "cau_hinh": "qirimubiao"},
+    {"tag": 14, "con": "Q币赠送",    "do_tin": "khop",     "ma": "CUIMainTopTool.lua:370 Q币赠送", "cau_hinh": ""},
+    {"tag": 15, "con": "翅膀",       "do_tin": "khop",     "ma": "CUIMainTopTool.lua:388 翅膀", "cau_hinh": "chibang"},
+    {"tag": 16, "con": "动态活动",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:405 动态活动", "cau_hinh": "dynamicAct (CUIMainTopTool.lua:784)"},
+    {"tag": 17, "con": "活动公告",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:415 活动公告", "cau_hinh": "huodonggonggao"},
+    {"tag": 18, "con": "攻城战",     "do_tin": "khop",     "ma": "CUIMainTopTool.lua:424 攻城战", "cau_hinh": "gongchengzhan"},
+    {"tag": 19, "con": "lFacebookButton", "do_tin": "khop", "ma": "CUIMainTopTool.lua:434 Facebook; iosApproveHelper.lua:66 韩国版FaceBook", "cau_hinh": "facebook"},
+    {"tag": 20, "con": "美人奇遇",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:448 美人奇遇", "cau_hinh": "qiyu"},
+    {"tag": 21, "con": "魂匣界面",   "do_tin": "gan",      "ma": "CUIMainTopTool.lua:472 魂匣", "cau_hinh": "hunxia"},
+    {"tag": 22, "con": "七天乐",     "do_tin": "khop",     "ma": "CUIMainTopTool.lua:483 七天乐", "cau_hinh": "qitianle"},
+    {"tag": 23, "con": "神兵宝箱",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:498 神兵宝箱; CGuideScheme.lua:3301 神兵宝箱入口", "cau_hinh": "shenbinbaoxiang"},
+    {"tag": 24, "con": "迎新礼包活动", "do_tin": "khop",   "ma": "CUIMainTopTool.lua:506 迎新礼包活动", "cau_hinh": "yinxinlibao"},
+    {"tag": 25, "con": "阵法界面",   "do_tin": "gan",      "ma": "CUIMainTopTool.lua:564 阵法", "cau_hinh": "zhenfa"},
+    {"tag": 26, "con": "神将秘境",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:591 神将秘境", "cau_hinh": "mijing"},
+    {"tag": 27, "con": "星魂入口",   "do_tin": "gan",      "ma": "CUIMainTopTool.lua:603 星魂", "cau_hinh": "xinghun"},
+    {"tag": 28, "con": "招财猫",     "do_tin": "khop",     "ma": "CUIMainTopTool.lua:578 招财猫", "cau_hinh": "caishenjianlin"},
+    {"tag": 29, "con": "问卷",       "do_tin": "khop",     "ma": "CUIMainTopTool.lua:615 问卷", "cau_hinh": "wenjuan"},
+    {"tag": 30, "con": "现金红包",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:627 现金红包", "cau_hinh": ""},
+    {"tag": 31, "con": "充值红包",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:646 充值红包", "cau_hinh": ""},
+    {"tag": 32, "con": "水族馆",     "do_tin": "khop",     "ma": "CUIMainTopTool.lua:658 水族馆", "cau_hinh": ""},
+    {"tag": 33, "con": "宠物林地",   "do_tin": "gan",      "ma": "CUIMainTopTool.lua:670 宠物", "cau_hinh": ""},
+    {"tag": 34, "con": "刷刷乐",     "do_tin": "khop",     "ma": "CUIMainTopTool.lua:682 刷刷乐", "cau_hinh": ""},
+    {"tag": 35, "con": "天下无双",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:694 天下无双", "cau_hinh": ""},
+    {"tag": 36, "con": "铜雀锡福",   "do_tin": "khop",     "ma": "CUIMainTopTool.lua:706 铜雀锡福", "cau_hinh": ""},
+    {"tag": 37, "con": "国战",       "do_tin": "khop",     "ma": "CUIMainTopTool.lua:718 国战", "cau_hinh": ""},
+    {"tag": 38, "con": "精彩活动",   "do_tin": "gan",      "ma": "CUIMainTopTool.lua:54 nWonderfulEntryTag = 38 (精彩 = wonderful)", "cau_hinh": ""},
+    {"tag": 39, "con": "周年庆感谢信", "do_tin": "gan",    "ma": "CUIMainTopTool.lua:762 G_Anniversary", "cau_hinh": "ganxiexin"},
+    {"tag": 40, "con": "股票",       "do_tin": "khop",     "ma": "CUIMainTopTool.lua:744 股票", "cau_hinh": ""}
+   ],
+   "lMainToolbarRightTop/18": [
+    {"tag": 2, "loai": "CCScale9Sprite", "co_con": "CCLabelTTF", "do_tin": "cau-truc",
+     "ma": "CUICOGEntry.lua:272 spTips = spButton:getChildByTag(2); :273 ttfTips = spTips:getChildByTag(1); :301-302 ttfTips:setString/setColor",
+     "doi_chieu": "lArmyGroup_COGButton (UI_ArmyGroup_Campsite_ControlPanel) — cung kieu nut, ma goc dung y het (CUICOGEntry.lua:310-311), va DO DUOC tren may ao: CCScale9Sprite tag 2 chua CCLabelTTF tag 1. Nut 18 chi co dung mot con la CCScale9Sprite chua CCLabelTTF."}
+   ],
+   "lMainToolbarRightTop/18/2": [
+    {"tag": 1, "loai": "CCLabelTTF", "do_tin": "cau-truc",
+     "ma": "CUICOGEntry.lua:273 ttfTips = spTips:getChildByTag(1); :301 ttfTips:setString",
+     "doi_chieu": "lArmyGroup_COGButton/2/1 do duoc la CCLabelTTF; khung nay chi co mot con."}
+   ],
+   "snsMainUIGold": [
+    {"tag": 1, "loai": "CCLabelTTF", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua:3131 setNum: rootUI:getChildByTag(1):setString(so); RefreshGold -> RollGold -> setNum(snsMainUIGold, vang)",
+     "doi_chieu": "KHONG co so do doi chieu: cac node da do cung hinh (nut + nhan + hinh) mang tag khac nhau tuy man. Bang chung chi tu ma: thanh nay co dung mot nhan."},
+    {"tag": 2, "loai": "CCSprite", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua rollNum: spIcon = rootUI:getChildByTag(2)",
+     "doi_chieu": "Chi tu ma; thanh nay co dung mot CCSprite."}
+   ],
+   "snsMainUIDiamond": [
+    {"tag": 1, "loai": "CCLabelTTF", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua:3131 setNum qua RollDiamond(snsMainUIDiamond)",
+     "doi_chieu": "Chi tu ma; thanh nay co dung mot nhan."},
+    {"tag": 2, "loai": "CCSprite", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua rollNum: spIcon = rootUI:getChildByTag(2)",
+     "doi_chieu": "Chi tu ma; thanh nay co dung mot CCSprite."}
+   ],
+   "snsMainFatigue": [
+    {"tag": 1, "loai": "CCLabelTTF", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua:1256 RefreshFatigue: oUI = snsMainFatigue:getChildByTag(1); RollFatigue -> setNum(..., nMax) ra 'x/y'",
+     "doi_chieu": "Chi tu ma; thanh nay co dung mot nhan (chu gia '90/100')."},
+    {"tag": 2, "loai": "CCSprite", "do_tin": "cau-truc",
+     "ma": "CUIMain.lua:1260 (chu thich) snsMainFatigue:getChildByTag(2):setDisplayFrame(...)",
+     "doi_chieu": "Chi tu ma; thanh nay co dung mot CCSprite."}
+   ]
+  }
+ }
+}

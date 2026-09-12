@@ -43,6 +43,15 @@ sc/offline/
   bootstrap.lua       dựng người chơi mới
   log.lua             nhật ký, trong đó có danh sách API còn thiếu
   handlers/login.lua  chuỗi đăng nhập -> bắt tay -> vào game
+  handlers/chapter.lua chiến dịch: bắt đầu ải, thắng, thua — gọi luật server
+                      có sẵn trong sc/share/share_ChapterLogic.lua
+  handlers/achieve.lua thành tựu: đạt / nhận thưởng — gọi luật gốc
+                      sc/share/AchieveLogic.lua (hướng dẫn tân thủ chờ nó)
+  handlers/statewar.lua Quốc chiến: chỉ câu hỏi giờ mở lúc vào Main; trả
+                      "chưa có lịch" để lớp "đang tải" của client tắt
+  handlers/mysterious.lua Cửa hàng bí ẩn: ClientRefresh theo mốc giờ; trả qua
+                      đường chung OnReciveResponse, KHÔNG sinh hàng (luật đó
+                      chỉ server gốc có)
 test/
   mock.lua            giả lập môi trường game để test trên PC
   run.lua             bộ test chuỗi vào game
@@ -73,18 +82,28 @@ server thật cũng buộc phải gửi, vì transport là JSON và JSON không 
 
 | | |
 |---|---:|
-| Handler đã hiện thực | **9** / 614 |
+| Handler đã hiện thực | **11** / 614 |
 | API nuốt lặng lẽ (nhịp tim, thống kê) | 4 |
-| Test đạt — lớp offline | 33 / 33 |
+| Test đạt — lớp offline | 44 / 44 |
 | Test đạt — `deploy.py` | 28 / 28 |
 
-Đã chạy được: đăng nhập → danh sách máy chủ → bắt tay → `ClientEnterGame` →
-`G_DataManager:Init` với đủ 33 bảng, lưu và nạp lại tiến trình.
+Đã chạy được: đăng nhập → danh sách máy chủ → bắt tay → giờ server →
+`ClientEnterGame` → `G_DataManager:Init` với đủ 33 bảng → danh sách hoạt động
+→ `RepaleceScene("Main")`, lưu và nạp lại tiến trình. Trong Godot
+(`bravecross-game/tools/vao_main.gd`) cả chuỗi này chạy bằng mã gốc tới cảnh
+chính.
 
 Tên bảng lấy từ `EventManagerTableName` (`sc/share/EventManager.lua:1086`), tên
-trường lấy từ các đăng ký `G_EventManager:Reg(..., EventManagerType.Data, <bảng>,
-<trường>)` rải trong mã. **Giá trị** khởi tạo thì do ta chọn — không có cách nào
-biết bản gốc dùng số nào — và được đánh dấu `ĐẶT` trong `bootstrap.lua`.
+trường lấy từ chỗ client đọc. **Giá trị** khởi tạo lấy từ **chính bảng cấu hình
+của bản gốc**: `KDBGameCommonConfig` có mục `<bảng>Reset` cho 10/33 bảng, và mã
+server dùng chung nạp người chơi đúng kiểu đó (`LotteryLogic:Reset`). Bản trước
+tự đặt kim cương 5.000 và thống soái 10 — bản gốc ghi 0 và 6. Chỉ còn `ĐẶT` những
+gì server cấp cho từng tài khoản (Uid, tên, phiên); 23 bảng không có mục Reset
+thì để rỗng.
+
+Tên trường phải khớp chỗ client ĐỌC — đã sửa ba chỗ đoán sai: tên nhân vật là
+`CharacterName` (không phải `UserName`), phản hồi đăng nhập là `uid` / `session`
+viết thường, danh sách máy chủ là `RecomendList`.
 
 ## Chạy test
 

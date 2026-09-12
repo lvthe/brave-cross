@@ -11,10 +11,15 @@ import os, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Lua 5.1: game chay LuaJIT. `lupa.LuaRuntime` tron lay ban moi nhat (5.5) —
+# sai doi, va co may Windows chan han file lua55 ("Application Control").
 try:
-    import lupa
+    import lupa.lua51 as lupa
 except ImportError:
-    sys.exit('thieu lupa: pip install lupa')
+    try:
+        import lupa
+    except ImportError:
+        sys.exit('thieu lupa: pip install lupa')
 
 
 def main():

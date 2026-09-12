@@ -63,7 +63,28 @@ def chon_ung_vien(ung_vien, con_engine):
     return tot
 
 
-def chon_con(cha, o, da_dung):
+def diem_cay_con(c, con_engine):
+    """Bao nhieu con engine bao khop (vi tri + co) mot con cua node c.
+
+    Dung de phan xu khi nhieu anh em TRUNG KHIT ca vi tri lan co: vi tri
+    thoi khong phan biet duoc, cay con thi co. `UI_MessageBox`: nam con cua
+    `lSmallBackgroup` cung o (230, 155) 500x330. May ao do tag 1 co 6 con
+    (2/3/4/202/1011/1012) — dung bo con cua `lMessageBox` — con tag 4 co 3
+    con, la `lThreeButton`. Lay cai dau tien con trong thi `lMessageBox` an
+    tag 4, `getChildByTag(1):getChildByTag(2)` ra nil, va MOI hop thoai hoi
+    cua game chet o CMessageBox.lua:79.
+    """
+    diem = 0
+    for e in con_engine:
+        for k in c.get('children', []):
+            if (abs(k['x'] - e['x']) <= NOI and abs(k['y'] - e['y']) <= NOI
+                    and abs(k['w'] - e['w']) <= 1.0 and abs(k['h'] - e['h']) <= 1.0):
+                diem += 1
+                break
+    return diem, -abs(len(c.get('children', [])) - len(con_engine))
+
+
+def chon_con(cha, o, da_dung, ti_le=(1.0, 1.0), con_engine=()):
     """Con nào của `cha` ứng với node engine báo ở vị trí o.
 
     Khớp trước bằng vị trí đúng khít, không được thì mới nới ra gần đúng.
@@ -71,20 +92,32 @@ def chon_con(cha, o, da_dung):
     ảnh mới, nên vị trí lệch vài px so với file — hai icon trạng thái của
     `canget` file ghi @686.5 và @688 mà engine báo @681 và @674. Khít 0,5 px
     thì trượt cả hai, và dòng đầu của danh sách hỏng ngay.
+
+    Bước cuối so theo TỈ LỆ CỠ CHA (ti_le = cỡ engine báo / cỡ trong file).
+    Engine nới lớp phủ màn theo tỉ lệ cửa sổ (SetWHScaleToWinSize: 1366 ->
+    1429 trên máy ảo) và giữ con ở đúng TỈ LỆ trong cha: `lLoadingDialog` file
+    ghi x=683 (giữa 1366), engine báo 714,5 (giữa 1429) — lệch 31,5 px, quá
+    ngưỡng nới. Thiếu bước này thì `lCommonLoadingDialog:getChildByTag(4)` ra
+    nil và CUIBuyDialog.lua:197/227 chết — chính chỗ cảnh Main chết.
     """
     con = cha.get('children', [])
     if not con:
         return None
     chua = [c for c in con if id(c) not in da_dung]
+    sx, sy = ti_le
 
-    def hop(bo, nguong):
+    def hop(bo, nguong, kx=1.0, ky=1.0):
         gan = [c for c in bo
-               if abs(c['x'] - o['x']) <= nguong and abs(c['y'] - o['y']) <= nguong]
+               if abs(c['x'] * kx - o['x']) <= nguong
+               and abs(c['y'] * ky - o['y']) <= nguong]
         if not gan:
             return None
         # Cùng vị trí thì lấy cái khớp cả kích thước.
         khop = [c for c in gan
                 if abs(c['w'] - o['w']) <= 1.0 and abs(c['h'] - o['h']) <= 1.0]
+        if len(khop) > 1 and con_engine:
+            # Trung khit ca vi tri lan co: phan xu bang cay con (diem_cay_con).
+            return max(khop, key=lambda c: diem_cay_con(c, con_engine))
         if khop:
             return khop[0]
         # Không thì lấy cái gần nhất.
@@ -95,6 +128,12 @@ def chon_con(cha, o, da_dung):
             r = hop(bo, nguong)
             if r is not None:
                 return r
+    if abs(sx - 1.0) > 1e-3 or abs(sy - 1.0) > 1e-3:
+        for nguong in (GAN, NOI):
+            for bo in (chua, con):
+                r = hop(bo, nguong, sx, sy)
+                if r is not None:
+                    return r
     return None
 
 
@@ -126,11 +165,19 @@ def ghep_mot_man(doc, cay):
             da_giai.add(id(nut))
             goc[duong] = nut
             continue
-        cha = goc.get('/'.join(phan[:-1]))
+        duong_cha = '/'.join(phan[:-1])
+        cha = goc.get(duong_cha)
         if cha is None:
             truot += 1
             continue
-        con = chon_con(cha, o, da_dung)
+        # Co cha ma engine bao ve so voi co trong file (xem chon_con).
+        o_cha = cay.get(duong_cha) or {}
+        ti_le = (o_cha.get('w', 0) / cha['w'] if cha.get('w') else 1.0,
+                 o_cha.get('h', 0) / cha['h'] if cha.get('h') else 1.0)
+        sau = duong.count('/') + 1
+        con_engine = [cay[d] for d in cay
+                      if d.startswith(duong + '/') and d.count('/') == sau]
+        con = chon_con(cha, o, da_dung, ti_le, con_engine)
         if con is None:
             truot += 1
             continue
@@ -184,5 +231,85 @@ def main():
         print('(chay lai voi --ghi de ghi vao layout_ref)')
 
 
+NHAN = HERE / 'tags_nhan.json'
+
+
+def chon_khop(c, e):
+    """Node c co khop muc e cua tags_nhan.json khong.
+
+    'con'  : ten node hoac ten lop, dung tuyet doi (doi chieu nhan).
+    'loai' : typeName cua node; 'co_con' (tuy chon): no co it nhat mot con
+             typeName do (suy cau truc — cho node khong ten, lop chung chung).
+    """
+    if 'con' in e:
+        return e['con'] in (c.get('name'), c.get('cls'))
+    if c.get('typeName') != e.get('loai'):
+        return False
+    if 'co_con' in e:
+        return any(k.get('typeName') == e['co_con'] for k in c.get('children', []))
+    return True
+
+
+def ghep_nhan(ghi):
+    """Ap tag SUY RA bang doi chieu nhan (tags_nhan.json) — chay SAU tag do.
+
+    Chi gan cho node CHUA co tag, khong de hai con cung tag, va danh dau
+    tagFrom = 'nhan' de ai doc bo cuc cung biet tag nao la do, tag nao la suy.
+    Muc nao khong chi ra DUNG MOT node thi bao HONG chu khong doan.
+    """
+    if not NHAN.exists():
+        return 0, 0
+    bang = json.loads(NHAN.read_text('utf-8'))
+    gan = loi = 0
+    for man, ds_cha in bang.get('man', {}).items():
+        f = LAYOUT / (man.replace('.xgg', '') + '.json')
+        if not f.exists():
+            print('  (tags_nhan: khong co %s)' % f.name)
+            continue
+        doc = json.loads(f.read_text('utf-8'))
+        for ten_cha, ds in ds_cha.items():
+            # Cha la DUONG TAG kieu tags_that.json: 'lMainToolbarRightTop/18'
+            # = con mang tag 18 cua node ten lMainToolbarRightTop. Nho vay muc
+            # sau tro duoc toi node chi vua co tag o muc truoc.
+            phan = ten_cha.split('/')
+            cha = []
+            for r in doc.get('roots', []):
+                moi_ten(r, phan[0], cha)
+            for t_ in phan[1:]:
+                cha = [c for n_ in cha for c in n_.get('children', [])
+                       if str(c.get('tag')) == t_]
+            if len(cha) != 1:
+                print('  HONG tags_nhan: %s co %d node o %s' % (man, len(cha), ten_cha))
+                loi += 1
+                continue
+            con = cha[0].get('children', [])
+            for e in ds:
+                khop = [c for c in con if chon_khop(c, e)]
+                if len(khop) != 1:
+                    print('  HONG tags_nhan: %s/%s: %d con khop %s'
+                          % (man, ten_cha, len(khop), e.get('con') or e.get('loai')))
+                    loi += 1
+                    continue
+                c = khop[0]
+                if 'tag' in c:
+                    if c['tag'] != e['tag']:
+                        print('  HONG tags_nhan: %s da co tag DO %s, bang nhan ghi %s'
+                              % (e['con'], c['tag'], e['tag']))
+                        loi += 1
+                    continue
+                if any(x.get('tag') == e['tag'] for x in con):
+                    print('  HONG tags_nhan: tag %s da co con khac mang' % e['tag'])
+                    loi += 1
+                    continue
+                c['tag'] = e['tag']
+                c['tagFrom'] = 'nhan'
+                gan += 1
+        if ghi:
+            f.write_text(json.dumps(doc, ensure_ascii=False), encoding='utf-8')
+    return gan, loi
+
+
 if __name__ == '__main__':
     main()
+    g_, l_ = ghep_nhan('--ghi' in sys.argv)
+    print('tags_nhan.json: %d node gan them tag suy tu nhan, %d loi' % (g_, l_))

@@ -146,6 +146,45 @@ function OfflineStore:all()
 	return self.data
 end
 
+local function chepSau(v)
+	if type(v) ~= "table" then
+		return v
+	end
+	local t = {}
+	for k, x in pairs(v) do
+		t[k] = chepSau(x)
+	end
+	return t
+end
+
+--[[ Chép dữ liệu người chơi của CLIENT về kho.
+
+	Vì sao lấy từ client: bản gốc chạy CÙNG luật (sc/share) ở cả hai đầu.
+	Client tự áp thay đổi rồi mới báo server — ví dụ CallSetLastArmyLineup
+	gọi G_ArmyLogic:SetLastArmyLineup tại chỗ rồi mới CallServer
+	(ClientArmyLogic.lua:120-122) — còn server chạy lại luật đó trên bản của
+	nó. Ở đây server chạy trong chính máy ảo Lua của client, trên chính bảng
+	G_DataManager.userData, nên sau khi luật chạy xong thì bảng đó LÀ trạng
+	thái đúng; việc của kho chỉ là giữ lại một bản.
+
+	Chép SÂU: dùng chung bảng thì mọi thay đổi tạm của giao diện sau đó cũng
+	lọt vào kho mà không qua handler nào. ]]
+function OfflineStore:syncFromClient()
+	local dm = rawget(_G, "G_DataManager")
+	local u = dm and dm.userData
+	if type(u) ~= "table" or not self.data then
+		OfflineLog:err("syncFromClient: chua co G_DataManager.userData")
+		return false
+	end
+	for _, name in ipairs(self.TABLES) do
+		if u[name] ~= nil then
+			self.data[name] = chepSau(u[name])
+		end
+	end
+	self.dirty = true
+	return true
+end
+
 function OfflineStore:reset()
 	self.data = nil
 	self.dirty = false

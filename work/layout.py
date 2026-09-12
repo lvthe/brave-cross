@@ -32,8 +32,13 @@ DEFAULT_CONF = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'conf')
 KEEP = ('type', 'typeName', 'cls', 'name', 'zOrder', 'res', 'x', 'y', 'scaleX', 'scaleY',
         'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom', 'visible')
 
-# Chi co o CCLayerColorRoundRect, nen khong nam trong KEEP.
-KEEP_MAYBE = ('color', 'opacity')
+# Chi co o CCLayerColorRoundRect (color, opacity) va CCLayerGradientEx
+# (gradient), nen khong nam trong KEEP.
+KEEP_MAYBE = ('color', 'opacity', 'gradient', 'alignH', 'alignV')
+
+# Ten cham / doi tuong nhan cham: chi 2.005 / 33.472 node co, nen chi ghi khi
+# khac rong cho file khoi phinh.
+KEEP_NONEMPTY = ('touch', 'touchObj', 'text')
 
 
 def trim(node):
@@ -42,6 +47,14 @@ def trim(node):
     for k in KEEP_MAYBE:
         if k in node:
             out[k] = node[k]
+    for k in KEEP_NONEMPTY:
+        if node.get(k):
+            out[k] = node[k]
+    # He so parallax (xgg.py, +0x30): gan het node la (1, 1), nen chi ghi khi
+    # khac — nen cac chien truong va thanh pho cua UI_Main.
+    p = node.get('parallax')
+    if p and p != [1.0, 1.0]:
+        out['parallax'] = p
     kids = [trim(c) for c in node['children']]
     if kids:
         out['children'] = kids

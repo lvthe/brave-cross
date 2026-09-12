@@ -751,3 +751,67 @@ Thứ tự trong file cũng không suy ra được: `canget` ở vị trí 5 man
 máy ảo, chạy, rồi gom `getChildByTag` của mọi node thành bảng dữ liệu. Bộ
 này chạy được cho một màn; quét cả 287 màn thì máy ảo còn hay gục giữa
 chừng (bản dịch ARM chết ở chỗ khác nhau mỗi lần), cần chia mẻ và chạy lại.
+
+## Dịch ngược libgame.so — công thức sát thương
+
+Công thức tính sát thương của trận **nằm trong C++**, không trong Lua hay file
+cấu hình. `map/global_config.xml` chỉ có HẰNG SỐ (mục `<formula>`); cách ghép
+chúng ở `.text`. Lần ra bằng `picmap` + `xref`: mỗi khoá `fFormula*` được nạp
+vào một trường của đối tượng cấu hình lúc parse (`0x38c3aa`+), rồi các hàm con
+đọc lại theo offset đó.
+
+**Offset của hằng số trong đối tượng cấu hình** (đo từ lệnh `str [r4,#off]`
+ngay sau mỗi `strcmp` khoá):
+
+| offset | khoá | giá trị (global_config) |
+|---|---|---|
+| `+0x14c` | `fFormulaDefendAvoidMin` | −1000 |
+| `+0x150` | `fFormulaDefendAvoidBase` | 1500 |
+| `+0x154` | `fFormulaDamageAdditionDenom` | 3000 |
+| `+0x158` | `fFormulaRoleGrowthBase` | 2 |
+| `+0x15c` | `fFormulaRoleGrowthPower` | 1.5 |
+| `+0x160` | `fFormulaShapeChangedPower` | 0.6 |
+| `+0x164` | `fFormulaCriticalResistBase` | 3000 |
+| `+0x168` | `fFormulaStateResistBase` | 2000 |
+| `+0x16c` | `fFormulaFinalHarmRateDenom` | 3000 |
+
+**Các hàm con** (mỗi hàm nhận đối tượng cấu hình qua `bl 0x38c7f0`):
+
+```
+DefendAvoid(x)     0x380ae0 :  a = max(x, DefendAvoidMin)
+                                r = a / (a + DefendAvoidBase);  min(r, 1)
+DamageAddition(x)  0x380b2c :  x / DamageAdditionDenom
+RoleGrowth(b,p)    0x380b56 :  x / pow(b, p)          (b=RoleGrowthBase mặc định)
+ShapeChanged(x,p)  0x380b8a :  x * pow(p, ShapeChangedPower)
+CriticalResist(x)  0x380bb8 :  x / (x + CriticalResistBase)
+StateResist(x)     0x380bdc :  x / (x + StateResistBase)
+FinalHarm(a,b,c,d,e) 0x380c00: (a - c)/FinalHarmRateDenom cộng dồn... max(., −e)
+GrowthScale(ap,lv,gf) 0x380c52: ap * (gf-scaled theo cấp)
+```
+
+**Hàm sát thương chính** `0x380c94` — nhận một struct 0x4c byte dựng bởi
+`0x3808d8` (parse một BẢNG có tên trường), rồi ghép:
+
+```
+atk   = GrowthScale(fAp, s?, fGrowthFactor) + nAp_flat
+def   = nDp * max(0, 1 - fIgnoreDp)
+avoid = max(0, DefendAvoid(def) - f_0x18)
+elem  = max(nFireAp, nIceAp, 0, nThunderAp)
+dmg   = elem + atk * (1 - avoid) + nPiercingAp
+dmg  += dmg * DamageAddition(nDamageAddition)
+dmg  -= fReducingDamage
+dmg  += dmg * FinalHarm(<4 trường 0x38..0x48>)
+out   = dmg * fDamageMultiples          ; và trả kèm hệ số harm (clamp ≥ 0)
+```
+
+**Tên trường của struct** (từ `strcmp` trong builder `0x3808d8`): `fAp` (+0),
+`fGrowthFactor` (+0xc), `nDp` (+0x10), `fIgnoreDp` (+0x14), `nFireAp` (+0x1c),
+`nIceAp` (+0x20), `nThunderAp` (+0x24), `nPiercingAp` (+0x28),
+`nDamageAddition` (+0x2c), `fReducingDamage` (+0x30), `fDamageMultiples`
+(+0x34). Bốn trường FinalHarm (`+0x38..0x48`) và trường `+0x18` chưa đặt tên
+xong.
+
+**Chưa làm / chưa kiểm được:** ánh xạ từng trường struct sang chỉ số của bên
+ĐÁNH hay bên CHỊU (nằm trong hàm gọi tại trận `0x41ad08`, ~200 byte dựng
+struct), và kiểm byte-exact — cả hai cần chạy bản gốc trong máy ảo để so đầu
+ra. Cấu trúc + hằng số ở trên thì chắc chắn.
