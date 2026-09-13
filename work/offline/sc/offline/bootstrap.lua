@@ -84,6 +84,30 @@ function OfflineBootstrap:baseInfo()
 	t.CharacterName = self.NAME      -- ĐẶT
 	t.DeviceId = "offline-device"    -- ĐẶT
 	t.CreateTime = os.time()         -- ĐẶT: lúc tạo nhân vật (CUIMainTopTool đọc)
+	-- Giới tính nhân vật chính: bản gốc cho người chơi CHỌN lúc tạo, offline
+	-- không có bước đó nên ĐẶT. HeroLogic:GetHeroSpriteName trả "PlayerM" khi
+	-- Gender bật, "PlayerW" khi tắt -> chữ thứ 7 của tên armature (M/W), quyết
+	-- định hình nhân vật chính trên sân. Để FALSE = nữ, khop nhan vat chinh
+	-- (co gai) cua ban goc.
+	t.Gender = false                 -- ĐẶT: nữ (Player000W03W)
+	return t
+end
+
+--[[ GameUserGlobalData: bảng cờ/mốc-thời-gian linh tinh, KHÓA-THEO-TÊN phẳng
+	(UserDataManager:GetUserGlobalData trả về tUserGlobalData[key]).
+
+	FirstEnterGameTime là MỐC người chơi vào game lần đầu. Bản gốc chỉ ĐỌC nó ở
+	client (share_ClothingLogic, share_gameWorld, TimeHeroLogic...): server ghi
+	lúc tạo tài khoản, không có trong bảng cấu hình *Reset. Thiếu nó thì
+	ClothingLogic:GetChargeWingLeftTime báo "FirstEnterGameTime is nil" mỗi lần
+	Main làm mới (đo: hàng chục dòng lỗi khi chụp main.png), và các mốc hoạt
+	động tính theo nó (cánh sạc, thẻ tháng, mục tiêu 7 ngày) lệch hết. Đây là
+	dấu thời gian, không phải số cân bằng game nên ĐẶT được. ]]
+function OfflineBootstrap:globalData()
+	local t = self:resetOf("GameUserGlobalData") or {}
+	if t.FirstEnterGameTime == nil then
+		t.FirstEnterGameTime = os.time()   -- ĐẶT: mốc vào game lần đầu
+	end
 	return t
 end
 
@@ -111,6 +135,7 @@ function OfflineBootstrap:newUserData()
 	end
 	d.GameUserBaseInfo = self:baseInfo()
 	d.GameUserSessionData = self:sessionData()
+	d.GameUserGlobalData = self:globalData()
 	OfflineLog:info(string.format("nguoi choi moi: %d/%d bang lay tu cau hinh goc",
 		nGoc, #OfflineStore.TABLES))
 	return d
@@ -126,6 +151,19 @@ function OfflineBootstrap:ensure()
 				OfflineStore.data[name] = self:resetOf(name) or {}
 				OfflineStore.dirty = true
 			end
+		end
+		-- Bù cho bản lưu cũ tạo trước khi ta seed FirstEnterGameTime.
+		local g = OfflineStore.data.GameUserGlobalData
+		if type(g) == "table" and g.FirstEnterGameTime == nil then
+			g.FirstEnterGameTime = os.time()
+			OfflineStore.dirty = true
+		end
+		-- Bù cho bản lưu cũ dat Gender = true (nam). Doi ve nu de khop nhan vat
+		-- chinh ban goc (xem baseInfo).
+		local b = OfflineStore.data.GameUserBaseInfo
+		if type(b) == "table" and b.Gender ~= false then
+			b.Gender = false
+			OfflineStore.dirty = true
 		end
 		return false
 	end
