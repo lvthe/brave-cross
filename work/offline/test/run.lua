@@ -115,7 +115,12 @@ check(ud and ud.GameUserSessionData ~= nil, "co bang GameUserSessionData")
 
 local nTables = 0
 for _ in pairs(ud or {}) do nTables = nTables + 1 end
-check(nTables == 33, "du 33 bang", nTables)
+-- 37 = 33 bang ban dau + 4 bang client hoi toi bang CHUOI chu khong qua
+-- EventManagerTableName, nen truoc do lot luoi (GameUserGuildData,
+-- GameUserCloudShop, GameUserStateWar, GameUserRankTitle). Cach tim: quet moi
+-- GetUserDataWithName("...") trong 973 file roi tru di danh sach dang co.
+check(nTables == 37, "du 37 bang", nTables)
+check(ud and ud.GameUserGuildData ~= nil, "co bang GameUserGuildData")
 
 print("\n=== 4. luu va nap lai ===")
 OfflineStore:set("GameUserBaseInfo", "Gold", 12345)
@@ -248,6 +253,35 @@ check(d.GameUserBaseInfo ~= nil and d.GameUserBaseInfo.Gold == 50000,
 -- vtable, rawget luon tra nil. Bo kiem nay giu cho khoi lap lai loi do.
 check(rawget(G_PetDataManager, "InitData") == nil,
 	"InitData KHONG phai truong tho (nen phai tra qua metatable)")
+
+print("\n=== 13. bang hoi: nguoi choi offline khong o bang nao ===")
+--[[ Bang hoi la tinh nang NHIEU NGUOI CHOI. Offline khong co nguoi choi khac
+	va khong co kho bang hoi, nen cau tra loi trung thuc la "chua co bang" —
+	dung ma GuildNotExist cua chinh ban goc, chu khong dung mot cai bang gia. ]]
+ErrorCode = ErrorCode or {}
+ErrorCode.Guild = ErrorCode.Guild or { GuildNotExist = 3501 }
+G_GuildLogic = {}
+function G_GuildLogic:OnGetGuildInfo(nErrCode, tGuildInfo)
+	self.tGot = { nErrCode, tGuildInfo }
+end
+Mock:reset()
+CallServer(5, "G_GuildLogic", "ClientGetGuildInfo", 0, 0, 0)
+Mock:tick(1)
+local g = G_GuildLogic.tGot
+check(g ~= nil, "OnGetGuildInfo duoc goi")
+check(g and g[1] == ErrorCode.Guild.GuildNotExist,
+	"tra dung ma GuildNotExist cua ban goc", g and g[1])
+check(g and type(g[2]) == "table",
+	"tra bang rong chu khong phai nil (client goi ProcessError len no)")
+
+-- Bang GameUserGuildData phai co trong kho: thieu no thi
+-- ClientGuildLogic:GetGuildData thoat ngay va CUIGuildControl:onInit khong
+-- chay tiep — ma khong bao gi ca.
+local coBang = false
+for _, ten in ipairs(OfflineStore.TABLES) do
+	if ten == "GameUserGuildData" then coBang = true end
+end
+check(coBang, "kho giu bang GameUserGuildData")
 
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

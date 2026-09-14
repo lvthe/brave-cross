@@ -23,6 +23,7 @@ require("offline.handlers.achieve")
 require("offline.handlers.statewar")
 require("offline.handlers.mysterious")
 require("offline.handlers.lottery")
+require("offline.handlers.guild")
 
 Offline = {}
 Offline.VERSION = "0.1"

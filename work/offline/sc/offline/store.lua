@@ -36,6 +36,19 @@ OfflineStore.TABLES = {
 	"GameMagicWeapon", "GameUserFormation", "GameUserEpicChapter",
 	"GameUserStarSoul", "GameScoreCompetitivePlay", "GameNewHandPrivilege",
 	"GamePet", "GameGuildTechnology", "GameAnniversary",
+	-- Bốn bảng dưới đây client hỏi tới bằng CHUỖI chứ không qua
+	-- `EventManagerTableName`, nên lọt lưới khi lập danh sách này. Tìm ra bằng
+	-- cách quét mọi `GetUserDataWithName("...")` trong 973 file rồi trừ đi
+	-- danh sách trên — còn đúng bốn cái.
+	--
+	-- Thiếu chúng KHÔNG báo gì: `GetUserDataWithName` rơi xuống
+	-- `initUserDataFromDB` (share_CDataManager.lua:225) và trả mã lỗi, rồi
+	-- người gọi `goto Exit0` lặng lẽ. Ví dụ `ClientGuildLogic:GetGuildData`
+	-- thoát ngay ở đó, nên `CUIGuildControl:onInit` không chạy tiếp.
+	"GameUserGuildData",     -- share_GuildLogic.ModuleName, GuildStoreLogic
+	"GameUserCloudShop",
+	"GameUserStateWar",
+	"GameUserRankTitle",
 }
 
 function OfflineStore:path()
