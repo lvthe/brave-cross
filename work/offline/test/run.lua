@@ -221,5 +221,33 @@ check(ga ~= nil, "OnGetAcvitityList (ten sai chinh ta cua ban goc) duoc goi")
 check(ga and type(ga[1]) == "table" and type(ga[2]) == "table",
       "hai danh sach rong: khong co may chu thi khong co hoat dong")
 
+print("\n=== 12. bang khong co *Reset thi lay hinh dang tu InitData() cua client ===")
+--[[ Bảng rỗng KHÔNG vô hại: GetUserDataWithName trả OK với `{}`, client đi
+	tiếp rồi chết ở dòng sau (PetData.lua:50 gọi pairs(tData.pets) với pets
+	là nil). Vài bộ quản lý tự khai hình dạng ban đầu bằng InitData() —
+	đó là định nghĩa của bản gốc, dùng lại được. ]]
+PetDataManager = { TABLE_NAME = "GamePet" }
+function PetDataManager:InitData()
+	return { pets = {}, possess = {}, fight_pet = 0 }
+end
+G_PetDataManager = setmetatable({ TABLE_NAME = "GamePet" },
+	{ __index = PetDataManager })   -- phương thức ở vtable, giống hệ lớp bản gốc
+
+local d = OfflineBootstrap:newUserData()
+check(type(d.GamePet) == "table" and type(d.GamePet.pets) == "table"
+	and d.GamePet.fight_pet == 0,
+	"GamePet lay dung hinh dang tu InitData()",
+	type(d.GamePet) == "table" and tostring(next(d.GamePet)) or "?")
+
+-- Bang CO *Reset thi cau hinh goc van thang.
+check(d.GameUserBaseInfo ~= nil and d.GameUserBaseInfo.Gold == 50000,
+	"bang co *Reset van lay tu cau hinh goc", d.GameUserBaseInfo
+		and d.GameUserBaseInfo.Gold)
+
+-- Tra cuu phai di QUA metatable: he lop cua ban goc de phuong thuc trong
+-- vtable, rawget luon tra nil. Bo kiem nay giu cho khoi lap lai loi do.
+check(rawget(G_PetDataManager, "InitData") == nil,
+	"InitData KHONG phai truong tho (nen phai tra qua metatable)")
+
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

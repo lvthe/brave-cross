@@ -22,9 +22,7 @@
 	(OfflineStore:syncFromClient).
 
 	CÒN THIẾU, không bịa:
-	  * Danh sách rơi đồ (DropData.DropList): server gốc sinh ra, luật sinh
-	    không có trong sc/share. Gửi bảng rỗng — đánh xong không rơi đồ, còn
-	    vàng, kinh nghiệm và phần thưởng cố định vẫn đủ vì chúng lấy từ cấu hình.
+	  * Kiểm gian lận: xem dưới.
 	  * Kiểm gian lận (ChapterData.DamageVerify) của server gốc: không có mã,
 	    không kiểm.
 ]]
@@ -40,6 +38,121 @@ local function ma_ok()
 end
 
 -- Danh sach roi do KHONG CO GI, dung hinh {DropConfig, Drop} ma client doi.
+--[[ DANH SÁCH RƠI ĐỒ.
+
+	Luật SINH nằm ở server gốc và không được ship — nhưng SỐ thì có đủ trong
+	cấu hình của chính bản gốc, nên dựng lại được:
+
+	  * `KDBGameNpcConfig[NpcID].DropData` — chuỗi JSON, mỗi mục là
+	    `{DropWay, DropValue, ModeOfDistribution, PrizeData{...}, ...}`.
+	  * `KDBGameNpcConfig[NpcID].TotalDropValue` — mẫu số: 100 hoặc 10000.
+	  * `KDBGameChapterConfig[key].ChapterInfo` — `{Groups:[{PosX, PosY,
+	    AppearTime, Soldiers:[{NpcID, Level, Num}]}]}`.
+
+	Hình dạng phải trả về, chép từ chú thích đầu `user/Battle/CUIGameFinish.lua`
+	và từ chỗ đọc thật (`CUIGameFinish.lua:1885`):
+
+	    { DropConfig = { ["D1"] = { PrizeData = {...} }, ... },
+	      Drop       = { ["1-2-1"] = { "D1", "D3" }, ... } }
+
+	Mã đơn vị `"<nhóm>-<lính>-<bản sao>"` do SÂN TRẬN đặt (bản gốc: engine
+	C++); client chỉ gom rồi gửi lại, nên chỉ cần hai đầu khớp nhau — xem
+	`battle/tran_goc.gd`. Bằng chứng cho dạng mã: chú thích của bản gốc cho ví
+	dụ "1-1-1", "1-1-2", "1-1-3", "1-2-1" (ba bản sao rồi sang lính kế tiếp), và
+	`ChapterInfo` của ải 1 có đúng một nhóm `Num = 3` ở chỗ đó.
+
+	ĐẶT — cách quay, vì luật server không có:
+	  mỗi mục quay RIÊNG, trúng với xác suất `DropValue / TotalDropValue`.
+	  Căn cứ: 167/331 NPC có tổng `DropValue` VƯỢT `TotalDropValue`, nên không
+	  thể là một lần quay chọn một món; và `TotalDropValue` chỉ nhận 100 hoặc
+	  10000, đúng dạng mẫu số phần trăm / phần vạn.
+	  `DropWay` và `ModeOfDistribution` trong toàn bộ 2.387 mục đều bằng 1, nên
+	  ở đây không rẽ nhánh theo chúng — có dữ liệu khác thì phải xem lại.
+
+	Quân `Num = 0` không ra trận (`tran_goc.gd:doc_quan`) nên không có mã. ]]
+--[[ Vài trường cấu hình là chuỗi JSON trong file, nhưng tầng cấu hình của bản
+	gốc đã giải sẵn một số trong đó thành bảng (`ChapterInfo` là một —
+	`updateChapterConfig` làm việc đó, giống `updateAchieveConfig` giải `Award`).
+	Nhận cả hai dạng thay vì đoán dạng nào. ]]
+local function chuoiJson(s)
+	if type(s) == "table" then
+		return s
+	end
+	if type(s) ~= "string" or s == "" or s == "[]" then
+		return nil
+	end
+	local ok, t = pcall(function() return cjson.decode(s) end)
+	if ok and type(t) == "table" then
+		return t
+	end
+	return nil
+end
+
+local function npcConfig(nNpcID)
+	if G_ConfigManager == nil then
+		return nil
+	end
+	-- Dùng đúng hàm tra cứu của bản gốc (share_configManager.lua:2390).
+	local ok, t = pcall(function()
+		return G_ConfigManager:GetNpcConfigWithNpcId(tostring(nNpcID))
+	end)
+	if ok and type(t) == "table" then
+		return t
+	end
+	return nil
+end
+
+function OfflineDrop_build(strChapterKey)
+	local tDropConfig, tDrop, nKey = {}, {}, 0
+	local cfg = nil
+	if G_ConfigManager ~= nil then
+		local ok, t = pcall(function()
+			return G_ConfigManager:GetChapterConfig(strChapterKey)
+		end)
+		cfg = ok and t or nil
+	end
+	local info = cfg and chuoiJson(cfg.ChapterInfo)
+	if info == nil or type(info.Groups) ~= "table" then
+		OfflineLog:warn("khong doc duoc ChapterInfo cua " .. tostring(strChapterKey)
+			.. " — danh sach roi do de rong")
+		return { DropConfig = tDropConfig, Drop = tDrop }
+	end
+
+	for iNhom, g in ipairs(info.Groups) do
+		if type(g) == "table" and type(g.Soldiers) == "table" then
+			for iLinh, s in ipairs(g.Soldiers) do
+				local nNum = tonumber(s.Num) or 0
+				local npc = nNum > 0 and npcConfig(s.NpcID) or nil
+				local ds = npc and chuoiJson(npc.DropData) or nil
+				local nMau = tonumber(npc and npc.TotalDropValue) or 0
+				for k = 1, nNum do
+					local ma = iNhom .. "-" .. iLinh .. "-" .. k
+					local tKeys = {}
+					if ds ~= nil and nMau > 0 then
+						for _, muc in ipairs(ds) do
+							local nGiaTri = tonumber(muc.DropValue) or 0
+							if nGiaTri > 0 and math.random() * nMau < nGiaTri then
+								nKey = nKey + 1
+								local khoa = "D" .. nKey
+								tDropConfig[khoa] = { PrizeData = muc.PrizeData }
+								tKeys[#tKeys + 1] = khoa
+							end
+						end
+					end
+					tDrop[ma] = tKeys
+				end
+			end
+		end
+	end
+	return { DropConfig = tDropConfig, Drop = tDrop }
+end
+
+
+--[[ Danh sách rơi của ván ĐANG chơi. Phải nhớ lại giữa hai lần gọi: quay ở
+	`ClientChapterBegin`, dùng lại ở `ClientChapterCompleteSuccess`. Quay lại
+	lần hai thì phần thưởng nhận được sẽ khác cái người chơi vừa nhặt trên sân. ]]
+local tRoiDangChoi = nil
+
 local function danhSachRoiRong()
 	return { DropConfig = {}, Drop = {} }
 end
@@ -122,9 +235,10 @@ R:on("ClientChapterBegin", function(ctx, tData)
 	-- {DropConfig, Drop} lay tu chinh mau thu cua ban goc
 	-- (share_ChapterLogicTest.lua:58). Gui {} tron thi client dung o
 	-- OnServerChapterBegin, khong bao gio doi canh.
+	tRoiDangChoi = OfflineDrop_build(strKey)
 	ctx:call("G_ChapterLogic", "OnServerChapterBegin", {
 		ChapterKey = strKey,
-		DropData = { DropList = danhSachRoiRong(), ChapterEx = cfg.ChapterUserEx or 0 },
+		DropData = { DropList = tRoiDangChoi, ChapterEx = cfg.ChapterUserEx or 0 },
 	})
 end)
 
@@ -141,8 +255,21 @@ R:on("ClientChapterCompleteSuccess", function(ctx, strKey, tClientData)
 	-- Số sao do client tính (CUIGame:getRating theo số tướng còn sống).
 	local nRating = tonumber(cd.RatingType) or 1
 
+	-- Lọc danh sách rơi theo những con ĐÃ GIẾT, bằng chính hàm luật của bản
+	-- gốc (ChapterLogic:filterKillDropList). Client gom KillIdList từ
+	-- `OnKillEnemy` mà sân trận gọi (lua/san_tran.lua).
+	local tRoi = tRoiDangChoi or danhSachRoiRong()
+	local tGiet = type(cd.KillIdList) == "table" and cd.KillIdList or {}
+	local okLoc, tRoiGiet = G_ChapterLogic:filterKillDropList(tGiet, tRoi)
+	if okLoc and type(tRoiGiet) == "table" then
+		tRoi = tRoiGiet
+	else
+		OfflineLog:warn("filterKillDropList tu choi — gui danh sach roi rong")
+		tRoi = danhSachRoiRong()
+	end
+
 	local ok, nErr, nResourceCount = G_ChapterLogic:chapterCompleteSuccess(
-		strKey, {}, nRating, cfg.ChapterUserEx or 0)
+		strKey, tRoi, nRating, cfg.ChapterUserEx or 0)
 	if not ok then
 		OfflineLog:warn(string.format("ClientChapterCompleteSuccess %s: luat goc tu choi, ma %s",
 			tostring(strKey), tostring(nErr)))
@@ -155,7 +282,7 @@ R:on("ClientChapterCompleteSuccess", function(ctx, strKey, tClientData)
 	-- (CGameFinishAward:getAwardList, CUIGameFinish.lua:1883-1888).
 	ctx:call("G_ChapterLogic", "OnServerChapterCompleteSuccess", {
 		ChapterKey = strKey,
-		DropList = danhSachRoiRong(),
+		DropList = tRoi,
 		ResourceCount = nResourceCount or 0,
 		ErrorCode = nErr or ma_ok(),
 	})

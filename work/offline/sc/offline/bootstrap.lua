@@ -121,6 +121,57 @@ function OfflineBootstrap:sessionData()
 	}
 end
 
+--[[ Bảng nào KHÔNG có mục `<bảng>Reset` trong cấu hình thì trước đây để rỗng.
+	Rỗng không phải là vô hại: `G_DataManager:GetUserDataWithName` trả OK với
+	`{}`, nên client đi tiếp rồi chết ở dòng sau —
+	`user/UI/pet/PetData.lua:50` gọi `pairs(tData.pets)` với `pets` là nil.
+
+	Nhưng vài bộ quản lý dữ liệu TỰ KHAI hình dạng ban đầu của bảng mình, bằng
+	`InitData()`. Đó là định nghĩa của chính bản gốc, không phải số ta bịa:
+
+	    PetDataManager:InitData()       -> pets={}, possess={}, fight_pet=0,
+	                                       pet_home={}, login_reward={...},
+	                                       fish_farm={...}   (GamePet)
+	    StarSoulDataManager:InitData()  -> cur_divide=1, conjure_ziwen=0,
+	                                       pack={}, career={{},{},{},{},{}}
+	                                                          (GameUserStarSoul)
+
+	Tìm chúng bằng cách quét `_G` chứ không liệt kê tay: bất cứ bảng nào vừa có
+	`TABLE_NAME` vừa có `InitData` đều là một bộ như vậy. Thêm bộ mới sau này
+	thì tự chạy, khỏi sửa chỗ này.
+
+	Chỉ điền khi bảng đang RỖNG — có `<bảng>Reset` thì cấu hình gốc thắng. ]]
+function OfflineBootstrap:initDataCuaClient(d)
+	local n = 0
+	for ten, v in pairs(_G) do
+		-- TABLE_NAME là trường thô (đặt trong ctor) nên rawget được; còn
+		-- InitData là PHƯƠNG THỨC, mà hệ lớp của bản gốc để phương thức trong
+		-- vtable chứ không trên đối tượng — rawget luôn trả nil, phải tra qua
+		-- metatable. Đã mất một lần vì chỗ này.
+		local co_ten = type(v) == "table" and rawget(v, "TABLE_NAME") ~= nil
+		local fn = nil
+		if co_ten then
+			local ok = pcall(function() fn = v.InitData end)
+			if not ok then fn = nil end
+		end
+		if co_ten and type(fn) == "function" then
+			local bang = tostring(v.TABLE_NAME)
+			local cu = d[bang]
+			if type(cu) == "table" and next(cu) == nil then
+				local ok, t = pcall(function() return v:InitData() end)
+				if ok and type(t) == "table" and next(t) ~= nil then
+					d[bang] = t
+					n = n + 1
+					OfflineLog:info("bang " .. bang .. " lay hinh dang tu "
+						.. ten .. ":InitData()")
+				end
+			end
+		end
+	end
+	return n
+end
+
+
 --[[ Dựng khối userData đầy đủ.
 	Hình dạng phải đúng cái mà ClientGameWorld:initData -> G_DataManager:Init
 	mong đợi: một bảng khoá-theo-tên-bảng. ]]
@@ -136,6 +187,10 @@ function OfflineBootstrap:newUserData()
 	d.GameUserBaseInfo = self:baseInfo()
 	d.GameUserSessionData = self:sessionData()
 	d.GameUserGlobalData = self:globalData()
+	local nInit = self:initDataCuaClient(d)
+	if nInit > 0 then
+		OfflineLog:info(string.format("%d bang lay hinh dang tu InitData() cua client", nInit))
+	end
 	OfflineLog:info(string.format("nguoi choi moi: %d/%d bang lay tu cau hinh goc",
 		nGoc, #OfflineStore.TABLES))
 	return d
