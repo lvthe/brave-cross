@@ -32,7 +32,18 @@ Offline.VERSION = "0.1"
 
 	Bản client để trống hàm này (sc/share/share_CDataManager.lua:207) vì phần
 	thân là của server. Trả về bảng rỗng thay vì nil để các đường dẫn gọi
-	GetUserDataWithName cho một bảng chưa có không vỡ. ]]
+	GetUserDataWithName cho một bảng chưa có không vỡ.
+
+	NGOẠI LỆ (TU_DUNG): vài bảng có DataManager riêng TỰ DỰNG hình dạng gốc,
+	nhưng CHỈ khi bảng là NIL — ví dụ CavernDataManager:GetUserCavern
+	(share/CavernDataManager.lua:42) kiểm `== nil` rồi gọi CraeteUserCavern().
+	Trả {} rỗng thì client tưởng đã có dữ liệu, bỏ qua bước dựng, rồi màn hình
+	đọc trường nil (`CurrentProgress`) và vỡ (CUICavern.lua:971). Với các bảng
+	đó trả NIL để client tự dựng ĐÚNG hình dạng gốc — không bịa. ]]
+local TU_DUNG = {
+	GameUserCavern = true,   --魔窟 (hang / ma khu): CavernDataManager:CraeteUserCavern
+}
+
 local function patchDataManager()
 	if not CDataManager then
 		OfflineLog:err("khong tim thay CDataManager — nap sai thu tu?")
@@ -40,6 +51,9 @@ local function patchDataManager()
 	end
 	CDataManager.initUserDataFromDB = function(mgr, strModuleName)
 		OfflineLog:info("initUserDataFromDB: " .. tostring(strModuleName))
+		if TU_DUNG[strModuleName] then
+			return 0, nil
+		end
 		return 0, {}
 	end
 end
