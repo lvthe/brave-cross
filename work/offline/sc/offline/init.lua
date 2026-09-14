@@ -24,6 +24,7 @@ require("offline.handlers.statewar")
 require("offline.handlers.mysterious")
 require("offline.handlers.lottery")
 require("offline.handlers.guild")
+require("offline.handlers.cavern")
 
 Offline = {}
 Offline.VERSION = "0.1"
