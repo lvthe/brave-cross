@@ -500,7 +500,7 @@ XGAnalytics:logEventByID(XGAnalytics.EVENT_ID.LOADCONFIG)
 
 
 
--- === CHEN DE DO: do tag that (emu_tags.py sinh ra) ===
+-- === CHEN DE DO: di ca cay, doc thang tag (emu_tags.py sinh ra) ===
 do
 	local function mota(n)
 		local w, h = 0, 0
@@ -511,36 +511,61 @@ do
 		if ok2 and c then x, y = c, (d or 0) end
 		return string.format("%g|%g|%g|%g", w, h, x, y)
 	end
-	-- Chi hoi DUNG nhung tag ma ma goc that su dung, khong quet dai. Ban goc
-	-- co 135 gia tri tag khac nhau, phu 100% so luot getChildByTag — trong
-	-- khi quet dai 0..60 chi phu 92% ma van ton 61 luot hoi moi node.
-	local TAGS = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,39,40,41,42,43,44,45,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,71,77,90,99,100,101,102,103,104,105,106,107,108,109,110,111,119,123,181,191,200,201,202,203,204,205,206,207,211,212,213,233,234,235,410,987,999,1000,1001,1002,1003,1004,1005,1006,1009,1010,1011,1012,1101,1102,1111,1230,1234,1314,1516,2000,2324,2514,3637,4001,4002,4568,5000,5001,7799,8123,8384,9999,10000,10001,20000,40000,50000,63535}
-	local function quet(man, duong, node, sau)
-		if node == nil or sau > 8 then return end
-		for _, tg in ipairs(TAGS) do
-			local ok, c = pcall(function() return node:getChildByTag(tg) end)
-			if ok and c ~= nil then
-				local d = duong .. "/" .. tg
-				print("DOTAG|" .. man .. "|" .. d .. "|" .. mota(c))
-				quet(man, d, c, sau + 1)
+	local function chuoi(n, ten)
+		local ok, v = pcall(function() return n[ten](n) end)
+		if ok and v ~= nil then return tostring(v):gsub("|", "/") end
+		return ""
+	end
+	-- BO phai khai TRUOC `di`: khai sau thi trong than `di` no la bien toan
+	-- cuc (nil) va `BO[duong]` no ngay, ca phep do khong chay.
+	local BO = {["btnHideToolbar"]=true,["btnMainToolHeroUI"]=true,["btnMainToolHeroUI/1"]=true,["btnMainToolbarRightIconHero/2"]=true,["g_levelTarget/2/10"]=true,["g_levelTarget/2/11"]=true,["g_levelTarget/2/12"]=true,["g_levelTarget/2/13"]=true,["lMainBtnLayer/6/2/10"]=true,["lMainBtnLayer/6/2/11"]=true,["lMainBtnLayer/6/2/12"]=true,["lMainBtnLayer/6/2/13"]=true,["lMainBtnLayer/6/2/6"]=true,["lMainBtnLayer/6/2/7"]=true,["lMainBtnLayer/6/2/8"]=true,["lMainBtnLayer/6/2/9"]=true,["lMainToolbarRightButtonMask"]=true,["snsMainUIGold"]=true,["snsMainUIGold/1"]=true,["snsMainUIGold/2"]=true,["snsMainUIGold/3"]=true}
+	local function di(man, duong, node, sau)
+		if node == nil then return end
+		if BO[duong] then return end
+		print("DOCAY|" .. man .. "|" .. duong .. "|" .. chuoi(node, "getTag")
+				.. "|" .. chuoi(node, "getStringTag") .. "|" .. mota(node))
+		if sau >= 8 then return end
+		-- getChildren() tra nil (hoac loi) thi CA NHANH duoi bi bo, va truoc
+		-- day khong co dong nao bao: man van duoc dong dau "tron", `bo` rong,
+		-- nhin khong khac gi mot nhanh la. Do duoc: UI_COG_CityInfo "tron",
+		-- bo rong, ma chi 34/159 node. Phai in ra thi moi dem duoc.
+		local ok, ch = pcall(function() return node:getChildren() end)
+		if not ok or ch == nil then
+			print("DOCUT|" .. man .. "|" .. duong .. "|" .. tostring(ok))
+			return
+		end
+		local okn, n = pcall(function() return #ch end)
+		if not okn or type(n) ~= "number" then
+			print("DOCUT|" .. man .. "|" .. duong .. "|dem")
+			return
+		end
+		for i = 1, n do
+			local ok2, c = pcall(function() return ch[i] end)
+			if ok2 and c ~= nil then
+				di(man, duong .. "/" .. i, c, sau + 1)
 			end
 		end
 	end
-	local DS = {{"UI_WorldWar_960_640.xgg",{"lWorldWar","WCSChildLayer","btnWorldWarWCSEnter","btnWorldWarAPREnter"}}}
+	local DS = {{"UI_Main_ControlPanel_960_640.xgg",{"lMainToolbarRightButtonMask","btnHideToolbar","spMainUITheme_newYear_0","spMainUITheme_christmas_0","snsMainToolArmySoul","lMainToolbarTop","snsMainUIGold"}}}
 	for _, m in ipairs(DS) do
 		local ok = pcall(function() loadLevelFile("conf/" .. m[1]) end)
-		print("DOMAN|" .. m[1] .. "|" .. tostring(ok))
+		print("DOMAN|" .. m[1] .. "|" .. tostring(ok) .. "|95a8983d")
 		if ok then
 			for _, nm in ipairs(m[2]) do
 				local n = rawget(_G, nm)
 				if n ~= nil then
-					print("DOTAG|" .. m[1] .. "|" .. nm .. "|" .. mota(n))
-					quet(m[1], nm, n, 0)
+					di(m[1], nm, n, 0)
+				else
+					-- Ten co trong bo cuc ma _G khong co: ca cay con duoi no
+					-- KHONG duoc do, va truoc day khong co dong nao bao — man
+					-- van duoc dong dau "tron". Do duoc: UI_COG_CityInfo di
+					-- "tron" trong khi chi 34/159 node.
+					print("DOTREO|" .. m[1] .. "|" .. nm)
 				end
 			end
 		end
 	end
-	print("DOXONG")
+	print("DOXONG|95a8983d")
 end
 
 do return end

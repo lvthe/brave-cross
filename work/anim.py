@@ -41,8 +41,9 @@ Khung, 80 byte, o goc header[0x5c]:
     +0x18  float sx, float sy           ti le
     +0x2C  int32  d    CHI SO ANH dang hien: vi tri trong danh sach sprite cua
                        xuong (header 0x4c); -1 = AN
+    +0x38  uint32 str_off, str_len     TEN CACH TRON cua khung nay
     +0x40  uint32 dur  so khung keyframe nay GIU truoc khi sang keyframe sau
-    +0x20, +0x24, +0x28, +0x30..+0x3C, +0x44..+0x4C   chua giai (+0x28 hang
+    +0x20, +0x24, +0x28, +0x30..+0x34, +0x44..+0x4C   chua giai (+0x28 hang
                        so theo xuong; +0x44..+0x4C co ve la bien doi mau)
 
 Truoc day ghi "+0x20..+0x50 luon 0 tren mau da xem" — SAI: mau cu toan nhan
@@ -163,6 +164,36 @@ class Anim(object):
     def _name_at(self, p):
         return self.s(self.u(p), self.u(p + 4))
 
+    def _blend_at(self, q):
+        """Ten cach tron cua mot khung: cap (str_off, str_len) o +0x38.
+
+        Cong thuc CACH TRON nam trong tung khung, khong phai trong bang sprite
+        (cho nay truoc day ghi "chua giai"). Do tren 418 file .xml, tu vung
+        dong goi duoc chi co: 'normal' 462.850, rong 159.663, 'screen' 22.083,
+        'undefined' 3, 'overlay' 3, 'lighten' 1, cong 21 cho rac (BingYing,
+        XSJiYouHeTiJi). 'multiply' KHONG xuat hien lan nao.
+
+        Doi chieu voi ban goc chay trong may ao (work/emu_dom.py) va voi ham
+        phan nhanh trong libgame.so (0x25d476..0x25d4ce, xem CLAUDE.md):
+
+            chuoi        +0x78  +0x7c (nguon)  +0x80 (dich)   GL
+            rong / la    0      1              0x303          GL_ONE, GL_ONE_MINUS_SRC_ALPHA
+            'screen'     1      0x302          1              GL_SRC_ALPHA, GL_ONE   <- CONG
+            'multiply'   2      0x306          0x303          GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA
+
+        Thieu truong nay thi armature nao co khung 'screen' se duoc ve tron
+        THUONG: do duoc o Main — `UITongYong_ItemLight` (32/32 khung 'screen')
+        thanh mot dom xanh dac thay vi vet sang.
+        """
+        off = self.u(q + 0x38)
+        ln = self.u(q + 0x3C)
+        if ln == 0 or ln > 64:
+            return ''
+        a = self.pool + off
+        if a + ln > self.size:
+            return ''
+        return self.d[a:a + ln].decode('utf-8', 'replace')
+
     # ------------------------------------------------------------- doc
     def keys(self, key_off, count):
         """Cac khung cua mot xuong."""
@@ -178,6 +209,7 @@ class Anim(object):
                 ('sx', round(v[6], 4)), ('sy', round(v[7], 4)),
                 ('d', struct.unpack_from('<i', self.d, q + 0x2C)[0]),
                 ('dur', struct.unpack_from('<I', self.d, q + 0x40)[0]),
+                ('blend', self._blend_at(q)),
             ]))
         return out
 

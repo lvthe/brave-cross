@@ -48,3 +48,8 @@ work/vn_api.json
 
 # Bảng tham chiếu chéo sinh từ libgame.so — sinh lại bằng: python work/picmap.py
 work/picmap.pkl
+
+# Ảnh chụp màn hình game gốc, lấy bằng work/emu_dom.py để đối chiếu cách trộn
+# (7,1 MB, 13 file) — là tài sản có bản quyền của bản gốc, cùng loại với
+# *.apk ở trên. Chụp lại được bất cứ lúc nào, nên chặn hẳn.
+work/_dom/
