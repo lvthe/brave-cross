@@ -178,11 +178,16 @@ end
 function OfflineBootstrap:newUserData()
 	local d, nGoc = {}, 0
 	for _, name in ipairs(OfflineStore.TABLES) do
-		local t = self:resetOf(name)
-		if t ~= nil then
-			nGoc = nGoc + 1
+		-- Bảng thuộc TU_DUNG thì ĐỂ VẮNG MẶT, không nhét {} — client tự dựng
+		-- hình dạng gốc nhưng CHỈ khi bảng là nil (xem OfflineStore.TU_DUNG).
+		-- Đặt {} ở đây là bịt mất đường đó rồi màn hình vỡ ở dòng sau.
+		if not OfflineStore.TU_DUNG[name] then
+			local t = self:resetOf(name)
+			if t ~= nil then
+				nGoc = nGoc + 1
+			end
+			d[name] = t or {}
 		end
-		d[name] = t or {}
 	end
 	d.GameUserBaseInfo = self:baseInfo()
 	d.GameUserSessionData = self:sessionData()
@@ -202,9 +207,14 @@ function OfflineBootstrap:ensure()
 	if OfflineStore:load() then
 		-- bổ sung bảng mới nếu bản lưu cũ thiếu (khi ta mở thêm tính năng)
 		for _, name in ipairs(OfflineStore.TABLES) do
-			if OfflineStore.data[name] == nil then
-				OfflineStore.data[name] = self:resetOf(name) or {}
-				OfflineStore.dirty = true
+			-- Bảng TU_DUNG thì vắng mặt là ĐÚNG trạng thái, không phải thiếu sót
+			-- của bản lưu cũ — "bù" cho nó là quay lại đúng lỗi vừa gỡ. Bảng nào
+			-- đã chơi rồi thì nằm sẵn trong file lưu và không đi qua đây.
+			if not OfflineStore.TU_DUNG[name] then
+				if OfflineStore.data[name] == nil then
+					OfflineStore.data[name] = self:resetOf(name) or {}
+					OfflineStore.dirty = true
+				end
 			end
 		end
 		-- Bù cho bản lưu cũ tạo trước khi ta seed FirstEnterGameTime.

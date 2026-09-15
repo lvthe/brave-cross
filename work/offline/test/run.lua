@@ -119,6 +119,10 @@ for _ in pairs(ud or {}) do nTables = nTables + 1 end
 -- EventManagerTableName, nen truoc do lot luoi (GameUserGuildData,
 -- GameUserCloudShop, GameUserStateWar, GameUserRankTitle). Cach tim: quet moi
 -- GetUserDataWithName("...") trong 973 file roi tru di danh sach dang co.
+--
+-- Con 37 chu khong tang, du `TABLES` vua them GameUserEndlessChapter: bang
+-- thuoc TU_DUNG CO Y vang mat o khoi nay, de client tu dung hinh dang goc khi
+-- thay nil (muc 14 kiem chinh dieu do). Dem duoc no o day la HONG.
 check(nTables == 37, "du 37 bang", nTables)
 check(ud and ud.GameUserGuildData ~= nil, "co bang GameUserGuildData")
 
@@ -282,6 +286,203 @@ for _, ten in ipairs(OfflineStore.TABLES) do
 	if ten == "GameUserGuildData" then coBang = true end
 end
 check(coBang, "kho giu bang GameUserGuildData")
+
+print("\n=== 14. ai vo tan (EndlessChapter) ===")
+
+--[[ Bang `GameUserEndlessChapter` KHONG co muc `<bang>Reset` trong cau hinh va
+	khong lop nao khai `InitData()`, nen hinh dang goc chi co MOT duong: de nó la
+	NIL cho `EndlessChapterLogic:GetUserEndlessChapterData`
+	(share/EndlessChapterLogic.lua:127) tu goi `craeteUserEndlessChapter()`.
+
+	Tra {} la client tuong da co du lieu, bo qua buoc dung, roi hai man hinh lam
+	so hoc tren nil:
+	  CUIInfiniteLevelMain.lua:619            FreeChallengesCount + PayChallengesCount(nil) - ChallengesCount(nil)
+	  CUIInfiniteLevelFirstPassRewards.lua:211 BestProsees(nil) >= i
+]]
+local coTrongKho = false
+for _, ten in ipairs(OfflineStore.TABLES) do
+	if ten == "GameUserEndlessChapter" then coTrongKho = true end
+end
+check(coTrongKho, "kho giu bang GameUserEndlessChapter (de LUU duoc tien trinh)")
+check(OfflineStore.TU_DUNG.GameUserEndlessChapter == true,
+	"bang nam trong TU_DUNG (de client tu dung hinh dang goc)")
+
+-- TU_DUNG tac dung bang cach de bang VANG MAT trong khoi userData. Kiem bang
+-- chinh ham dung khoi, khong suy doan.
+local ud2 = OfflineBootstrap:newUserData()
+check(ud2.GameUserEndlessChapter == nil,
+	"khoi userData KHONG chua bang nay, de client thay nil ma tu dung")
+check(ud2.GameUserGuildData ~= nil,
+	"doi chieu: bang thuong VAN co mat trong khoi (phep kiem tren khong vo nghia)")
+
+-- Duong doc cua client di qua day (share_CDataManager.lua:225 -> ban va o
+-- offline/init.lua). Phai tra NIL, khong phai {}.
+local nErrE, tDataE = CDataManager:initUserDataFromDB("GameUserEndlessChapter")
+check(nErrE == 0 and tDataE == nil,
+	"initUserDataFromDB tra NIL (khong phai {}) cho bang TU_DUNG", tostring(tDataE))
+local nErrT, tDataT = CDataManager:initUserDataFromDB("GameUserChuaBiet")
+check(nErrT == 0 and type(tDataT) == "table",
+	"bang KHONG thuoc TU_DUNG van tra {} nhu cu")
+
+--[[ Bang xep hang: cung loai voi ClientGetGuildInfo cua bang hoi — can NGUOI
+	CHOI KHAC. Tra rong chu khong dung ten gia. Hinh dang {} / 0 / 0 khong phai
+	so ta nghi ra: ban goc co san mau y het o CUILeaderboard.lua:1633. ]]
+G_EndlessChapterLogic = {}
+function G_EndlessChapterLogic:OnGetEndlessChapterRank(tRankList, nSelfRank, nYesterdayRank)
+	self.tGot = { tRankList, nSelfRank, nYesterdayRank }
+end
+Mock:reset()
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterRank")
+Mock:tick(1)
+local r = G_EndlessChapterLogic.tGot
+check(r ~= nil, "OnGetEndlessChapterRank duoc goi")
+check(r and type(r[1]) == "table" and next(r[1]) == nil,
+	"tra danh sach RONG (khong dung ten gia)", r and type(r[1]))
+check(r and r[2] == 0 and r[3] == 0, "chua co hang thi 0/0", r and tostring(r[2]))
+
+-- Phai DON LOP "DANG TAI": CUIMain chi ha lop do o OnReceiveResponse
+-- (CUIMain.lua:470, than ham :941), nen tra loi bang ham `On...` rieng KHONG du.
+local coDon = false
+for _, c in ipairs(Mock.calls) do
+	if c.func == "OnReciveResponse" then coDon = true end
+end
+check(coDon, "co goi OnReciveResponse de ha lop 'dang tai'")
+
+--[[ Moi RPC cua ho nay phai TRA LOI. Handler dang ky ma khong tra loi thi client
+	treo o lop "dang tai" chu khong bao gi (net.lua:252-262) — do la ly do cac
+	RPC thuoc phan may chu van duoc dang ky du chua lam duoc gi. ]]
+local DS_RPC = {
+	"ClientFight", "ClientInspire", "ClientResetEndlessChapter",
+	"ClientCompeleteFight", "ClientGotoNextProsees", "ClientGetEndlessChapterRank",
+	"ClientSwap", "ClientStopSwap", "ClientSwapImmediately",
+	"ClientBuyChallengesCount", "ClientGetEndlessChapterFirstPrize",
+}
+for _, ten in ipairs(DS_RPC) do
+	check(OfflineRouter:get(ten) ~= nil, "co handler cho " .. ten)
+end
+for _, ten in ipairs(DS_RPC) do
+	Mock:reset()
+	local ok = pcall(function()
+		CallServer(5, "G_EndlessChapterLogic", ten)
+	end)
+	Mock:tick(1)
+	-- KHONG duoc khong tra loi (client treo, net.lua:252-262). Con SO phan hoi
+	-- thi khong nhat thiet la 1: ClientGetEndlessChapterRank tra loi HAI dich —
+	-- du lieu cho G_EndlessChapterLogic, roi don lop cho g_CUIGameRPCManager.
+	-- Bat bien that la: lop "dang tai" duoc ha DUNG MOT lan.
+	check(ok and #Mock.calls >= 1, ten .. " TRA LOI (khong treo client)", #Mock.calls)
+	-- Va phai ha lop "dang tai": moi CallX cua ho nay deu phat
+	-- OnWaitingForRequest, chi OnReceiveResponse ha duoc (CUIMain.lua:941).
+	-- (ClientGotoNextProsees la ngoai le cua ban goc — no bi chu thich mat dong
+	-- phat OnWaitingForRequest o ClientEndlessChapterLogic.lua:302 — nhung don
+	-- lop o day van dung va vo hai.)
+	local nHa = 0
+	for _, c in ipairs(Mock.calls) do
+		if c.func == "OnReciveResponse" then nHa = nHa + 1 end
+	end
+	check(nHa == 1, ten .. " ha lop 'dang tai' dung MOT lan (khong hai)", nHa)
+end
+
+--[[ 15. Tien trinh ai vo tan phai SONG qua lan khoi dong lai.
+
+	Day la toan bo ly do cua phuong an persistence: bang nam trong `TABLES` (nen
+	`syncFromClient` luu duoc) NHUNG cung nam trong `TU_DUNG` (nen luc khoi dong
+	no VANG MAT khi chua choi, va client tu dung hinh dang goc). Hai lan doc
+	khac nhau di hai duong khac nhau — kiem ca hai. ]]
+print("\n=== 15. tien trinh ai vo tan qua lan khoi dong lai ===")
+
+-- Da choi: client dung xong bang, syncFromClient chep ve kho, roi luu.
+OfflineStore.data = OfflineBootstrap:newUserData()
+OfflineStore.data.GameUserEndlessChapter = {
+	BestProsees = 7, ChallengesCount = 3, PayChallengesCount = 1,
+	ResetCount = 0, InspireCount = 2, FirstPrizeStates = { ["1"] = true },
+}
+check(OfflineStore:save(), "luu duoc tien trinh")
+
+OfflineStore.data = nil
+check(OfflineStore:load(), "khoi dong lai: nap lai duoc")
+check(OfflineBootstrap:ensure() == false, "lan nay la nguoi choi CU, khong tao lai")
+local e = OfflineStore.data.GameUserEndlessChapter
+check(type(e) == "table", "bang ai vo tan CON trong kho sau khi khoi dong lai")
+check(e and e.BestProsees == 7, "tien trinh con nguyen (BestProsees = 7)",
+	e and e.BestProsees)
+check(e and e.FirstPrizeStates and e.FirstPrizeStates["1"] == true,
+	"trang thai da lanh thuong con nguyen")
+
+--[[ Ban luu CU, tao TRUOC khi co tinh nang: khong he co khoa nay. Ham bu trong
+	`ensure()` khong duoc nhet {} vao — nhet lai la dung loi :619/:211 quay ve,
+	vi {} khac nil nen client bo qua ham dung cua chinh no. ]]
+OfflineStore.data = { GameUserBaseInfo = { Gold = 1 } }
+OfflineStore:save()
+OfflineStore.data = nil
+OfflineStore:load()
+OfflineBootstrap:ensure()
+check(OfflineStore.data.GameUserEndlessChapter == nil,
+	"ban luu cu KHONG bi nhet {} (nhet la loi :619/:211 quay lai)",
+	tostring(OfflineStore.data.GameUserEndlessChapter))
+check(OfflineStore.data.GameUserGuildData ~= nil,
+	"doi chieu: bang thuong VAN duoc bu cho ban luu cu")
+
+--[[ 16. Nang cap file luu cu (phien ban dinh dang).
+
+	File luu do ban build TRUOC khi co `TU_DUNG` ghi ra: khong co khoa phien
+	ban, va cac bang `TU_DUNG` bi nhiem `{}`. Do la lo hong THAT, do duoc tren
+	file luu that: ban ghi co dung 5 truong ma `GetUserEndlessChapterData` va
+	(:133-152) va THIEU ca 5 bo dem, nen `CUIInfiniteLevelMain.lua:619` van
+	chay so hoc tren nil. Sua `TU_DUNG` khong cuu duoc no, vi khoa da CO MAT
+	trong file — client thay khac nil nen bo qua ham dung cua chinh no. ]]
+print("\n=== 16. nang cap file luu cu (phien ban dinh dang) ===")
+
+local tHong = {
+	SwapBeginTime = 0, FightHeroList = { 25 }, CurrentProsess = 1,
+	CurrentState = 0, FirstPrizeStates = {},
+}
+local function ghiFileKieuCu()
+	local fp = io.open(OfflineStore:path(), "w")
+	fp:write(cjson.encode({
+		GameUserBaseInfo = { Gold = 50000 },
+		GameUserEndlessChapter = tHong,
+		GameUserCavern = {},
+	}))
+	fp:close()
+end
+
+ghiFileKieuCu()
+OfflineStore.data = nil
+OfflineStore.phien_ban = nil
+check(OfflineStore:load(), "nap duoc file luu kieu cu")
+check(OfflineStore.data.GameUserEndlessChapter == nil,
+	"bo bang ai vo tan da nhiem {}", tostring(OfflineStore.data.GameUserEndlessChapter))
+check(OfflineStore.data.GameUserCavern == nil, "bo luon bang hang (cung thuoc TU_DUNG)")
+check(OfflineStore.data.GameUserBaseInfo ~= nil, "bang thuong KHONG bi bo")
+check(OfflineStore.phien_ban == OfflineStore.PHIEN_BAN,
+	"ghi nhan phien ban moi", tostring(OfflineStore.phien_ban))
+
+-- Khoa phien ban KHONG duoc lot vao khoi du lieu dua cho client: `all()` tra
+-- thang `self.data`, ma khoi do di nguyen vao `G_DataManager:Init`.
+check(OfflineStore.data[OfflineStore.KHOA_PHIEN_BAN] == nil,
+	"self.data sach khoa phien ban")
+check(OfflineStore:all()[OfflineStore.KHOA_PHIEN_BAN] == nil,
+	"khoa phien ban KHONG lot vao khoi du lieu cua client")
+
+-- File dinh dang HIEN TAI, co tien trinh that: KHONG duoc bo gi.
+OfflineStore.data = OfflineBootstrap:newUserData()
+OfflineStore.data.GameUserEndlessChapter = { BestProsees = 4 }
+check(OfflineStore:save(), "ghi duoc file dinh dang hien tai")
+OfflineStore.data = nil
+OfflineStore.phien_ban = nil
+check(OfflineStore:load(), "nap lai duoc")
+local e2 = OfflineStore.data.GameUserEndlessChapter
+check(type(e2) == "table" and e2.BestProsees == 4,
+	"file dinh dang hien tai: tien trinh KHONG bi bo", e2 and e2.BestProsees)
+
+-- Va sau khi nang cap thi lan luu ke tiep mang phien ban hien tai, nen khong
+-- nang cap lai nua.
+ghiFileKieuCu()
+OfflineStore.data = nil
+OfflineStore.phien_ban = nil
+OfflineStore:load()
+check(OfflineStore:nangCap() == 0, "nang cap lai lan hai khong bo gi (idempotent)")
 
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

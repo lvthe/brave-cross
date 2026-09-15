@@ -25,6 +25,7 @@ require("offline.handlers.mysterious")
 require("offline.handlers.lottery")
 require("offline.handlers.guild")
 require("offline.handlers.cavern")
+require("offline.handlers.endless")
 
 Offline = {}
 Offline.VERSION = "0.1"
@@ -40,11 +41,10 @@ Offline.VERSION = "0.1"
 	(share/CavernDataManager.lua:42) kiểm `== nil` rồi gọi CraeteUserCavern().
 	Trả {} rỗng thì client tưởng đã có dữ liệu, bỏ qua bước dựng, rồi màn hình
 	đọc trường nil (`CurrentProgress`) và vỡ (CUICavern.lua:971). Với các bảng
-	đó trả NIL để client tự dựng ĐÚNG hình dạng gốc — không bịa. ]]
-local TU_DUNG = {
-	GameUserCavern = true,   --魔窟 (hang / ma khu): CavernDataManager:CraeteUserCavern
-}
+	đó trả NIL để client tự dựng ĐÚNG hình dạng gốc — không bịa.
 
+	Danh sách nằm ở `OfflineStore.TU_DUNG` (store.lua) chứ không ở đây: cả
+	bootstrap lẫn chỗ này đều phải đọc CÙNG một danh sách. ]]
 local function patchDataManager()
 	if not CDataManager then
 		OfflineLog:err("khong tim thay CDataManager — nap sai thu tu?")
@@ -52,7 +52,7 @@ local function patchDataManager()
 	end
 	CDataManager.initUserDataFromDB = function(mgr, strModuleName)
 		OfflineLog:info("initUserDataFromDB: " .. tostring(strModuleName))
-		if TU_DUNG[strModuleName] then
+		if OfflineStore.TU_DUNG[strModuleName] then
 			return 0, nil
 		end
 		return 0, {}
