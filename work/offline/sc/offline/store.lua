@@ -101,6 +101,34 @@ OfflineStore.TU_DUNG = {
 	-- Bảng này KHÔNG có mục `<bảng>Reset` trong cấu hình và không lớp nào khai
 	-- `InitData()`, nên hàm dựng của client là đường DUY NHẤT có hình dạng gốc.
 	GameUserEndlessChapter = true,
+	-- Cửa hàng Vân Du (云游商人). Tính năng TẮT trong bản này: `Setting.lua` của
+	-- chính bản gốc (kênh vi) không hề định nghĩa `IS_OPEN_TOURMERCHANT`, và cả
+	-- 5 chỗ đọc nó đều là `if IS_OPEN_TOURMERCHANT then` nên nil = tắt. Chính
+	-- mã gốc nói ra điều đó — ClientTourMerchantLogic.lua:112:
+	--
+	--   --2016/10/31 by rong34 begin 如果云游商人功能没有开启的话,
+	--   --                                GameUserCloudShop是没值的
+	--   if not bRetCode then break end
+	--   if tUserCloudShop == nil or tUserCloudShop.Status == nil then break end
+	--
+	-- Trả {} thì `{}` KHÁC nil: `getLeftStandingTime` (:57) đi vào nhánh else
+	-- và làm số học trên `ComeTime` nil, ném lỗi ngay giữa
+	-- `CUIMain:postOnMainShowEvent` (qua OnMainShowUI -> refreshDyncBuilding ->
+	-- isLeftStandingTime). Lỗi đó KHÔNG chỉ là một dòng nhật ký: nó cắt ngang
+	-- postOnMainShowEvent, nên `g_CUILevelTarget:show()` và `self:Tick()` phía
+	-- sau không bao giờ chạy (CUIMain.lua:314-324). Đo được trong
+	-- C.loi_hen: 'postOnMainShowEvent: .../ClientTourMerchantLogic.lua:57:
+	-- attempt to perform arithmetic on field ComeTime (a nil value)'.
+	--
+	-- Vắng mặt thì `initUserDataFromDB` trả (0, nil) — đúng hợp đồng của bản
+	-- gốc (share_CDataManager.lua:207 trả 0, nil) và đúng thứ tự client viết:
+	-- ProcessError(0) là false (số 0 là truthy trong Lua), nên nó KHÔNG
+	-- `goto Exit0`, mà rơi vào nhánh `tUserCloudShop == nil` -> trả `true, 0`.
+	-- Hai chỗ đọc còn lại không tự chặn nil — `isGoodsSoldOut`
+	-- (ClientTourMerchantLogic.lua:174) và `CUITourMerchant:_initData`
+	-- (CUITourMerchant.lua:179) — nhưng cả hai chỉ chạy khi màn cửa hàng mở,
+	-- mà màn đó chỉ mở trong khối `IS_OPEN_TOURMERCHANT`, tức không bao giờ.
+	GameUserCloudShop = true,
 }
 
 function OfflineStore:path()

@@ -115,15 +115,20 @@ check(ud and ud.GameUserSessionData ~= nil, "co bang GameUserSessionData")
 
 local nTables = 0
 for _ in pairs(ud or {}) do nTables = nTables + 1 end
--- 37 = 33 bang ban dau + 4 bang client hoi toi bang CHUOI chu khong qua
--- EventManagerTableName, nen truoc do lot luoi (GameUserGuildData,
--- GameUserCloudShop, GameUserStateWar, GameUserRankTitle). Cach tim: quet moi
--- GetUserDataWithName("...") trong 973 file roi tru di danh sach dang co.
+-- 38 ten trong `TABLES`, nhung khoi userData chi co 36: HAI bang thuoc `TU_DUNG`
+-- CO Y vang mat o khoi nay (GameUserEndlessChapter, GameUserCloudShop), de
+-- client thay nil ma tu dung hinh dang goc (muc 14 kiem chinh dieu do). Dem
+-- duoc chung o day la HONG.
 --
--- Con 37 chu khong tang, du `TABLES` vua them GameUserEndlessChapter: bang
--- thuoc TU_DUNG CO Y vang mat o khoi nay, de client tu dung hinh dang goc khi
--- thay nil (muc 14 kiem chinh dieu do). Dem duoc no o day la HONG.
-check(nTables == 37, "du 37 bang", nTables)
+-- 38 = 33 bang ban dau + 4 bang client hoi toi bang CHUOI chu khong qua
+-- EventManagerTableName, nen truoc do lot luoi (GameUserGuildData,
+-- GameUserCloudShop, GameUserStateWar, GameUserRankTitle) + GameUserEndlessChapter.
+-- Cach tim 4 bang kia: quet moi GetUserDataWithName("...") trong 973 file roi
+-- tru di danh sach dang co.
+--
+-- LUU Y: GameUserCavern cung thuoc TU_DUNG nhung KHONG nam trong TABLES, nen no
+-- khong tinh vao 38 — 38 la so ten trong kho, khong phai so bang thuoc TU_DUNG.
+check(nTables == 36, "du 36 bang", nTables)
 check(ud and ud.GameUserGuildData ~= nil, "co bang GameUserGuildData")
 
 print("\n=== 4. luu va nap lai ===")
@@ -324,6 +329,40 @@ local nErrT, tDataT = CDataManager:initUserDataFromDB("GameUserChuaBiet")
 check(nErrT == 0 and type(tDataT) == "table",
 	"bang KHONG thuoc TU_DUNG van tra {} nhu cu")
 
+--[[ Cửa hàng Vân Du (`GameUserCloudShop`) — cùng loại, nhưng lý do khác hẳn.
+
+	`Setting.lua` của CHÍNH BẢN GỐC (kênh vi) không định nghĩa
+	`IS_OPEN_TOURMERCHANT`, và cả 5 chỗ đọc nó đều là `if IS_OPEN_TOURMERCHANT
+	then` — nên tính năng này TẮT trong bản ta dựng lại. Mã gốc nói thẳng ra
+	điều đó (ClientTourMerchantLogic.lua:112, chú thích của rong34, 2016:
+	"nếu tính năng chưa mở thì GameUserCloudShop không có giá trị").
+
+	Trả {} thì `{}` KHÁC nil: `getLeftStandingTime` (:57) đi vào nhánh else và
+	làm số học trên `ComeTime` nil. Lỗi đó không chỉ là một dòng nhật ký — nó
+	ném ra giữa `CUIMain:postOnMainShowEvent` (qua OnMainShowUI ->
+	refreshDyncBuilding -> isLeftStandingTime), nên `g_CUILevelTarget:show()`
+	và `self:Tick()` phía sau không bao giờ chạy (CUIMain.lua:314-324). ]]
+local coCloud = false
+for _, ten in ipairs(OfflineStore.TABLES) do
+	if ten == "GameUserCloudShop" then coCloud = true end
+end
+check(coCloud, "kho giu bang GameUserCloudShop (de LUU, nếu client có điền)")
+check(OfflineStore.TU_DUNG.GameUserCloudShop == true,
+	"bang nam trong TU_DUNG (tinh nang TAT trong ban nay)")
+
+local ud3 = OfflineBootstrap:newUserData()
+check(ud3.GameUserCloudShop == nil,
+	"khoi userData KHONG chua bang cua hang Van Du, de client thay nil")
+
+-- Hợp đồng đọc: phải trả (0, nil) chứ không phải một mã lỗi. Mã khác 0 thì
+-- `KDebug.ProcessError(bRetCode)` đúng và client `goto Exit0` — nhánh
+-- `tUserCloudShop == nil` mà chính bản gốc viết ra sẽ không bao giờ tới được.
+-- (Số 0 là truthy trong Lua nên `not 0` = false, đúng như bản gốc trông cậy.)
+local nErrC, tDataC = CDataManager:initUserDataFromDB("GameUserCloudShop")
+check(nErrC == 0 and tDataC == nil,
+	"initUserDataFromDB tra (0, nil) cho bang cua hang Van Du",
+	tostring(nErrC) .. ", " .. tostring(tDataC))
+
 --[[ Bang xep hang: cung loai voi ClientGetGuildInfo cua bang hoi — can NGUOI
 	CHOI KHAC. Tra rong chu khong dung ten gia. Hinh dang {} / 0 / 0 khong phai
 	so ta nghi ra: ban goc co san mau y het o CUILeaderboard.lua:1633. ]]
@@ -443,6 +482,7 @@ local function ghiFileKieuCu()
 		GameUserBaseInfo = { Gold = 50000 },
 		GameUserEndlessChapter = tHong,
 		GameUserCavern = {},
+		GameUserCloudShop = {},
 	}))
 	fp:close()
 end
@@ -454,6 +494,8 @@ check(OfflineStore:load(), "nap duoc file luu kieu cu")
 check(OfflineStore.data.GameUserEndlessChapter == nil,
 	"bo bang ai vo tan da nhiem {}", tostring(OfflineStore.data.GameUserEndlessChapter))
 check(OfflineStore.data.GameUserCavern == nil, "bo luon bang hang (cung thuoc TU_DUNG)")
+check(OfflineStore.data.GameUserCloudShop == nil,
+	"bo bang cua hang Van Du da nhiem {}", tostring(OfflineStore.data.GameUserCloudShop))
 check(OfflineStore.data.GameUserBaseInfo ~= nil, "bang thuong KHONG bi bo")
 check(OfflineStore.phien_ban == OfflineStore.PHIEN_BAN,
 	"ghi nhan phien ban moi", tostring(OfflineStore.phien_ban))
