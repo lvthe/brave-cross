@@ -174,6 +174,40 @@ class Xgg(object):
 
     NODE_MIN = 0xA0        # phan dau co dinh cua mot ban ghi node
 
+    # O "tai nguyen" cua ban ghi node, theo KICH THUOC ban ghi. Gan nhu moi ban
+    # ghi deu co o quen thuoc +0x70/+0x74, nhung co mot kich thuoc thi o do dai
+    # BANG 0 con dia chi van dung — chuoi that nam ngay tai dia chi ay trong kho
+    # chuoi, chi thieu do dai.
+    #
+    # Do tren cay vn/decrypted (87 node CCParticleSystemQuad, va 232 la kich
+    # thuoc DANH RIENG cho hat: quet ca assets/conf thi 85/85 ban ghi 232 byte
+    # deu la hat):
+    #
+    #   * ca 87 node hat co ban ghi 232 byte;
+    #   * ca 87 node co +0x74 = 0, nen xgg.py truoc day tra res = chuoi rong,
+    #     va layout_ref ghi lai chuoi rong — day chinh la ly do mot ket luan cu
+    #     ("bo cuc KHONG noi hat nao") bi sai;
+    #   * dia chi o +0x70 van DUNG: no tro vao dung cho chua duong dan tep hat
+    #     (do: +0x70 cua ca 87 node TRUNG KHIT dia chi o +0xE0);
+    #   * do dai that nam o +0xE4. Doc cap (+0xE0, +0xE4) ra duoc duong dan
+    #     .plist cho 87/87 node, khong node nao ra thu khac.
+    #
+    # Vi sao khong dung mot luat "quen": "neu +0x74 = 0 thi tim trong ban ghi
+    # mot cap (dia chi, do dai) co dia chi bang +0x70". Luat ay DUNG cho hat
+    # nhung SAI cho ban ghi 320/352 byte: o +0xDC o do tinh co mang dung gia tri
+    # dia chi ay roi giai ra chuoi '2'/'1' (co chu cua CCLabelTTF) — 8.176 node
+    # trung so chu khong trung nghia. Nen phai theo kich thuoc ban ghi, cung
+    # loi voi IMG_FIELD (xem node_image) cho o ten anh.
+    RES_FIELD = {232: 0xE0}
+
+    def res_of(self, a, size):
+        """Truong tai nguyen cua ban ghi `size` byte bat dau o `a`."""
+        off = self.RES_FIELD[size]
+        o, n = struct.unpack_from('<2I', self.data, a + off)
+        if n == 0:
+            return ''
+        return self.string(o, n)
+
     def node_offsets(self):
         """Section F la bang offset uint32 tro vao G, tang dan."""
         a, b = self.offsets['F'], self.offsets['H']
@@ -232,7 +266,8 @@ class Xgg(object):
                  else 'type%d' % t),
                 ('cls', self.string(u(0x60), u(0x64))),
                 ('name', self.string(u(0x68), u(0x6C))),
-                ('res', self.string(u(0x70), u(0x74))),
+                ('res', self.res_of(a, end - a) if self.RES_FIELD.get(end - a)
+                 else self.string(u(0x70), u(0x74))),
                 # +0x0C / +0x14: TEN CHAM va TEN DOI TUONG NHAN CHAM — hai
                 # tham so ma engine dua cho setLuaTouchName va
                 # setCallbackLuaObject khi nap bo cuc. Engine goi
