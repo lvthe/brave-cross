@@ -24,9 +24,10 @@ Bảy bank không đọc được, và cả bảy đều đúng là không có g
 | `MasterBank`, `MasterBank.strings`, `XiaoQiaoExclus` | `RIFF` chỉ có `FMT ` + `LIST` (`PROJ`), **không có chunk `SND `** — bank metadata, không có mẫu |
 | `Vo_ZhiTianXinChang_Usual`, `Vo_ZhiTianXinChang_Wake`, `Vo_ZhuGeLiang_Usual`, `Vo_ZhuGeLiang_Wake` | file **1 byte**, chứa đúng ký tự `0` — bản gốc ship file rỗng |
 
-Bốn file 1 byte đó là **dữ liệu mất, không khôi phục được**: bản gốc có tham
-chiếu tới chúng (`event:/Vo-Usual/Vo_ZhuGeLiang_Usual`) nhưng âm thanh không
-được đóng gói. Ghi ra đây, không bịa.
+Bốn file 1 byte đó là **dữ liệu mất, không khôi phục được**: client có đường
+gọi tới chúng nếu `heroSprite` mang tên tương ứng (`CUIWing.lua:1474-1475` ghép
+`banks/Vo_%s_Usual.bank` và `event:/Vo-Usual/Vo_%s_Usual`), nhưng âm thanh
+không được đóng gói. Ghi ra đây, không bịa.
 
 ## Ba tầng định dạng (đo, không suy)
 
@@ -148,11 +149,34 @@ Vậy đường dẫn chỉ là **gợi ý**.
 
 Kết quả trên 448 chuỗi: **423 giải được** (413 khớp đúng tên, 10 khớp tiền tố),
 **4 là mẫu** để client tự điền tên lúc chạy (`event:/Vo-Wake/Vo_%s_Wake`),
-**21 không giải được** và đều được ghi kèm lý do — hai nhóm thật:
+**21 không giải được** và đều được ghi kèm lý do. Hai nhóm thật, đọc ra từ
+chính `khong_giai_duoc` của JSON (đừng chép tay lại danh sách này — nó đổi mỗi
+lần đo):
 
-* âm thanh **không được ship** — `UI.bank` không có `UI_Chapter_Treasure`,
-  `UI_Treasure`, `UI_Use`…; `BGM.bank` không có `BGM_NewYear`;
-* trỏ vào **bốn bank rỗng 1 byte** đã nói ở trên.
+* **15 chuỗi: bank có thật, nhưng bank đó không có subsound tên ấy** —
+  `Player03` 6 (`Act_Player03_QiangYin_Cast`, `_RouHua_Cast/Imp`,
+  `_Wake_Cast/Imp/Pre`), `LuXun` 3 (`_Fight_Cast`, `_Fight2_Cast`, `_Wake_Cast`),
+  rồi mỗi bank một cái: `BGM` (`BGM_NewYear`), `BaiHuZi`, `Catapult`, `FaZheng`,
+  `ZhangJiaoEvil`, `ZhangLiaoExclus`, `UI` (`UI_TianMIng`).
+* **5 chuỗi: không bank nào có subsound tên ấy** —
+  `Act_SpearmenN_Wake_Cast`, `Impact_Archery_Flesh_Heavy`,
+  `Impact_Archery_Flesh_Light`, `Vo_ZhuGeLiangYoung_Reward`,
+  `Vo_ZhaoYun_Event`.
+
+Với nhóm sau thì **đoạn đường dẫn KHÔNG phải bằng chứng**: `event_ref.py` từng
+gán hai tiếng `Impact_Archery_Flesh_*` cho `Impact_Electricity` chỉ vì đoạn
+`Impact` khớp tiền tố ba bank và nó dài nhất, rồi báo "bank
+`Impact_Electricity` không có subsound tên này" — sai, tên đó không nằm ở bank
+nào. Nên nhánh dự phòng đó (`_goi_y`) nay chỉ còn xét đoạn đường dẫn **bằng**
+tên bank.
+
+**Bốn bank 1 byte ở bảng trên KHÔNG nằm trong 21 chuỗi đó** — chúng là mất dữ
+liệu ở tầng bank, không phải ở tầng bảng tra. Chúng chỉ tới được bằng tên do
+client ghép lúc chạy: `CUIWing.lua:1474` nạp `banks/Vo_%s_Usual.bank` theo
+`heroSprite` rồi `:1475` xin `event:/Vo-Usual/Vo_%s_Usual`. Tên đó **không có
+chuỗi ký tự nào trong 973 file Lua** (đo: quét cả `sc/`), nên phép quét chuỗi
+không thấy; muốn biết bản gốc có tướng nào tên `ZhuGeLiang` hay
+`ZhiTianXinChang` thì phải tra bảng tướng, và ở đây **không khẳng định** là có.
 
 Đuôi tên trong bank **không thống nhất**: `_01`, `01`, và cả `_ 02`
 (`Impact_Catapult_Light_ 02`). Nên phép so phải bỏ mọi cụm `[số _ khoảng trắng]`

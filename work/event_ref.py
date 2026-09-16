@@ -35,9 +35,13 @@ Chuan hoa: bo MOI cum `[so _ khoang trang]` o CUOI, vi ban goc dat duoi khong
 thong nhat — `_01`, `01`, ca `_ 02` (`Impact_Catapult_Light_ 02`).
 
 KHONG giai duoc thi ghi vao `khong_giai_duoc` kem ly do, KHONG bia. Hai nhom
-that: (a) am thanh khong duoc ship — `UI.bank` khong co `UI_Chapter_Treasure`,
-`UI_Treasure`, `UI_Use`…; (b) bon bank VO: `Vo_ZhiTianXinChang_Usual/Wake`,
-`Vo_ZhuGeLiang_Wake/Usual` la file 1 byte chua dung ky tu `0`.
+that (so do tren 448 chuoi, xem BANK.md chu dung chep tay): 15 chuoi ma bank
+co that nhung khong co subsound ten ay (`Player03` 6, `LuXun` 3, roi `BGM`,
+`BaiHuZi`, `Catapult`, `FaZheng`, `ZhangJiaoEvil`, `ZhangLiaoExclus`, `UI`),
+va 5 chuoi khong bank nao co. Bon bank RONG 1 byte
+(`Vo_ZhiTianXinChang_Usual/Wake`, `Vo_ZhuGeLiang_Wake/Usual`) la mat du lieu o
+tang BANK chu khong phai o tang bang tra, nen chung khong nam trong 21 chuoi
+nay: chung chi toi duoc bang ten client ghep luc chay.
 
 Chon bien the: mot ten co the co nhieu ban (`_01`, `_02`, `_03`). Ban goc de
 FMOD quyet dinh (event nhieu sound thi FMOD chon theo luat cua no) — KHONG
@@ -111,17 +115,28 @@ def _su_kien():
     return ra, dem
 
 
-def _goi_y(ev, co):
+def _goi_y(ev, co, tien_to=True):
     """Chon trong `co` mot bank theo duong dan cua event.
 
     Hai muc, theo thu tu: doan duong dan BANG ten bank, roi doan duong dan la
     TIEN TO cua ten bank (`event:/Impact/Impact_Catapult_Light` -> doan
     `Impact` -> bank `Impact_Catapult`). Chi xet trong `co`, khong xet moi
     bank, nen khong the keo mot bank khong lien quan vao.
+
+    `tien_to=False` de TAT muc thu hai. Muc thu hai chon bank dai nhat khop
+    tien to, ma khi chinh event KHONG giai duoc thi no chon rat tuy tien: do
+    duoc `event:/Impact/Impact_Archery_Flesh_Heavy` bi no gan cho
+    `Impact_Electricity` (doan `Impact` khop tien to ca ba bank
+    `Impact_Archery` / `Impact_Electricity` / `Impact_Hit`, lay ten dai nhat) —
+    roi bao "bank Impact_Electricity khong co subsound ten nay", trong khi ten
+    that su khong nam o bank nao. Nen T3 chi duoc dung muc thu nhat: doan
+    duong dan BANG ten bank moi la bang chung, con tien to thi khong.
     """
     for x in ev.split('/')[1:-1]:
         if x in co:
             return x
+    if not tien_to:
+        return None
     ung = []
     for x in ev.split('/')[1:-1]:
         ung += [b for b in co if b.startswith(x)]
@@ -156,7 +171,9 @@ def giai(ev, sub_of, banks):
         return b, [t for t in sub_of[b] if t.startswith(cuoi)], 'tien-to'
     # T3: khong co. Neu doan duong dan la mot bank co that thi noi ro bank do
     # khong chua am thanh nay — nguon goi y KHAC voi "khong co bank nao".
-    b = _goi_y(ev, banks)
+    # Chi muc BANG ten bank (xem `_goi_y`), khong dung tien to: o day khong con
+    # ten subsound nao de doi chieu, nen tien to chi la suy dien.
+    b = _goi_y(ev, banks, tien_to=False)
     if b is not None:
         return None, [], 'bank %s khong co subsound ten nay' % b
     return None, [], 'khong bank nao co subsound ten nay'
