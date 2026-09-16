@@ -416,6 +416,36 @@ class Xgg(object):
                 if h_can <= 2 and v_can <= 2:
                     out[-1]['alignH'] = h_can
                     out[-1]['alignV'] = v_can
+            # CCProgressTimer (thanh/ vong tien do). Ban ghi LUON dai dung 256
+            # byte — do tren ca 325 node cua 73 file, khong co ngoai le nao —
+            # va mang san ba truong ma lop CCProgressTimer cua engine doc:
+            #
+            #   +0xF4  uint32  KIEU. Sau ten cua S_CCProgressTimer:setType xep
+            #                  theo dung thu tu nay (ROADMAP muc 4): 0 cw,
+            #                  1 ccw, 2 lr, 3 rl, 4 bt, 5 tb. Do lai doc lap:
+            #                  node kieu 2 do ra vung to len sang PHAI (+0 mep
+            #                  trai), node kieu 4 do ra vung to len TU DUOI
+            #                  (+181 duoi -> +0) — dung 'lr' va 'bt'. Con 0/1
+            #                  la vong: 12 node kieu 0 deu la hinh VUONG.
+            #   +0xF8  float   PHAN TRAM dang dat (0..100). Doi chieu voi
+            #                  getPercentage() cua ban goc chay trong may ao:
+            #                  ca hai node do deu ra 100.
+            #   +0xFC  byte    co 0/1, va ba byte SAU no luon la cd cd cd
+            #                  (vun rac khuon mau cua MSVC) nen ban ghi ket
+            #                  thuc dung o day. 307 node = 1, 18 node = 0.
+            #                  NGHIA CHUA RO — 18 cai 0 gom ca 12 node vong va
+            #                  ca 2 node 'bt', nhung cung co 4 node 'lr', nen
+            #                  khong cat nghia theo kieu duoc. Ghi ra de con
+            #                  doi chieu, KHONG dung de ve.
+            #
+            # Truong nay la thu duy nhat quyet dinh thanh hay vong: bo no di
+            # thi 262 node 'lr' ve thanh ngang, 49 node 'rl' ve sai chieu, va
+            # 12 node vong ve thanh hinh vuong day dac.
+            if out[-1]['typeName'] == 'CCProgressTimer' and end - a >= 0x100:
+                out[-1]['ptType'] = struct.unpack_from('<I', self.data, a + 0xF4)[0]
+                out[-1]['pct'] = round(
+                    struct.unpack_from('<f', self.data, a + 0xF8)[0], 3)
+                out[-1]['ptFlag'] = self.data[a + 0xFC]
         # Nho lai: tree() va node_image() deu dua tren CHINH cac dict nay, neu
         # dung lai moi lan mot danh sach moi thi khong the gan them truong.
         self._nodes = out
@@ -484,6 +514,27 @@ class Xgg(object):
         if not 0 <= i < len(nds):
             return '', ''
         nd = nds[i]
+        # CCProgressTimer la ngoai le DA DO: ban ghi 256 byte, ten anh o +0xEC
+        # cho 323/325 node, nhung rieng thanh tien do cua man nap game
+        # (UI_LoadingGame, 81x81) lai de ten anh o +0xE4
+        # ('../png/loading/loading_2.png') con +0xEC rong. Do ca cay: cap
+        # +0xE4 chi khac rong dung 1 lan, cap +0xEC rong dung 1 lan, va khong
+        # node nao co ca hai — nen "lay cap dau tien khac rong" la doc so,
+        # khong phai doan. Truoc day node do khong co ten anh nao.
+        if nd['typeName'] == 'CCProgressTimer' and nd['bytes'] >= 0x100:
+            a = self.offsets['G'] + self.node_offsets()[i]
+            for off in (0xE4, 0xEC):
+                so, sl = struct.unpack_from('<2I', self.data, a + off)
+                if not sl or sl > 200 or so + sl > self.size - self.offsets['H']:
+                    continue
+                try:
+                    ten = self.data[self.offsets['H'] + so:
+                                    self.offsets['H'] + so + sl].decode('utf-8')
+                except UnicodeDecodeError:
+                    continue
+                if ten and all(ord(c) >= 32 for c in ten):
+                    return self._xac_nhan(nd, ten)
+            return self._anh_theo_co(nd)
         off = self.IMG_FIELD.get(nd['bytes'])
         if off is None or off + 8 > nd['bytes']:
             return self._anh_theo_co(nd)
@@ -498,7 +549,10 @@ class Xgg(object):
             return '', ''
         if not name or any(ord(c) < 32 for c in name):
             return '', ''
+        return self._xac_nhan(nd, name)
 
+    def _xac_nhan(self, nd, name):
+        """Do tin cay cua mot ten anh: 'verified' / 'guess' (xem node_image)."""
         if not hasattr(self, '_csize'):
             self._csize = {}
             for r in self.records('C'):
