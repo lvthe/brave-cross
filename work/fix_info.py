@@ -639,6 +639,66 @@ def cong_thuc_scaled(f, pw, ph, w, h, ax, ay, sx, sy):
 
 # Kê toàn bộ -------------------------------------------------------------------
 
+def lech():
+    """Kể tên những node mà CÔNG THỨC đặt khác số đã lưu trong bản ghi.
+
+    Đây là phép đo cho câu hỏi "reflash đổi cái gì". Bản ghi `.xgg` giữ x,y của
+    người thiết kế, còn lúc chạy bản gốc gọi `sngFixInfoReflash` và ĐẶT LẠI theo
+    công thức — nên chỗ nào hai bên lệch nhau thì đó đúng là những node bản gốc
+    dịch khỏi vị trí trong file. Chạy ở CỠ THIẾT KẾ của cha (960x640 như trong
+    .xgg), tức đúng cỡ mà bản port dùng khi cửa sổ engine đúng tỉ lệ 1,5.
+
+    Sai số cho phép 0,01 điểm: các số trong bản ghi là số nguyên / nửa điểm, nên
+    một nửa điểm là lệch thật chứ không phải làm tròn.
+
+    `--lech <ten file>` để soi một màn, `--lech` trọn bộ để đếm.
+    """
+    import glob
+    ten = sys.argv[2] if len(sys.argv) > 2 else None
+    if ten:
+        ds = [os.path.join(CONF, ten if ten.endswith('.xgg') else ten + '.xgg')]
+        if not os.path.exists(ds[0]):
+            raise SystemExit('khong thay %s' % ds[0])
+    else:
+        ds = sorted(glob.glob(os.path.join(CONF, '*.xgg')))
+    print()
+    print('=== node ma cong thuc dat khac so da luu (co thiet ke cua cha) ===')
+    truc = 0
+    nhom = {}
+    for p in ds:
+        try:
+            x = xgg.load(p)
+            nds = x.nodes()
+        except xgg.XggError:
+            continue
+        d = cha_cua(x)
+        for i, nd in enumerate(nds):
+            f = fix_of(x, i)
+            if not (f['mx'] or f['my']):
+                # Cả hai kiểu 0: không trục nào được đặt lại.
+                continue
+            cha = d.get(id(nd))
+            if cha is None:
+                continue
+            pw, ph = cha['w'], cha['h']
+            w, h, axr, ayr, sx, sy = hinh_dang(x, i)
+            X, Y = cong_thuc(f, pw, ph, w, h, axr * w, ayr * h, sx, sy)
+            for nhan, tinh, luu in (('x', X, nd['x']), ('y', Y, nd['y'])):
+                if tinh is None or abs(tinh - luu) <= 0.01:
+                    continue
+                truc += 1
+                nhom['%s k=(%d,%d)' % (nhan, f['mx'], f['my'])] = \
+                    nhom.get('%s k=(%d,%d)' % (nhan, f['mx'], f['my']), 0) + 1
+                if ten:
+                    print('  %-34s %-26s %s: luu %-9g cong thuc %-9g lech %g'
+                          % (os.path.basename(p), nd.get('name') or '(khong ten)',
+                             nhan, luu, tinh, tinh - luu))
+    print('  %d truc lech' % truc)
+    for k in sorted(nhom, key=lambda s: -nhom[s]):
+        print('    %-16s %d' % (k, nhom[k]))
+    return 0
+
+
 def dem():
     """Bảng kê toàn bộ .xgg trong conf/.
 
@@ -830,6 +890,8 @@ def main():
     if a[0] == '--khoi':
         ok, hong = kiem_khoi()
         return 1 if hong else 0
+    if a[0] == '--lech':
+        return lech()
     if a[0] == '--dem':
         dem()
         return 0
