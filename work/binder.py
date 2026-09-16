@@ -5,6 +5,7 @@
     python binder.py --lop CCProgressTimer
     python binder.py --slot 0x290        # slot vtable -> ten, va lop nao lo ra
     python binder.py --settype           # sau ten cua setType + hang so chung minh
+    python binder.py --nut               # cac o cua node + pauseActions/resumeActions
 
 VI SAO
 ------
@@ -75,6 +76,37 @@ la 1). Bon ten con lai truyen 0 roi dat hai method nhan cap float o vtable
 cho Lua, nen TEN cua chung khong doc duoc; con so thi do duoc.
 
 Chay `python binder.py --settype` de in lai ca phep do.
+
+CAC O CUA NODE, va `pauseActions` (do o `--nut`)
+------------------------------------------------
+Bay ham action cua node bind vao cung mot ho ham trong .text, va moi ham doc
+dung mot o co dinh tren doi tuong:
+
+    +0xdc  bo quan ly action  -- runAction 0x4ae7d4, stopAllActions 0x4ae800,
+                                 stopActionByTag 0x4ae838, getActionByTag
+                                 0x4ae868, numberOfRunningActions 0x4ae890
+    +0xd8  bo hen gio         -- KHONG mot ham action nao doc no
+    +0xe0  m_bRunning (bool)
+
+`runAction` (0x4ae7e4) va ho ham hen gio (0x4ae89e) deu doc `ldrb r3,[r0,#0xe0]`
+roi `eor r3, r3, #1` truoc khi truyen xuong — dung phep PHU DINH do la dau vet
+nhan ra `!m_bRunning`, dung chu ky `CCNode::runAction` / `CCNode::schedule` cua
+Cocos2d-x. Nen ba o tren la do, khong phai suy tu ten.
+
+`pauseActions` (0x4aeb88) va `resumeActions` (0x4aeacc) moi ham goi **CA HAI**
+bo, khong phai chi action:
+
+    0x4aeb8e  ldr.w r0, [r0, #0xd8] ; bl 0x49fcd0     ; hen gio  <- pause
+    0x4aeb96  ldr.w r0, [r4, #0xdc] ; b.w 0x4a9920    ; action   <- pause
+    0x4aead2  ldr.w r0, [r0, #0xd8] ; bl 0x49fb44     ; hen gio  <- resume
+    0x4aeada  ldr.w r0, [r4, #0xdc] ; b.w 0x4a99dc    ; action   <- resume
+
+Tuc `pauseActions` chinh la `pauseSchedulerAndActions` cua Cocos nhu ban goc
+dat ten. He qua dung cho ban dung lai: tam dung mot node thi hen gio cua node
+do (`S_CCSchedule:scheduleOnce(node, ...)`) **cung dung theo**. Quet ca 132
+bang khong thay ham rieng nao de dung bo hen gio (`pause` 2 lop, `resume` 2,
+`schedule`/`scheduleOnce`/`scheduleUpdate` chi o lop `CCSchedule`) — nen day la
+duong DUY NHAT.
 """
 import argparse
 import collections
@@ -268,6 +300,70 @@ def lam_settype(s):
     lam_slot(s, 0x288)
 
 
+def lam_nut(s):
+    """In lai phep do cac o cua node: ham action -> o nao tren doi tuong.
+
+    Khong suy tu ten: moi ham bind di thang vao mot ham trong .text, va ham do
+    doc dung mot o co dinh. In ra o nao, de con doi chieu lai.
+    """
+    HO = [
+        ('runAction', 0x4ae7d4),
+        ('stopAllActions', 0x4ae800),
+        ('stopActionByTag', 0x4ae838),
+        ('getActionByTag', 0x4ae868),
+        ('numberOfRunningActions', 0x4ae890),
+        ('hen gio (khong bind)', 0x4ae89a),
+        ('resumeActions', 0x4aeacc),
+        ('pauseActions', 0x4aeb88),
+    ]
+    d, a, _ = s._o(0x4ae7d4)
+    md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
+    print('%-22s %-8s %-22s %s' % ('ham', 'dia chi', 'o doc tren self', 'ghi chu'))
+    for ten, ad in HO:
+        # Dung o CUOI HAM, khong dung cua so byte co dinh: cua so 0x20 chay tran
+        # qua ham ke tiep (cac ham nay chi 3-8 lenh) va doc nham o cua no — dung
+        # loi da mac mot lan voi bang lop (doc theo khe thi tran 20 ban ghi).
+        # Moc cuoi: `pop {..., pc}` / `bx lr`, hoac nhanh duoi `b`/`b.w`.
+        o, co_phu = [], False
+        for l in md.disasm(d[ad - a:ad - a + 0x40], ad):
+            if l.address > ad and l.mnemonic in ('push', 'push.w'):
+                break                      # mo dau ham ke tiep
+            if ']' in l.op_str and l.mnemonic.startswith('ldr'):
+                o.append(l.op_str.split('#')[-1].rstrip(']'))
+            if l.mnemonic == 'eor' and l.op_str.endswith('#1'):
+                co_phu = True
+            cuoi = (l.mnemonic in ('b', 'b.w', 'bx')
+                    or (l.mnemonic.startswith('pop') and 'pc' in l.op_str))
+            if cuoi:
+                break
+        chinh = sorted({x for x in o if x in ('0xd8', '0xdc', '0xe0')})
+        print('%-22s 0x%06x %-22s%s' % (
+            ten, ad, ', '.join('+' + x for x in chinh),
+            '  eor r3,r3,#1 (= !m_bRunning)' if co_phu else ''))
+    print()
+    print('ket luan: +0xdc = bo quan ly action (5 ham action doc no)')
+    print('          +0xd8 = bo thu hai — chi pause/resume cham toi, khong ham')
+    print('                  action nao doc; tan cong hen gio doc no cung phep')
+    print('                  phu dinh `!m_bRunning` nhu runAction')
+    print('          +0xe0 = m_bRunning (bool)')
+    print('          pause/resume goi CA HAI bo -> dung chu ky')
+    print('          pauseSchedulerAndActions cua Cocos')
+    print('          (TEN cua +0xd8 suy ra tu chu ky do; con so thi do duoc)')
+    print()
+    print('quet ca 132 bang lop xem co ham dung bo hen gio rieng khong:')
+    dem = collections.Counter()
+    for i in range(132):
+        for _, t, _, _ in s.bang(i):
+            if t in ('pause', 'pauseScheduler', 'pauseSchedulerAndActions', 'pauseTarget',
+                     'resume', 'resumeScheduler', 'resumeSchedulerAndActions', 'resumeTarget',
+                     'schedule', 'scheduleOnce', 'scheduleUpdate'):
+                dem[t] += 1
+    for t, n in sorted(dem.items()):
+        print('  %-28s %d lop' % (t, n))
+    print('  -> khong co ham nao rieng cho bo hen gio: pauseActions/resumeActions')
+    print('     la duong DUY NHAT, va no dung ca hai bo.')
+
+
 def main():
     sys.stdout.reconfigure(encoding='utf-8')
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
@@ -276,6 +372,8 @@ def main():
     ap.add_argument('--lop', metavar='TEN|SO')
     ap.add_argument('--slot', metavar='0xNNN')
     ap.add_argument('--settype', action='store_true')
+    ap.add_argument('--nut', action='store_true',
+                    help='cac o cua node + pauseActions/resumeActions')
     a = ap.parse_args()
     s = Soi()
     if a.bang:
@@ -288,7 +386,9 @@ def main():
         return lam_slot(s, int(a.slot, 0))
     if a.settype:
         lam_settype(s)
-    if not any((a.bang, a.xam, a.lop, a.slot, a.settype)):
+    if a.nut:
+        lam_nut(s)
+    if not any((a.bang, a.xam, a.lop, a.slot, a.settype, a.nut)):
         ap.print_help()
     return 0
 
