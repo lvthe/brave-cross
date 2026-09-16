@@ -195,9 +195,14 @@ class Xgg(object):
     # Vi sao khong dung mot luat "quen": "neu +0x74 = 0 thi tim trong ban ghi
     # mot cap (dia chi, do dai) co dia chi bang +0x70". Luat ay DUNG cho hat
     # nhung SAI cho ban ghi 320/352 byte: o +0xDC o do tinh co mang dung gia tri
-    # dia chi ay roi giai ra chuoi '2'/'1' (co chu cua CCLabelTTF) — 8.176 node
-    # trung so chu khong trung nghia. Nen phai theo kich thuoc ban ghi, cung
-    # loi voi IMG_FIELD (xem node_image) cho o ten anh.
+    # dia chi ay, roi giai ra chuoi nhu '2'/'1' (co chu cua CCLabelTTF) — trung
+    # so chu khong trung nghia. Do lai ca cay vn/decrypted/assets/conf:
+    # **8.328** node roi vao bay ay (ban ghi 320 byte: 299, 352 byte: 8.029),
+    # trong do **7.726** giai ra chuoi ngan <= 2 ky tu. (Hai con so ghi o cac
+    # luot truoc — 8.176 va 8.968 — khong phai ket qua cua phep do nay; 8.968
+    # la TONG so CCLabelTTF cua ca cay, khong phai so ban ghi roi vao bay.)
+    # Nen phai theo
+    # kich thuoc ban ghi, cung loi voi IMG_FIELD (xem node_image) cho o ten anh.
     RES_FIELD = {232: 0xE0}
 
     def res_of(self, a, size):
