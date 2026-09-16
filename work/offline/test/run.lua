@@ -422,6 +422,250 @@ for _, ten in ipairs(DS_RPC) do
 	check(nHa == 1, ten .. " ha lop 'dang tai' dung MOT lan (khong hai)", nHa)
 end
 
+--[[ 14b. Thuong thong ai LAN DAU (ClientGetEndlessChapterFirstPrize).
+
+	Day la muc DUY NHAT cua ho ai vo tan lam duoc TRON (xem chu thich dau
+	offline/handlers/endless.lua), nen phai kiem THAT chu khong chi kiem "co tra
+	loi" nhu vong DS_RPC o tren.
+
+	Bon manh, ca bon deu la ma goc:
+	  1. dieu kien   `BestProsees >= n` va `FirstPrizeStates[n]` chua bat
+	                 (share/EndlessChapterLogic.lua:127-182)
+	  2. ma loi      `ErrorCode.EndlessChapter` (share/error.lua:605-610)
+	  3. phat thuong `G_PrizeLogic:GetPrizeWithID(113000+n)` roi
+	                 `G_ChapterLogic:SetDataWithPrizeList(PrizeContent, 1, ...)`
+	                 — dung cap ham ma share_ChapterLogic.lua:2236-2238 dung cho
+	                 thuong chien dich
+	  4. dong bo dau "da nhan" xuong kho
+
+	Client gia o day chep DUNG hai ham ma handler dua vao (chep, khong suy dien):
+	  * `G_DataManager:ChangeUserData` -> `WriteToTable`
+	    (share_CDataManager.lua:334, :395-421): bang VANG MAT trong `userData`
+	    ma khoa khong phai "Table_Add" thi tra **false**. Do chinh la dieu kien
+	    that cua duong ghi.
+	  * `G_EndlessChapterLogic:GetUserEndlessChapterData`
+	    (share/EndlessChapterLogic.lua:111-165): lan dung DAU di
+	    `craeteUserEndlessChapter` -> `setUserEndlessChapter` ->
+	    `PostDataEvent(copyTab(t), ..., "Table_Add")`, nen DataManager giu mot
+	    BAN SAO con `self.UserEndlessChapter` giu BAN GOC; tu lan thu hai tra
+	    thang ban trong DataManager. Kiem ca hai lan vi hai lan di hai duong khac
+	    nhau — do la cho de mat phan thuong nhat.
+
+	So 113000+n khong phai suy ra: `KDBGameCommonConfig.EndlessChapterFirstPrize
+	Config` la chuoi `{"1":113001,...,"250":113250}` — do lai: 250 muc, va
+	113000+n dung cho CA 250 muc. ]]
+
+-- copyTab cua ban goc (share/public.lua:112) — chep SAU.
+local function copyTab(st)
+	local t = {}
+	for k, v in pairs(st or {}) do
+		t[k] = (type(v) == "table") and copyTab(v) or v
+	end
+	return t
+end
+
+--[[ CO Y dat hai ma KHAC ban goc: phep kiem phai chung minh handler DOC
+	`ErrorCode` chu khong nhung so. So that (NotPass 4101, HasGetFristPrize
+	4102) chi nam o share/error.lua:605-610, khong nam trong lop offline. ]]
+local MA_NOT_PASS, MA_DA_LAY = 7411, 7412
+ErrorCode = { EndlessChapter = { NotPass = MA_NOT_PASS, HasGetFristPrize = MA_DA_LAY } }
+
+-- ChangeUserData cua ban goc, rut gon con nhanh ma bang nay di (nhanh cuoi cua
+-- ChangeUserDataWithDataMap -> WriteToTable). Guard cua ban goc la
+-- KDebug.ProcessNotTable/NotString; o day khong co KDebug nen kiem bang nil.
+G_DataManager = { userData = {}, soLanGhi = 0 }
+function G_DataManager:ChangeUserData(strBang, tDoi, strKhoa)
+	if strBang == nil or tDoi == nil or strKhoa == nil then return false end
+	if strKhoa == "Table_Replace" then
+		self.userData[strBang] = tDoi
+		self.soLanGhi = self.soLanGhi + 1
+		return true
+	end
+	if self.userData[strBang] == nil then
+		if strKhoa ~= "Table_Add" then return false end
+		self.userData[strBang] = {}
+	end
+	local t = self.userData[strBang]
+	for k, v in pairs(tDoi) do t[k] = v end      -- MergeTab (share/public.lua:134)
+	t[strKhoa] = tDoi[strKhoa]
+	self.soLanGhi = self.soLanGhi + 1
+	return true
+end
+
+-- Them phan doc du lieu vao chinh bang da co o muc 14 (giu lai `tGot` cua phep
+-- kiem bang xep hang).
+G_EndlessChapterLogic.ModuleName = "GameUserEndlessChapter"
+G_EndlessChapterLogic.ProsessState = { Prepared = 0, Passed = 1 }
+function G_EndlessChapterLogic:craeteUserEndlessChapter()
+	return {
+		CurrentProsess = 1, ChallengesCount = 0, PayChallengesCount = 0,
+		ResetCount = 0, IsSweeping = false, LastSweepTime = 0, BestProsees = 0,
+		InspireCount = 0, SwapBeginTime = 0, MysteriousLevel = nil,
+		FightHeroList = {25}, CurrentState = self.ProsessState.Prepared,
+		FirstPrizeStates = {},
+	}
+end
+
+function G_EndlessChapterLogic:GetUserEndlessChapterData()
+	if self.UserEndlessChapter ~= nil then
+		return true, self.UserEndlessChapter
+	end
+	local t = G_DataManager.userData[self.ModuleName]
+	if t == nil then
+		t = self:craeteUserEndlessChapter()
+		-- setUserEndlessChapter: cache BAN GOC roi day BAN SAO sang DataManager
+		-- qua PostDataEvent(..., "Table_Add").
+		self.UserEndlessChapter = t
+		G_DataManager.userData[self.ModuleName] = copyTab(t)
+	end
+	if t.SwapBeginTime == nil then t.SwapBeginTime = 0 end
+	if t.FightHeroList == nil then t.FightHeroList = {25} end
+	if t.CurrentProsess == nil then t.CurrentProsess = 1 end
+	if t.CurrentState == nil then t.CurrentState = self.ProsessState.Prepared end
+	if t.FirstPrizeStates == nil then t.FirstPrizeStates = {} end
+	self.UserEndlessChapter = t
+	return true, t
+end
+
+G_PrizeLogic = { lanHoi = {} }
+-- Hai tang co cau hinh trong phep kiem nay. Tang khac tra false, dung nhu
+-- GetPrizeWithID khi config khong co (share/PrizeLogic.lua:127-136).
+G_PrizeLogic.CoSan = {
+	[113001] = { { PrizeResType = 3, PrizeResId = 0, PrizeValue = 500 } },
+	[113002] = { { PrizeResType = 3, PrizeResId = 0, PrizeValue = 600 } },
+}
+function G_PrizeLogic:GetPrizeWithID(nPrizeID)
+	table.insert(self.lanHoi, nPrizeID)
+	local c = self.CoSan[nPrizeID]
+	if c == nil then return false end
+	return true, { PrizeContent = c }
+end
+
+G_ChapterLogic = { lanPhat = {} }
+function G_ChapterLogic:SetDataWithPrizeList(tPrizeList, nCountMultiple, strPrizeFrom)
+	table.insert(self.lanPhat, { tPrizeList, nCountMultiple, strPrizeFrom })
+	return true
+end
+
+-- Dung lai tu dau: chua co gi trong DataManager, chua co ban cache trong logic.
+local function dat_lai(tDuLieu)
+	G_DataManager.userData = {}
+	G_DataManager.soLanGhi = 0
+	G_EndlessChapterLogic.UserEndlessChapter = nil
+	G_PrizeLogic.lanHoi = {}
+	G_ChapterLogic.lanPhat = {}
+	if tDuLieu ~= nil then
+		G_DataManager.userData.GameUserEndlessChapter = tDuLieu
+	end
+	Mock:reset()
+end
+
+-- Ma loi cua lan tra loi vua roi: ctx:call -> OnReciveResponse("", "", ma, {}).
+local function ma_tra_loi()
+	local c = Mock:find("OnReciveResponse")
+	return c and c.args[3] or nil
+end
+
+print("\n=== 14b. thuong thong ai LAN DAU ===")
+
+-- (1) Chua thong tang do thi tra ma NotPass va KHONG phat thuong.
+dat_lai({ BestProsees = 3, FirstPrizeStates = {} })
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 5)
+Mock:tick(1)
+check(ma_tra_loi() == MA_NOT_PASS, "chua thong tang 5: tra dung ma NotPass",
+	tostring(ma_tra_loi()))
+check(#G_PrizeLogic.lanHoi == 0, "chua thong: khong doc cau hinh thuong", #G_PrizeLogic.lanHoi)
+check(#G_ChapterLogic.lanPhat == 0, "chua thong: khong phat thuong", #G_ChapterLogic.lanPhat)
+check(G_DataManager.userData.GameUserEndlessChapter.FirstPrizeStates["5"] == nil,
+	"chua thong: KHONG danh dau da nhan")
+
+-- (2) Nguoi choi MOI (bang chua co), du dieu kien, xin lan dau.
+dat_lai(nil)
+local _, td = G_EndlessChapterLogic:GetUserEndlessChapterData()
+check(type(td) == "table" and td.BestProsees == 0,
+	"nguoi choi moi: client tu dung hinh dang goc", td and tostring(td.BestProsees))
+local tTrongKho = G_DataManager.userData.GameUserEndlessChapter
+check(tTrongKho ~= nil and tTrongKho ~= td,
+	"lan dung DAU: DataManager giu BAN SAO, khac ban client dang giu")
+td.BestProsees = 5      -- tran danh xong, chinh client cap nhat truong nay
+Mock:reset()
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 1)
+Mock:tick(1)
+check(G_PrizeLogic.lanHoi[1] == 113001, "doc dung cau hinh thuong 113000+n",
+	G_PrizeLogic.lanHoi[1])
+check(#G_ChapterLogic.lanPhat == 1, "phat thuong dung MOT lan", #G_ChapterLogic.lanPhat)
+local p = G_ChapterLogic.lanPhat[1]
+check(p ~= nil and p[1] == G_PrizeLogic.CoSan[113001],
+	"phat dung PrizeContent doc tu cau hinh, khong tu che")
+check(p ~= nil and p[2] == 1 and p[3] == "EndlessChapterFirstPrize",
+	"phat 1 lan, nguon 'EndlessChapterFirstPrize'", p and tostring(p[3]))
+check(ma_tra_loi() == 0, "lanh thuong thanh cong: khong ma loi", tostring(ma_tra_loi()))
+check(td.FirstPrizeStates["1"] == true, "danh dau da nhan tren ban client dang giu")
+-- Cho de mat phan thuong nhat: syncFromClient doc BAN SAO trong DataManager, nen
+-- chi danh dau tren ban client la khong du.
+check(tTrongKho.FirstPrizeStates["1"] == true,
+	"danh dau da nhan CUNG vao BAN SAO trong DataManager")
+-- Doc thang `OfflineStore.data` chu khong qua `OfflineStore:get`: `table()`
+-- TAO muc khi doc (store.lua:242), doc qua no thi phep kiem tu lam cho minh dung.
+check(OfflineStore.data and type(OfflineStore.data.GameUserEndlessChapter) == "table"
+	and OfflineStore.data.GameUserEndlessChapter.FirstPrizeStates["1"] == true,
+	"va xuong duoc kho (OfflineStore), de con nguyen qua lan khoi dong lai")
+
+-- (3) Xin lai chinh tang do: ma HasGetFristPrize, khong phat lan hai.
+Mock:reset()
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 1)
+Mock:tick(1)
+check(ma_tra_loi() == MA_DA_LAY, "xin lai: tra dung ma HasGetFristPrize",
+	tostring(ma_tra_loi()))
+check(#G_ChapterLogic.lanPhat == 1, "xin lai: khong phat thuong lan hai",
+	#G_ChapterLogic.lanPhat)
+check(#G_PrizeLogic.lanHoi == 1, "xin lai: khong doc lai cau hinh thuong",
+	#G_PrizeLogic.lanHoi)
+
+-- (4) Tung tang mot: tang 6 chua thong (toi nhat 5) thi van NotPass.
+Mock:reset()
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 6)
+Mock:tick(1)
+check(ma_tra_loi() == MA_NOT_PASS, "tang 6 chua thong: NotPass", tostring(ma_tra_loi()))
+check(#G_ChapterLogic.lanPhat == 1, "tang chua thong: khong phat", #G_ChapterLogic.lanPhat)
+
+-- (5) Chi so khong hop le: phai TRA LOI (khong treo client) va khong phat.
+local nPhatTruoc = #G_ChapterLogic.lanPhat
+for _, xau in ipairs({ 0, -3, "abc" }) do
+	Mock:reset()
+	CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", xau)
+	Mock:tick(1)
+	check(ma_tra_loi() == 0 and #G_ChapterLogic.lanPhat == nPhatTruoc,
+		"chi so " .. tostring(xau) .. ": tra loi, khong doc cau hinh thuong",
+		tostring(ma_tra_loi()))
+end
+
+-- (6) Khong doc duoc cau hinh thuong thi KHONG danh dau da nhan — danh dau thi
+-- nguoi choi mat luon phan thuong do (client khong hoi lai duoc nua).
+dat_lai({ BestProsees = 9, FirstPrizeStates = {} })
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 4)
+Mock:tick(1)   -- 113004 khong co trong CoSan
+check(#G_PrizeLogic.lanHoi == 1 and G_PrizeLogic.lanHoi[1] == 113004,
+	"thieu cau hinh: van doc dung ma 113004", G_PrizeLogic.lanHoi[1])
+check(#G_ChapterLogic.lanPhat == 0, "thieu cau hinh thuong: khong phat", #G_ChapterLogic.lanPhat)
+check(G_DataManager.userData.GameUserEndlessChapter.FirstPrizeStates["4"] == nil,
+	"thieu cau hinh thuong: KHONG danh dau da nhan")
+check(ma_tra_loi() == 0, "thieu cau hinh thuong: van tra loi, khong treo client",
+	tostring(ma_tra_loi()))
+
+-- (7) Thieu `ErrorCode` thi tra ma 0, KHONG bia mot con so. Trong game that
+-- `ErrorCode` luon co (share/share_public_require.lua:14 -> share.error, keo
+-- vao o lua/bootstrap.lua:603) — nhung neu thieu that thi tra 0 la trung thuc.
+local ecCu = ErrorCode
+ErrorCode = nil
+dat_lai({ BestProsees = 9, FirstPrizeStates = {} })
+CallServer(5, "G_EndlessChapterLogic", "ClientGetEndlessChapterFirstPrize", 2)
+Mock:tick(1)
+check(ma_tra_loi() == 0, "thieu ErrorCode: tra 0 chu khong bia so", tostring(ma_tra_loi()))
+check(#G_ChapterLogic.lanPhat == 1, "thieu ErrorCode: van phat thuong", #G_ChapterLogic.lanPhat)
+ErrorCode = ecCu
+G_DataManager.userData = {}
+
 --[[ 15. Tien trinh ai vo tan phai SONG qua lan khoi dong lai.
 
 	Day la toan bo ly do cua phuong an persistence: bang nam trong `TABLES` (nen

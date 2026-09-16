@@ -22,10 +22,11 @@
 	không có trong repo. Nên ở đây không thể "gọi luật gốc" như `chapter.lua`
 	làm với `share_ChapterLogic.lua`.
 
-	VÌ VẬY FILE NÀY CỐ Ý MỎNG: trả lời các câu hỏi CHỈ-ĐỌC, còn với phần máy
-	chủ thì DỌN LỚP "ĐANG TẢI" rồi nói thẳng là chưa làm. Đăng ký chứ không để
-	rơi vào `OfflineLog:missing`: handler không trả lời thì client treo ở lớp
-	"đang tải" chứ không báo gì (net.lua:252-262).
+	VÌ VẬY FILE NÀY CỐ Ý MỎNG: trả lời các câu hỏi CHỈ-ĐỌC và làm TRỌN đúng MỘT
+	việc máy chủ (`ClientGetEndlessChapterFirstPrize` — xem chú thích ở hàm đó),
+	còn phần máy chủ thật thì DỌN LỚP "ĐANG TẢI" rồi nói thẳng là chưa làm. Đăng
+	ký chứ không để rơi vào `OfflineLog:missing`: handler không trả lời thì client
+	treo ở lớp "đang tải" chứ không báo gì (net.lua:252-262).
 
 	CÒN THIẾU, nói rõ vì sao — KHÔNG đoán (mỗi mục là một dòng `chua_lam` dưới):
 
@@ -55,20 +56,39 @@
 	  ClientBuyChallengesCount không biết khi nào trừ tài nguyên và khi nào cộng
 	                           `PayChallengesCount`; hằng số giá thì có
 	                           (`PayChallengesCost = 50`).
-	  ClientGetEndlessChapterFirstPrize
-	                           ĐỦ dữ liệu để làm mà chưa làm trong đợt này: xét
-	                           `BestProsees >= nIndex` + `FirstPrizeStates`, mã
-	                           lỗi `ErrorCode.EndlessChapter` (NotPass=4101,
-	                           HasGetFristPrize=4102), thưởng
-	                           `EndlessChapterFirstPrizeConfig[tostring(n)]`
-	                           (113000+n), phát bằng `SetDataWithPrizeData`. Ghi
-	                           lại đây để lần sau khỏi dò.
 ]]
 
 require("offline.log")
+require("offline.store")
 require("offline.router")
 
 local R = OfflineRouter
+
+--[[ Mã lỗi, lấy từ bản gốc (`sc/share/error.lua:605-610`).
+
+	KHÔNG có số dự phòng, và đây là chỗ dễ sai nhất của hàm này: `ErrorCode` là
+	mã GỐC và luôn được nạp — `share/share_public_require.lua:14` require
+	`share.error`, mà file đó được kéo vào ở `lua/bootstrap.lua:603`. Thiếu nó
+	là lỗi nạp chứ không phải chuyện để ta chọn hộ một con số; bịa số thì
+	`CUIMain:OnShowError` tra ra một khoá khác và người chơi đọc một câu khác.
+
+	Đo thêm, để khỏi tưởng hai mã này có sẵn câu chữ: `conf/text_vi.xgg` có 453
+	khoá `ErrorCode_*` và **4101/4102 KHÔNG nằm trong đó** (cả nhóm 4xxx chỉ có
+	4001, 4003, 4205, 4401…). `CUIMain:OnShowError` (:914) làm
+	`GetStringWithKey(string.format("ErrorCode_%d", err))`, mà `_text` thiếu
+	khoá thì trả về chính khoá (game/lua_runtime.gd:507) — nên người chơi thấy
+	đúng dòng chữ `ErrorCode_4101`. Bản gốc cũng vậy: máy chủ thật gửi mã đó.
+	Giữ nguyên, KHÔNG thay bằng câu tự viết. ]]
+local function ma_loi(strTen)
+	local ec = rawget(_G, "ErrorCode")
+	local t = ec and ec.EndlessChapter
+	if t == nil or t[strTen] == nil then
+		OfflineLog:err("thieu ErrorCode.EndlessChapter." .. strTen
+			.. " — tra loi khong co ma loi (0) chu khong bia mot so")
+		return nil
+	end
+	return t[strTen]
+end
 
 --[[ Dọn lớp "đang tải".
 
@@ -81,9 +101,14 @@ local R = OfflineRouter
 	CUIRPCManager:OnReciveResponse(callbackObj, callbackFunc, nErrCode, eventList)
 	(:166) — phát OnReceiveResponse rồi áp eventList. Ta truyền ("", "", 0, {}):
 	không lỗi, không đổi dữ liệu, không gọi callback. Cùng lối
-	`mysterious.lua:37` và `statewar.lua:26` đang dùng. ]]
-local function don_lop_dang_tai(ctx)
-	ctx:call("g_CUIGameRPCManager", "OnReciveResponse", "", "", 0, {})
+	`mysterious.lua:37` và `statewar.lua:26` đang dùng.
+
+	`nErrCode ~= 0` (:187) thì bản gốc còn bắn
+	`CUINotificationEvent.OnServerRequestError` — tức là hiện ĐÚNG câu báo lỗi
+	của bản gốc. Nên chỗ nào có mã lỗi thật thì truyền vào, đừng nuốt. ]]
+local function don_lop_dang_tai(ctx, nErrCode, tEventList)
+	ctx:call("g_CUIGameRPCManager", "OnReciveResponse", "", "",
+		nErrCode or 0, tEventList or {})
 end
 
 
@@ -145,7 +170,132 @@ chua_lam("ClientSwapImmediately",
 	"client khong co listener nao cho lenh nay — no-op tu dau")
 chua_lam("ClientBuyChallengesCount",
 	"khong biet khi nao tru tai nguyen / cong PayChallengesCount (gia 50 thi co)")
-chua_lam("ClientGetEndlessChapterFirstPrize",
-	"DU du lieu de lam ma chua lam dot nay — xem chu thich dau file")
+
+
+--[[ Thưởng thông ải LẦN ĐẦU của một tầng (首次通关奖励).
+
+	ĐÂY LÀ MỤC DUY NHẤT của họ này làm được TRỌN, vì cả ba mảnh đều có mã gốc:
+
+	  1. ĐIỀU KIỆN — `BestProsees >= nIndex` và `FirstPrizeStates[tostring(n)]`
+	     chưa bật. Hai trường đó là hình dạng CHÍNH CLIENT dựng
+	     (`share/EndlessChapterLogic.lua:164-182`).
+	  2. MÃ LỖI — `ErrorCode.EndlessChapter` (NotPass 4101, HasGetFristPrize 4102)
+	     ở `sc/share/error.lua:605-610`.
+	  3. PHÁT THƯỞNG — `G_PrizeLogic:GetPrizeWithID(113000 + n)` rồi
+	     `G_ChapterLogic:SetDataWithPrizeList(PrizeContent, 1, ...)`. Đúng cặp hàm
+	     mà `share_ChapterLogic.lua:2236-2238` (thưởng chiến dịch) dùng, không
+	     phải đường tự chế.
+
+	Số 113000+n KHÔNG phải suy ra: `KDBGameCommonConfig` mục
+	`EndlessChapterFirstPrizeConfig` là chuỗi JSON `{"1":113001,...,"250":113250}`.
+
+	CHI TIẾT DỄ SAI — client tự đánh dấu trước, không chờ ta:
+	`onTouchEnd_OnGetFristPassReward` (CUIInfiniteLevelFirstPassRewards.lua:335)
+	gọi RPC rồi LẬP TỨC bật `FirstPrizeStates[n] = true` và đổi hình sang "đã
+	nhận", KHÔNG có hàm `On*` nào để nghe phản hồi (đo: `grep` toàn `sc/` chỉ ra
+	một dòng chú thích). Nên việc của ta không phải "báo cho client biết đã nhận"
+	mà là (a) phát thật phần thưởng, (b) ĐỒNG BỘ dấu đó xuống kho.
+
+	Vì sao phải đồng bộ tay: lần dựng ĐẦU TIÊN, `GetUserEndlessChapterData` gọi
+	`setUserEndlessChapter` -> `PostDataEvent(copyTab(t))`, nên bản trong
+	`G_DataManager.userData` là một BẢN SAO còn `self.UserEndlessChapter` giữ bản
+	GỐC — màn hình sửa bản gốc, `OfflineStore:syncFromClient` đọc bản sao. Từ lần
+	thứ hai trở đi thì hai bên là một (nhánh `UserEndlessChapter ~= nil` trả thẳng
+	bản trong DataManager). Ghi qua event `Data` là cách của chính bản gốc
+	(`CUIRPCManager:OnReciveResponse:217` -> `G_DataManager:ChangeUserData`), nên
+	dùng nó chứ không sửa thẳng `userData`. ]]
+R:on("ClientGetEndlessChapterFirstPrize", function(ctx, nIndex)
+	local n = tonumber(nIndex)
+	if n == nil or n < 1 then
+		OfflineLog:warn("ClientGetEndlessChapterFirstPrize: chi so khong hop le "
+			.. tostring(nIndex))
+		don_lop_dang_tai(ctx)
+		return
+	end
+
+	if G_EndlessChapterLogic == nil then
+		OfflineLog:warn("ClientGetEndlessChapterFirstPrize: chua co "
+			.. "G_EndlessChapterLogic")
+		don_lop_dang_tai(ctx)
+		return
+	end
+
+	local _, duLieu = G_EndlessChapterLogic:GetUserEndlessChapterData()
+	if type(duLieu) ~= "table" then
+		OfflineLog:warn("ClientGetEndlessChapterFirstPrize: khong doc duoc "
+			.. "GameUserEndlessChapter")
+		don_lop_dang_tai(ctx)
+		return
+	end
+
+	local nToiNhat = tonumber(duLieu.BestProsees) or 0
+	if nToiNhat < n then
+		OfflineLog:warn(string.format("ClientGetEndlessChapterFirstPrize tang %d: "
+			.. "chua thong (toi nhat %d) — ma %s", n, nToiNhat,
+			tostring(ma_loi("NotPass"))))
+		don_lop_dang_tai(ctx, ma_loi("NotPass"))
+		return
+	end
+
+	local tDaNhan = duLieu.FirstPrizeStates
+	if type(tDaNhan) ~= "table" then
+		tDaNhan = {}
+	end
+	if tDaNhan[tostring(n)] == true then
+		OfflineLog:warn(string.format("ClientGetEndlessChapterFirstPrize tang %d: "
+			.. "da nhan roi — ma %s", n, tostring(ma_loi("HasGetFristPrize"))))
+		don_lop_dang_tai(ctx, ma_loi("HasGetFristPrize"))
+		return
+	end
+
+	-- PHÁT THƯỞNG bằng cặp hàm của bản gốc. Không có `G_PrizeLogic` thì thôi,
+	-- khong bia so thay.
+	local nPrizeID = 113000 + n
+	local okLay, bLay, tCauHinh =
+		pcall(G_PrizeLogic.GetPrizeWithID, G_PrizeLogic, nPrizeID)
+	if not okLay or bLay ~= true or type(tCauHinh) ~= "table"
+			or type(tCauHinh.PrizeContent) ~= "table" then
+		OfflineLog:warn(string.format("ClientGetEndlessChapterFirstPrize tang %d: "
+			.. "khong doc duoc cau hinh thuong %d", n, nPrizeID))
+		don_lop_dang_tai(ctx)
+		return
+	end
+
+	local okPhat, bPhat = pcall(G_ChapterLogic.SetDataWithPrizeList,
+		G_ChapterLogic, tCauHinh.PrizeContent, 1, "EndlessChapterFirstPrize")
+	if not okPhat or bPhat ~= true then
+		OfflineLog:warn(string.format("ClientGetEndlessChapterFirstPrize tang %d: "
+			.. "SetDataWithPrizeList tu choi", n))
+		don_lop_dang_tai(ctx)
+		return
+	end
+
+	-- Đánh dấu đã nhận. Ghi vào BẢN CLIENT ĐANG GIỮ (để màn hình đang mở nhất
+	-- quán) rồi ghi vào kho bằng ĐÚNG hàm mà đường phản hồi của bản gốc dùng
+	-- (`G_DataManager:ChangeUserData`, xem `CUIRPCManager:OnReciveResponse:217`).
+	--
+	-- Vì sao gọi thẳng chứ không chỉ trả event `Data` cho `OnReciveResponse` áp:
+	-- hàng đợi phản hồi chỉ chạy ở tick sau (`OfflineNet:tick`), mà
+	-- `OfflineStore:flush` chỉ ghi khi `dirty`, còn `dirty` chỉ bật ở
+	-- `syncFromClient`. Gọi thẳng thì `syncFromClient` đọc được NGAY giá trị vừa
+	-- ghi; để event tự áp thì lượt ghi đầu tiên bỏ sót dấu này.
+	local tMoi = {}
+	for k, v in pairs(tDaNhan) do
+		tMoi[k] = v
+	end
+	tMoi[tostring(n)] = true
+	duLieu.FirstPrizeStates = tMoi
+	local okGhi, bGhi = pcall(G_DataManager.ChangeUserData, G_DataManager,
+		"GameUserEndlessChapter", { FirstPrizeStates = tMoi }, "FirstPrizeStates")
+	if not okGhi or bGhi ~= true then
+		OfflineLog:warn(string.format("ClientGetEndlessChapterFirstPrize tang %d: "
+			.. "khong ghi duoc dau da nhan xuong kho — se hoi lai duoc", n))
+	end
+	OfflineStore:syncFromClient()
+
+	OfflineLog:info(string.format(
+		"ClientGetEndlessChapterFirstPrize tang %d: phat thuong %d", n, nPrizeID))
+	don_lop_dang_tai(ctx)
+end)
 
 return true
