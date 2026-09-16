@@ -24,14 +24,19 @@ DINH DANG (do bang cach doi chieu noi dung, khong phai doc tai lieu)
     B == 1  ->  A la SO HIEU SLOT trong giao dien node dung chung
   Slot da doi chieu cheo voi ghi chu trong CLAUDE.md (`setPosition` o slot
   `+0x74` cua `cocos2d::sngCCNodeFixInfo`) — khop.
-* **Moi bang ket thuc bang mot ban ghi 12 byte toan so 0.** Day la moc chan that,
-  va la thu pha vo gia thuyet "cac bang nam lien nhau, lop sau bat dau ngay sau
-  lop truoc": trong 131 khe giua cac dia chi bat dau da sap xep, **ba khe khong
-  chia het cho 12** (0x934a24->0x934ad0 = 172 byte; 0x9363e4->0x939f7c = 15.256;
+* **Moi bang ket thuc bang mot ban ghi 12 byte toan so 0.** Day la moc chan that:
+  **131/132** bang ket thuc dung o moc chan (do bang chinh cong cu nay), khong
+  bang nao bi cat vi ten khong doc duoc. Moc chan nay cung la thu pha vo gia
+  thuyet "cac bang nam lien nhau, lop sau bat dau ngay sau lop truoc": trong 131
+  khe giua cac dia chi bat dau da sap xep, **ba khe khong chia het cho 12**
+  (0x934a24->0x934ad0 = 172 byte; 0x9363e4->0x939f7c = 15.256;
   0x93ae1c->0x9596b4 = 125.080). Doc theo moc chan cho so KHAC HAN doc theo khe:
   lop `Label` ra **99** ban ghi chu khong phai 119 — tuc loi doc theo khe da chay
   tran qua 20 ban ghi sang bang lop ke tiep. Vi vay moi so dem o day deu lay theo
   moc chan.
+* Mot so lop dang ky TRUNG ten (vd `release` xuat hien 159 luot tren 132 lop;
+  `CCLabelBMFont` lap ca bo giao dien node). Day la dang ky hai lan that, khong
+  phai doc tran: phan lap lai chinh API cua chinh lop do, khong he co ten la.
 * Kiem chung noi dung (dung hai lop doc lap nhau): lop 0 `SimpleAudioEngine` ra
   `end/setResource/preloadBackgroundMusic/playBackgroundMusic/stopBackgroundMusic/
   pauseBackgroundMusic`; lop 8 `CCLabelTTF` ra `setString/getString/initWithString/
@@ -46,9 +51,18 @@ KET QUA DA DO (dung lam suy luon cho phan khac)
   CCProgressTimer. **`CCLabelTTF` KHONG co** — nen o ban goc goi `setGray` len mot
   nhan CCLabelTTF la loi Lua that, va do la ly do CO HOC khien cac dong ay bi
   comment san trong ma goc.
+  Nhung `setGray` KHONG phai mot ham duy nhat: CCSprite va CCButton dung CHUNG mot
+  dia chi ma (0x49d70d), CCScale9Sprite rieng (0x2d2839), `Label` rieng (0x2cb1c9),
+  CCProgressTimer thi qua slot +0x290. Bon duong, khong phai mot.
 * `setOrange` co tren **dung 1 lop**: CCProgressTimer — khop dung 6 cho goi trong
   ma goc, ca 6 deu la progress timer.
 * `CCLayerColorRoundRect` khong co `setGray` lan `setOrange`.
+* Co **hai** lop progress timer, khong phai mot: `setPercentage`/`getPercentage`/
+  `setType` co trong dung 2 bang — `CCProgressTimer` (20) va `CCProgressWithClock`
+  (125), ca hai 71 ban ghi va **dung chung** dia chi ma (getPercentage 0x2bccb5,
+  setPercentage 0x2bd095, setType 0x2bd439). Lop 125 them `setClock` (0x2bd98b) /
+  `stopClock` (0x2bda11); con `setGray` +0x290 va `setOrange` +0x298 thi **chi**
+  lop 20 co.
 
 setType (do o `--settype`)
 --------------------------
