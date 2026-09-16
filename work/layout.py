@@ -63,6 +63,17 @@ def trim(node):
     p = node.get('parallax')
     if p and p != [1.0, 1.0]:
         out['parallax'] = p
+    # Khoi fix-info (xgg.py, +0x38..+0x54): 8 so int32 cho sngFixInfoReflash.
+    # THU TU THO: kieu Y truoc, roi kieu X, roi o40 o44 o48 o4C o50 o54. Ghi ra
+    # danh sach chu khong phai 8 truong roi, de giu dung thu tu trong ban ghi —
+    # phia Godot doi ra ten truong bang XggLayout.fix_of().
+    #
+    # Chi 28.568/33.472 node (85,3%) co khoi khac rong — 5.832 node ca hai kieu
+    # 0, trong do 928 node van mang o khac 0. xgg.py da bo qua node toan so 0,
+    # nen o day chi can chuyen tiep.
+    fx = node.get('fix')
+    if fx:
+        out['fix'] = fx
     kids = [trim(c) for c in node['children']]
     if kids:
         out['children'] = kids

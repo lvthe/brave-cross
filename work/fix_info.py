@@ -16,6 +16,8 @@ trong terminal thì không ai kiểm lại được.
 Chạy được gì khi không có máy ảo:
     --dem            đếm cả kho .xgg (không cần log)
     --in <f> <tên>   in bản ghi của một node (không cần log)
+    --khoi           đối chiếu cột `fix` mà xgg.py/layout.py ghi ra với đọc thô
+                     (không cần log); cả kho 33.472 node, khớp 28.568, lệch 0
     --kiem           cần `_pt/*.log` — sinh bằng `python emu_pt.py --cong`,
                      `--o54`, `--kieu0`, `--kieu23` (đều cần máy ảo đang chạy).
                      `_pt/` là thư mục nháp, không nằm trong git.
@@ -760,6 +762,61 @@ def in_node(ten_file, ten):
     return 0
 
 
+def kiem_khoi():
+    """Cột `fix` mà `xgg.py` ghi ra có đúng bằng đọc thô không.
+
+    `xgg.py` đọc khối ở `+0x38` khi dựng `nodes()`, `layout.py` chuyển tiếp nó
+    sang JSON cho Godot. Đó là hai đường MỚI, nên phải có một đường cũ để đối
+    chiếu — chính `struct.unpack_from` của file này. Một lần lệch ở đây thì mọi
+    node của mọi màn đều đặt sai chỗ khi lớp đổi cỡ, mà lại im lặng.
+
+    Ngoài số khớp, phép đếm còn cho hai con số dùng để giải thích vì sao cột
+    này chỉ có 85,3% node: 5.832 node có cả hai kiểu bằng 0, trong đó 928 node
+    vẫn mang o khác 0 — khối không rỗng nhưng cũng không ai dùng.
+    """
+    print()
+    print('=== cot fix cua xgg.py (duong xuat) doi chieu voi doc tho ===')
+    ok = hong = 0
+    tong = co = co_kieu = o_khi_kieu_0 = khong_khoi = 0
+    for p in sorted(xgg.find_files(CONF)):
+        try:
+            x = xgg.load(p)
+            G, offs = x.offsets['G'], x.node_offsets()
+            nds = x.nodes()
+        except xgg.XggError as e:
+            print('  bo qua %s: %s' % (os.path.basename(p), e))
+            continue
+        for i, nd in enumerate(nds):
+            tong += 1
+            raw = list(struct.unpack_from('<8i', x.data, G + offs[i] + 0x38))
+            co_xgg = nd.get('fix')
+            if raw[0] or raw[1]:
+                co_kieu += 1
+            elif any(raw):
+                o_khi_kieu_0 += 1
+            if any(raw):
+                co += 1
+                if co_xgg == raw:
+                    ok += 1
+                else:
+                    hong += 1
+                    if hong <= 3:
+                        print('  LECH %s %s: %s vs %s'
+                              % (os.path.basename(p), nd.get('name'), co_xgg, raw))
+            elif co_xgg is not None:
+                khong_khoi += 1
+                hong += 1
+                if hong <= 3:
+                    print('  THUA cot fix o %s %s (ca tam so deu 0)'
+                          % (os.path.basename(p), nd.get('name')))
+            else:
+                khong_khoi += 1
+    print('  %d node: %d node co khoi khac rong (%d co kieu khac 0, %d ca hai'
+          ' kieu 0), %d node ca tam so 0 va khong ghi ra, khop %d, lech %d'
+          % (tong, co, co_kieu, o_khi_kieu_0, khong_khoi, ok, hong))
+    return ok, hong
+
+
 def main():
     a = sys.argv[1:]
     if not a or a[0] == '--kiem':
@@ -769,6 +826,9 @@ def main():
             ok, hong = ok + o, hong + h
         print()
         print('khop %d, lech %d' % (ok, hong))
+        return 1 if hong else 0
+    if a[0] == '--khoi':
+        ok, hong = kiem_khoi()
         return 1 if hong else 0
     if a[0] == '--dem':
         dem()

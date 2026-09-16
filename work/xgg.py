@@ -345,6 +345,30 @@ class Xgg(object):
                               struct.unpack_from('<2f', self.data, a + 0x30)]),
                 ('bytes', end - a),
             ]))
+            # +0x38..+0x54: KHOI FIX-INFO — tam so int32 ma
+            # sngFixInfoReflash doc de tinh lai vi tri khi lop doi co (luat
+            # day du o ROADMAP.md, muc 9 cua "Bang ham thieu", repo
+            # bravecross-game). THU TU THO, DUNG NHU TRONG BAN GHI:
+            #
+            #     +0x38 kieu y    +0x3C kieu x
+            #     +0x40 o40   +0x44 o44   +0x48 o48
+            #     +0x4C o4C   +0x50 o50   +0x54 o54
+            #
+            # KIEU Y TRUOC, KIEU X SAU. Doc nham thu tu nay (lay [0] lam truc
+            # x) sinh ra dung hai con so dem sai — 2.622 va 2.302 — da tung
+            # duoc ghi vao tai lieu nhu the la dung. Nen o day giu nguyen thu
+            # tu tho va ghi ra DANH SACH, de khong ai vo tinh doc [0] thanh
+            # truc x; phia Godot co ham XggLayout.fix_of() doi ra ten truong.
+            #
+            # Do duoc tren 33.472 node cua 296 file: 27.640 node (82,6%) co it
+            # nhat mot KIEU khac 0, 5.832 node ca hai kieu 0 — nhung trong 5.832
+            # ay van co 928 node mang o khac 0 (khoi khong rong ma cung khong
+            # dung). Cong lai thi 28.568 node (85,3%) co khoi khac rong, va do
+            # la con so cua phep cong `any` duoi day. Chi ghi khi khac rong cho
+            # file khoi phinh — cung loi voi 'parallax' ngay tren.
+            fix = struct.unpack_from('<8i', self.data, a + 0x38)
+            if any(fix):
+                out[-1]['fix'] = list(fix)
             # +0xE6: MAU cua CCLayerColorRoundRect, bon byte R,G,B,A.
             #
             # Cach kiem (574 node loai 4 tren toan bo 287 man):
