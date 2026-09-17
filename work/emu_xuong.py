@@ -36,15 +36,15 @@ BÀI TOÁN KHUNG ẢNH — chỗ bảng `ChamRef` đang dựa vào một nguồn
 ------------------------------------------------------------------------------
 `ChamRef` lấy `(w,h)` của xương chạm từ **bản ghi sprite trong `.xml`**. Nhưng
 cùng một ảnh còn khai khung ở **bản ghi `.plist`**, và bản ghi ấy có BA cặp số
-cỡ (13 float, `sngxml.py` đọc thành `sizeWH`, `sourceWH`, `f34_38`):
+cỡ (13 float, `sngxml.py` đọc thành `sizeWH`, `sizeWH2`, `sourceSize`):
 
-    f2,f3   = sizeWH     — khung ĐÃ CẮT trong atlas
-    f9,f10  = sourceWH   — LẶP LẠI y hệt sizeWH (đo: 13.634/13.634 khung)
-    f11,f12 = f34_38     — `sourceSize` thật: khung TRƯỚC KHI CẮT
+    f2,f3   = sizeWH      — khung ĐÃ CẮT trong atlas
+    f9,f10  = sizeWH2     — LẶP LẠI y hệt sizeWH (đo: 13.634/13.634 khung)
+    f11,f12 = sourceSize  — `sourceSize` thật: khung TRƯỚC KHI CẮT
 
-Tức `srcW/srcH` mà `export.py` ghi ra hiện nay **không phải** khung trước khi
-cắt như chú thích nói, mà là bản lặp của `w/h`; còn `sourceSize` thật thì
-**chưa được xuất**. Với ảnh của xương chạm (`_res-44`), hai nguồn `.xml` và
+Tức `srcW/srcH` mà `export.py` ghi ra **đã sửa**: trước đây nó lấy f9,f10 (bản
+lặp của `w/h`, không phải khung trước khi cắt), nay lấy f11,f12. Với ảnh của
+xương chạm (`_res-44`), hai nguồn `.xml` và
 `sourceSize` bằng nhau ở **253/256** rig và lệch đúng 1 điểm ảnh ở ba rig
 `BatFlight` (2×2 so với 1×1), `DragonFlight` (2×2 so với 1×1), `LvBuZhanShi`
 (1×1 so với 0×0) — cả ba chưa từng được đo. Lệch 1 điểm ảnh nhân với `sx` cỡ

@@ -13,7 +13,7 @@ CÔNG THỨC
            h·sy·|cos rot2| + w·sx·|sin rot2|)
 
   * `w, h` là **`sourceSize` của bản ghi `.plist`** — cặp float thứ 12, 13 của
-    bản ghi 60 byte (ở `+0x34`), `sngxml.py` đọc ra dưới tên `f34_38`.
+    bản ghi 60 byte (ở `+0x34`), `sngxml.py` đọc ra dưới tên `sourceSize`.
   * `sx, sy, rot1, rot2` là khoá của xương `Collision` (`rot1` ở `+0x10`, `rot2`
     ở `+0x14` của bản ghi khung 80 byte).
   * `rot` tính bằng ĐỘ, và phải lấy **|cos|** chứ không phải `cos`: `CaoCao` /

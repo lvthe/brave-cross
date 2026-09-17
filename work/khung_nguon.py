@@ -10,8 +10,8 @@ Bản ghi `.plist` (60 byte, 13 float từ `+0x08`) khai **ba** cặp cỡ, khô
 một:
 
     f2,f3   = khung ĐÃ CẮT trong atlas        (`sngxml.py` gọi là `sizeWH`)
-    f9,f10  = LẶP LẠI y hệt `sizeWH`          (gọi là `sourceWH`)
-    f11,f12 = `sourceSize`, khung TRƯỚC KHI CẮT (`f34_38`)
+    f9,f10  = LẶP LẠI y hệt `sizeWH`          (gọi là `sizeWH2`)
+    f11,f12 = `sourceSize`, khung TRƯỚC KHI CẮT (`sourceSize`)
 
 Còn bản ghi sprite của `.xml` (mảng ở header 0x60, bản ghi 40 byte, `+0x08`)
 khai cặp thứ tư. Ba phép đếm ở đây cho biết cặp nào trùng cặp nào.

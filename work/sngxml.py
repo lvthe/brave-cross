@@ -36,13 +36,20 @@ BO CUC .plist
     ban ghi 60 byte:
       +0x00  uint32  str_off      ) tu code: FUN_0050daac
       +0x04  uint32  str_len      )
-      +0x08  float, +0x0c  float      vi tri trong atlas (suy dien)
-      +0x10  float, +0x14  float      kich thuoc khung   (suy dien)
-      +0x18  float, +0x1c  float      do lech, 85% bang 0 (suy dien)
+      +0x08  float, +0x0c  float      vi tri trong atlas       (suy dien)
+      +0x10  float, +0x14  float      kich thuoc khung DA CAT  (`sizeWH`)
+      +0x18  float, +0x1c  float      do lech, 85% bang 0      (suy dien)
       +0x20  uint32  CHI NHAN 0 hoac 1 — gan chac la co 'rotated'
       +0x24  float, +0x28  float      82% bang 0
-      +0x2c  float, +0x30  float      kich thuoc goc      (suy dien)
-      +0x34  float, +0x38  float
+      +0x2c  float, +0x30  float      LAP LAI y het `sizeWH`   (`sizeWH2`)
+      +0x34  float, +0x38  float      `sourceSize`: khung TRUOC KHI CAT
+
+    Hai dong cuoi TUNG bi dat ten nguoc: `+0x2c/+0x30` tung duoc goi la
+    `sourceWH` va cho la "kich thuoc goc", nhung phep dem 13.634/13.634 khung
+    cho thay no lap lai y het `sizeWH`. Khung goc that nam o `+0x34/+0x38`.
+    Do la `sourceSize` — o cua sprite theo dung nghia engine dung
+    (`CCSpriteFrame::getOriginalSize`), va cung la khung ma
+    `_lua_CollisionSize` doc. Do bang may ao, xem `emu_xuong.py` muc (D).
 
     Kieu tung cot (float hay nguyen) do duoc tu 18980 ban ghi that. TEN goi
     cho cac cap float la SUY DIEN theo khuon plist cocos2d, chua doi chieu
@@ -149,8 +156,15 @@ class SngXml(object):
                 ('offsetXY', [f[4], f[5]]),
                 ('rotated', bool(rotated)),
                 ('f24_28', [f[7], f[8]]),
-                ('sourceWH', [f[9], f[10]]),
-                ('f34_38', [f[11], f[12]]),
+                # Ba cap co nam lien nhau, va hai cap cuoi TUNG bi dat ten sai:
+                # f9,f10 LAP LAI y het `sizeWH` (do 13.634/13.634 khung, do
+                # `khung_nguon.py --do`), con khung TRUOC KHI CAT nam o f11,f12
+                # — do la `sourceSize` ma engine dung lam o cua sprite
+                # (CCSpriteFrame::getOriginalSize), va la khung ma
+                # `_lua_CollisionSize` doc (do bang may ao, xem `emu_xuong.py`
+                # muc D: BatFlight 145,01 chu khong phai 290,02).
+                ('sizeWH2', [f[9], f[10]]),
+                ('sourceSize', [f[11], f[12]]),
             ]))
         return out
 

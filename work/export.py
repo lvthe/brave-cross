@@ -74,10 +74,15 @@ def _entry(fr, png, w, h):
 
     offX/offY la DO LECH XEN VIEN: atlas cat bo vien trong suot de tiet kiem
     cho, nen tam cua anh da cat khong con trung tam cua khung goc. Thieu so
-    nay thi rap xuong lai se lech tung manh. srcW/srcH la kich thuoc khung
-    truoc khi cat."""
+    nay thi rap xuong lai se lech tung manh.
+
+    srcW/srcH la khung TRUOC KHI CAT (`sourceSize` cua ban ghi `.plist`), tuc o
+    cua sprite theo dung nghia engine dung (`CCSpriteFrame::getOriginalSize`).
+    Truoc day cho nay lay `sourceWH` — ma `sourceWH` lai la cap f9,f10, do ra
+    thi LAP LAI y het `w/h` (13.634/13.634 khung), nen truong nay khong he mang
+    khung truoc khi cat. Xem `khung_nguon.py`."""
     ox, oy = fr.get('offsetXY', [0.0, 0.0])
-    sw, sh = fr.get('sourceWH', [w, h])
+    sw, sh = fr.get('sourceSize', [w, h])
     return collections.OrderedDict([
         ('png', png), ('w', w), ('h', h),
         ('offX', round(ox, 4)), ('offY', round(oy, 4)),
