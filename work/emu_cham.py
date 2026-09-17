@@ -55,6 +55,15 @@ Bốn phép thử phân biệt:
   4. Cặp trục `rot1`/`rot2`: `MaYuanYi` (rot −0,08 / rot2 −0,03) và
      `GongSunZan` (rot 0,04 / rot2 0,06) — hai góc khác nhau đủ để **đổi vai**
      cho ra số khác hẳn (MaYuanYi: 254,654 × 189,623 so với 254,489 × 189,845).
+  5. **Bản gốc dựng BIẾN THỂ nào** của file `.xml`. Một file chứa nhiều armature;
+     bản dựng chọn nhóm NHIỀU ĐỘNG TÁC NHẤT, khi bằng nhau thì lấy nhóm ĐẦU
+     TIÊN — mà biến thể MANG TÊN FILE nằm CUỐI danh sách ở 297/304 file (đo trên
+     `assets/map/*.xml`), nên cách chọn ấy lệch với **45** rig. Trong 45 đó, **12**
+     rig có hộp chạm KHÁC HẲN nhau giữa hai biến thể. `StartCartoon` là phép thử
+     mạnh nhất vì CẢ HAI bên đều ra số khác 0 và khác nhau (949,24 × 588,48 so
+     với 901,76 × 559,04) — không thể giải thích bằng "xương `Collision` nằm chỗ
+     khác". `DaQiao` (85 × 135 so với `(0, 0)`) và `XSTaoTieChangJing`
+     (1607,07 × 822,84 so với `(0, 0)`) cách nhau cả nghìn điểm ảnh.
 
 Cách chèn, cách trả quyền file, cách khởi động — y như `emu_nhan.py` (xem
 docstring ở đó). Mỗi bước in TRƯỚC khi gọi, vì bản dịch ARM của máy ảo hay
@@ -183,6 +192,35 @@ do
 	for _, t in ipairs({"MaYuanYi", "GongSunZan"}) do
 		local a4 = hinh(t)
 		do_node("E-" .. t, a4)
+	end
+
+	-- (F) BAN GOC CHON BIEN THE NAO. Mot file .xml chua NHIEU armature (bien
+	-- the). Ban dung chon nhom NHIEU DONG TAC NHAT, khi bang nhau thi lay nhom
+	-- DAU TIEN — ma bien the MANG TEN FILE nam CUOI danh sach o 297/304 file
+	-- (do tren assets/map/*.xml), nen phep chon ay lech voi 45 rig.
+	--
+	-- Trong 45 rig do, 12 rig co hop cham KHAC HAN nhau giua hai bien the, va
+	-- hai trong so do do duoc bang chinh ham nay — mot ben KHONG co xuong
+	-- `Collision` nen ban goc tra (0, 0), con ben kia tra mot con so to:
+	--
+	--   DaQiao             DaQiao 85 x 135            | DaQiaoReplica        (0, 0)
+	--   XSTaoTieChangJing  XSTaoTieChangJing 1607 x 823 | _Base_1            (0, 0)
+	--   StartCartoon       StartCartoon 949,24 x 588,48 | StartCartoon_BG 901,76 x 559,04
+	--
+	-- Hai ket cuc cach nhau ca nghin diem anh, nen phep do nay phan biet duoc
+	-- ro rang: ra so to = ban goc dung bien the MANG TEN FILE; ra (0, 0) = ban
+	-- goc dung nhom nhieu dong tac nhat nhu ban dung dang lam. `StartCartoon`
+	-- la phep thu MANH NHAT vi ca HAI ben deu ra so khac 0 va khac nhau — khong
+	-- the giai thich bang "xuong Collision nam o cho khac".
+	for _, t in ipairs({"StartCartoon", "DaQiao", "XSTaoTieChangJing",
+			"CaiWenJiCircle", "XSJieSuoBingZhong"}) do
+		local a5 = hinh(t)
+		if a5 ~= nil then
+			-- Ten armature co the chi la khoa cache, KHONG noi len bien the nao
+			-- duoc dung — in ra de biet, nhung ket luan dua vao hop cham.
+			goi("F-ten-" .. t, function() return a5:_Lua_getArmatureName() end)
+			do_node("F-" .. t, a5)
+		end
 	end
 
 	print("CHAM|het")

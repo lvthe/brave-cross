@@ -367,7 +367,13 @@ def lenh_do():
     print('  dong tac mang >1 khoa       : %d' % nhieu_khoa)
     print('  khoa TRONG mot dong tac khac nhau: %d' % lech_trong_rig)
     print('  khoa 0 KHAC nhau giua cac dong tac: %d' % lech_khoa_0)
-    print('  bien the nhieu dong tac nhat KHAC ten file: %d' % khac_bien_the)
+    # Con so nay KHAC han con so cua `--bien-the`, dung de lan: no dem ca nhung
+    # file ma ten thu muc KHONG phai mot bien the (`Player000.xml` chi co cac
+    # nhom `Player000W03W`...), tuc la `bien_the_theo_ten()` phai lui ve nhom
+    # nhieu dong tac nhat — truong hop ay KHONG phai chon sai. Con so noi len
+    # viec chon sai la cua `--bien-the` (45, trong do 12 doi hop cham).
+    print('  nhom nhieu dong tac nhat khac bien the THEO TEN (ke ca ten file '
+          'khong phai bien the): %d' % khac_bien_the)
     print('kich thuoc khung anh cua xuong Collision:')
     for (w, h), n in sorted(wh.items(), key=lambda x: -x[1]):
         print('   %5g x %-5g  %d' % (w, h, n))
@@ -395,6 +401,51 @@ def lenh_lech():
                 print('      %-40s %s' % (g, ', '.join('%s/%s' % c for c in co[:6])))
         for k in trong:
             print('   khoa TRONG %s/%s khac nhau: %s' % (k[0], k[1], theo_dt[k]))
+
+
+def lenh_bien_the():
+    """Đếm xem việc CHỌN BIẾN THỂ có làm đổi kết quả không.
+
+    Bản dựng chọn nhóm nhiều động tác nhất, khi bằng nhau thì lấy nhóm ĐẦU TIÊN.
+    Lệnh này in ra ba con số dùng để biện luận cho `--bien-the` của bản dựng
+    (`SngRig._bien_the_cho`, đo trên máy ảo ở `emu_cham.py` mục F):
+
+      * biến thể mang tên file nằm ở đâu trong danh sách nhóm;
+      * bao nhiêu rig có biến thể mang tên file VÀ nó khác nhóm nhiều động tác
+        nhất — tức cách chọn cũ chọn sai;
+      * trong đó bao nhiêu rig mà hộp chạm KHÁC HẲN nhau giữa hai biến thể, tức
+        cách chọn cũ cho ra số sai (hoặc (0, 0)).
+    """
+    n_file = n_trung_ten = n_cuoi = n_lech = 0
+    doi = []
+    for r in tat_ca():
+        gs = r.a.groups()
+        if not gs:
+            continue
+        n_file += 1
+        names = [g['variant'] for g in gs]
+        if r.ten not in names:
+            continue                       # ten thu muc khong phai mot bien the
+        n_trung_ten += 1
+        if names[-1] == r.ten:
+            n_cuoi += 1
+        best = max(gs, key=lambda g: len(g['animations']))['variant']
+        if best == r.ten:
+            continue
+        n_lech += 1
+        a, b = r.ho_cham(bien_the=r.ten), r.ho_cham(bien_the=best)
+        cap = ((a['rong'], a['cao']) if a else None,
+               (b['rong'], b['cao']) if b else None)
+        if cap[0] != cap[1]:
+            doi.append((r.ten, names.index(r.ten), len(names), best, cap))
+    print('file .xml co nhom dong tac      : %d' % n_file)
+    print('  ten file LA mot bien the      : %d' % n_trung_ten)
+    print('  trong do bien the ay nam CUOI : %d' % n_cuoi)
+    print('  nhung no KHAC nhom nhieu dong tac nhat: %d' % n_lech)
+    print('  trong do hop cham DOI HAN: %d' % len(doi))
+    for ten, i, n, best, (a, b) in doi:
+        print('   %-22s nhom %d/%d -> %-26s ten file %-24s richest %s'
+              % (ten, i + 1, n, best, a, b))
 
 
 def lenh_xem(ten):
@@ -447,13 +498,20 @@ def main():
     ap.add_argument('--json', metavar='DUONG_DAN')
     ap.add_argument('--do', action='store_true')
     ap.add_argument('--lech', action='store_true')
+    ap.add_argument('--bien-the', action='store_true')
     ap.add_argument('--xem', metavar='TEN')
     ap.add_argument('--chon', type=int, nargs='?', const=6)
     a = ap.parse_args()
+    # Phai doi stdout sang utf-8: khong co dong nay thi `print(__doc__)` chet
+    # tren Windows (cp1252) ngay tai chu co dau dau tien — ma chet o DUONG HUONG
+    # DAN, tuc la go sai mot tham so thi khong doc duoc cach dung.
+    sys.stdout.reconfigure(encoding='utf-8')
     if a.do:
         lenh_do()
     if a.lech:
         lenh_lech()
+    if a.bien_the:
+        lenh_bien_the()
     if a.xem:
         lenh_xem(a.xem)
     if a.chon is not None:
@@ -479,7 +537,7 @@ def main():
             json.dump(dict(so_bien_the=len(ra), cham=ra), fp,
                       ensure_ascii=False, indent=1, sort_keys=True)
         print('ghi %s: %d bien the co xuong Collision' % (a.json, n_bt))
-    if not any([a.do, a.lech, a.xem, a.chon is not None, a.json]):
+    if not any([a.do, a.lech, a.bien_the, a.xem, a.chon is not None, a.json]):
         print(__doc__)
     return 0
 
