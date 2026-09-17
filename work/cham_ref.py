@@ -12,10 +12,8 @@ CÔNG THỨC
     hộp = (w·sx·|cos rot1| + h·sy·|sin rot1| ,
            h·sy·|cos rot2| + w·sx·|sin rot2|)
 
-  * `w, h` là khung của **bản ghi sprite trong .xml** (mảng ở header 0x60, bản
-    ghi 40 byte, `+0x08`), KHÔNG phải khung trong file `.plist`. Hai chỗ khác
-    nhau thật: `Hoplite_res-44` là 3×3 trong .xml nhưng 1×1 trong `.plist`, và
-    máy ảo trả 3 × 54,52 = 163,56 — tức theo .xml.
+  * `w, h` là **`sourceSize` của bản ghi `.plist`** — cặp float thứ 12, 13 của
+    bản ghi 60 byte (ở `+0x34`), `sngxml.py` đọc ra dưới tên `f34_38`.
   * `sx, sy, rot1, rot2` là khoá của xương `Collision` (`rot1` ở `+0x10`, `rot2`
     ở `+0x14` của bản ghi khung 80 byte).
   * `rot` tính bằng ĐỘ, và phải lấy **|cos|** chứ không phải `cos`: `CaoCao` /
@@ -23,6 +21,36 @@ CÔNG THỨC
     dấu thì bề cao ra ÂM. Với `rot = 0` công thức rút về `w·sx, h·sy`.
   * Hộp bao của hình chữ nhật quay góc `t` đúng là `W·|cos t| + H·|sin t|` —
     công thức hình học thường, không phải số học đặt riêng cho việc này.
+
+NGUỒN KHUNG ẢNH — chỗ tài liệu này TỪNG SAI, và cách phát hiện
+--------------------------------------------------------------
+Bản ghi sprite của `.xml` (mảng ở header 0x60, bản ghi 40 byte, `+0x08`) cũng
+khai một cặp `(w,h)`, và bản đầu của tài liệu này kết luận "bản gốc đọc theo
+`.xml`" — **sai**. Lý do sai: `.plist` có **BA** cặp cỡ chứ không phải một
+(`work/khung_nguon.py` in ra ba cặp ấy):
+
+    f2,f3   = khung ĐÃ CẮT trong atlas        (`sizeWH`)
+    f9,f10  = LẶP LẠI y hệt `sizeWH`          (đo: 13.634/13.634 khung)
+    f11,f12 = `sourceSize`, khung TRƯỚC KHI CẮT
+
+Phép đối chiếu cũ lấy nhầm cặp ĐÃ CẮT (`Hoplite_res-44`: 1×1), thấy nó khác
+`.xml` (3×3) mà máy ảo lại trả 3 × 54,52 — nên tưởng là theo `.xml`. Nhưng
+`sourceSize` của chính ảnh ấy **cũng là 3×3**: hai nguồn bằng nhau, phép đo ấy
+không phân biệt được gì.
+
+Ba phép đo phân biệt được, và đều nói **`sourceSize`**:
+
+    rig               | đo được               | theo sourceSize     | theo .xml
+    ------------------|-----------------------|---------------------|----------------
+    BatFlight         | 145,00999450684 × 120 | 1 × 145,01 = 145,01 | 2 × 145,01 = 290,02
+    DragonFlight      | 175 × 145             | 1 × 175             | 2 × 175 = 350
+    DragonFlight Head | 64 × 64               | 64 × 64             | 65 × 64
+
+Hai phép đầu lệch **hẳn một hệ số 2** (`.xml` khai 2×2 cho ảnh `_res-44` còn
+`sourceSize` khai 1×1); phép thứ ba lệch đúng 1 điểm ảnh. Cả ba rig ấy **chưa
+từng được đo** trước lượt `emu_xuong.py`. Ảnh hưởng trên bảng: đúng **2 trong
+224** rig mang tên file có hộp chạm sai ở bảng cũ (`BatFlight`, `DragonFlight`),
+222 rig còn lại không đổi một số nào.
 
 CÁCH TÌM RA
 -----------
@@ -169,12 +197,57 @@ def hop(w, h, rot1, rot2, sx, sy):
     return rong, cao
 
 
+def kich_thuoc_nguon(plist_path):
+    """tên sprite -> `sourceSize` của bản ghi `.plist` (cặp float thứ 12, 13).
+
+    Đây mới là khung mà engine dùng (xem docstring đầu file). Tên trong `.plist`
+    có đuôi `.png`, còn tên trong `.xml` thì không — bỏ đuôi khi trả về.
+    """
+    d = open(plist_path, 'rb').read()
+    if d[:6] != b'sngXml':
+        return None
+    count = struct.unpack_from('<I', d, 0x10)[0]
+    off_recs = struct.unpack_from('<I', d, 0x38)[0]
+    off_pool = struct.unpack_from('<I', d, 0x3c)[0]
+    if not count or not off_recs:
+        return None
+    stride = (off_pool - off_recs) // count
+    if stride < 60:
+        return None
+    ra = {}
+    for i in range(count):
+        b = off_recs + i * stride
+        f = struct.unpack_from('<13f', d, b + 8)
+        no, nl = struct.unpack_from('<II', d, b)
+        nm = d[off_pool + no:off_pool + no + nl].decode('utf-8', 'replace')
+        ra[nm[:-4] if nm.endswith('.png') else nm] = (f[11], f[12])
+    return ra
+
+
 class Rig(object):
     """Một file .xml đọc ra đủ thứ cần cho hộp chạm."""
 
     def __init__(self, path):
+        self.duong_dan = path
         self.ten = os.path.basename(path)[:-4]
         self.a = anim.Anim(open(path, 'rb').read(), self.ten)
+        self._nguon = False              # chua doc; None = khong co .plist
+
+    def kich_thuoc_nguon_sprite(self):
+        """tên sprite -> (w,h) mà ENGINE dùng, đọc từ `.plist` cùng thư mục.
+
+        Không có `.plist` (hoặc tên ảnh vắng trong đó) thì lui về bản ghi
+        `.xml` — hai nguồn chỉ lệch ở 4.173/13.601 ảnh, và ở **2/224** rig thì
+        lệch ấy đổi hẳn hộp chạm.
+        """
+        if self._nguon is False:
+            pl = os.path.join(os.path.dirname(self.duong_dan), self.ten + '.plist')
+            self._nguon = kich_thuoc_nguon(pl) if os.path.isfile(pl) else None
+        if self._nguon is None:
+            return self.kich_thuoc_sprite()
+        ra = dict(self.kich_thuoc_sprite())
+        ra.update(self._nguon)
+        return ra
 
     def kich_thuoc_sprite(self):
         """tên sprite -> (w, h) của bản ghi trong .xml (mảng ở header 0x60)."""
@@ -307,7 +380,7 @@ class Rig(object):
         if k is None:
             return None
         anh = self.anh_cua_xuong().get(k['xuong'], [])
-        sz = self.kich_thuoc_sprite()
+        sz = self.kich_thuoc_nguon_sprite()
         keys = k['keys']
         # Khung ảnh của xương: chỉ số `d` của khoá trỏ vào danh sách ảnh của
         # xương, chứ không phải vào mảng sprite toàn cục.
