@@ -10,7 +10,7 @@ VÌ SAO PHẢI ĐO
 ở lớp giả lập. Đọc mã máy chỉ trả lời được một nửa:
 
   * Nửa TRẢ LỜI ĐƯỢC: nó trả về HAI số. Bảng bind của lớp armature nằm ở `.data`
-    0x937350 (81 bản ghi, KHÔNG nằm trong 132 lớp của `binder.py` — tìm ra bằng
+    0x937350 (**95** bản ghi, KHÔNG nằm trong 132 lớp của `binder.py` — tìm ra bằng
     cách dò bản ghi 12 byte quanh tên `_lua_CollisionSize`), bản ghi trỏ tới
     `0x2ab932`, và đoạn mã đó đọc hai float ở `[sp+8]` và `[sp+0xc]` rồi
     `lua_pushnumber` hai lần — tức một cặp số, không phải một số.

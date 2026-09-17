@@ -26,7 +26,7 @@ CÔNG THỨC
 
 CÁCH TÌM RA
 -----------
-Bảng bind của lớp armature nằm ở `.data` 0x937350 (81 bản ghi 12 byte, KHÔNG
+Bảng bind của lớp armature nằm ở `.data` 0x937350 (**95** bản ghi 12 byte, KHÔNG
 nằm trong 132 lớp của `binder.py`); bản ghi của `_lua_CollisionSize` trỏ tới
 `0x2ab932` (Thumb, bit 0 đã bật), và thân hàm ấy đọc hai float ở `[sp+8]` và
 `[sp+0xc]` rồi `lua_pushnumber` hai lần — một CẶP số, không phải một số. Nó gọi
@@ -35,6 +35,17 @@ nằm trong 132 lớp của `binder.py`); bản ghi của `_lua_CollisionSize` t
 `_Rb_tree::_M_insert_unique`) — tức cặp số nằm trong một bản ghi
 `CDFColliderBoneInfo` gắn trên chính armature ở `+0x27c`, khoá `0`. Đọc mã chỉ
 cho biết đến thế; cặp số NGHĨA LÀ GÌ thì phải đo.
+
+Con số **95** là đếm lại chứ không phải số cũ: bảng kết thúc ở `0x9377c4` (ba
+word 0), và ngay trước `0x937350` cũng là ba word 0 (`0x937344`) — nên bảng này
+liền một mạch 95 dòng. (Bản ghi "81" trong tài liệu trước đây là do vòng lặp đọc
+tự cắt ở `range(81)`, không phải bảng ngắn hơn.) Đuôi bảng đáng chú ý: có
+`_ShowShadow` (`0x419f75`), `_Lua_addStarLevelEffect` (`0x41ba6d`), `_lua_setOpacity`,
+`_lua_openColorOverlay`, `setIsOpenDetection` — tức bảng bind này phủ cả phần
+bóng đổ mà `battle/bong_ref.gd` đang mô phỏng. Có thêm một bảng **gần trùng** ở
+`0x937f28` (93 dòng, giống 92 dòng đầu của bảng kia, chỉ khác dòng `setPosition`:
+`0x3672c7` so với `0x41ba6d`) — chưa tra ra lớp nào dùng nó, ghi lại để đừng
+tưởng là một bảng duy nhất.
 
 BẢY PHÉP ĐO TRÊN MÁY ẢO (`emu_cham.py`, bản gốc chạy trong Android)
 
