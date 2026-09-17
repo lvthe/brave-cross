@@ -233,9 +233,10 @@ def main():
             # Them 2026-09-17. Ba su that doc ra tu .so, dung de chot cho DAT
             # toan linh dua ra (xem `chua_do_duoc` ngay duoi).
             'do_dai_toan_px': '0x382670: fArmySpace * fArmyLength * co o px '
-                              '(1.1 * 4 * 100 = 440 px) — lay qua slot ao +0x3ac '
-                              '(0x38193c) roi slot +0x270 (0x35e73a = this+0x180, '
-                              'cap co o px). Vi du thu BA cua loi "hang so tinh '
+                              '(1.1 * 4 * 100 = 440 px). Hai he so lay qua hai ham '
+                              'doc cau hinh 0x38193c (+0x70 = fArmyLength) va ban '
+                              'anh em 0x388240, roi nhan voi cap co o px '
+                              '(this+0x180). Vi du thu BA cua loi "hang so tinh '
                               'bang O nhan co o px" (sau 0x35f43e va 0x41b538)',
             'dispatch_khong_tinh_toa_do': '0x45eef0 -> 0x45eda4 (than dispatch()) '
                                           'chi goi 0x466220: danh dau quan (+0x5a4 '
