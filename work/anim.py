@@ -37,15 +37,18 @@ Ban ghi xuong, 24 byte, o goc header[0x58]:
 Khung, 80 byte, o goc header[0x5c]:
 
     +0x00  float x, y                   vi tri
-    +0x08  float x2, y2                 CHUA RO nghia — xem muc "hai cap vi tri"
+    +0x08  float x2, y2                 GOC TRAI-TREN cua o anh — xem muc
+                                        "hai cap vi tri" ben duoi
     +0x10  float rot1, rot2             HAI goc xoay RIENG (do), khong lap lai
     +0x18  float sx, float sy           ti le
+    +0x20  float ax, ay                 DIEM NEO cua anh, tinh bang pixel cua
+                                        chinh anh do (khong chuan hoa)
     +0x2C  int32  d    CHI SO ANH dang hien: vi tri trong danh sach sprite cua
                        xuong (header 0x4c); -1 = AN
     +0x38  uint32 str_off, str_len     TEN CACH TRON cua khung nay
     +0x40  uint32 dur  so khung keyframe nay GIU truoc khi sang keyframe sau
-    +0x20, +0x24, +0x28, +0x30..+0x34, +0x44..+0x4C   chua giai (+0x28 hang
-                       so theo xuong; +0x44..+0x4C co ve la bien doi mau)
+    +0x28, +0x30..+0x34, +0x44..+0x4C   chua giai (+0x28 hang so theo xuong;
+                       +0x44..+0x4C co ve la bien doi mau)
 
 Truoc day ghi "+0x20..+0x50 luon 0 tren mau da xem" — SAI: mau cu toan nhan
 vat thuong. Do tren 418 file / 641.538 keyframe cua ca hai ban:
@@ -63,26 +66,86 @@ chay anh 2 -> 3 -> 4 — hoat hinh doi anh tung khung.
 
 HAI CAP VI TRI (+0x00 va +0x08) va HAI GOC XOAY (+0x10 va +0x14)
 
-Truoc day ghi "+0x08 la cung vi tri, da lam tron" va "+0x10 la goc xoay, lap
-lai" — CA HAI DEU SAI. Do tren 418 file / 644.623 keyframe:
+Truoc day ghi "+0x08 chi la BAN LAM TRON cua +0x00" va "cong thuc ra hieu ay van
+CHUA KHOI PHUC" — ca hai deu SAI. Cong thuc da ra, do tren 418 file / 641.536
+keyframe (2 khung NaN bo ra), trong do 617.664 khung HIEN:
 
-  +0x08  chi la BAN LAM TRON cua +0x00 o **30.478 keyframe (4,7%)**, khong phai
-         quy luat. Hai cap nam trong 1 px o 586.832 keyframe, nhung hieu khong
-         phai hang so: xuong `Layer000` cua ZhuGeLiangCircle co **7 hieu khac
-         nhau** tren 143 khoa (co ca 0), va lech lon nhat len toi **3551,25 px**
-         (ZhuGeLiangCircle `yx4`; Hoplite cung co cho lech 1276,28 px).
-         Da thu mot gia thuyet — hieu bang DIEM NEO (px,py) cua anh dang hien —
-         va **khong dung**: xuong `Area_3` / `Collision` cua Hoplite mang anh
-         `Hoplite_res-44` co neo (0, 0) trong khi hieu la ~(31, 41).
-         **Cong thuc ra hieu ay van CHUA KHOI PHUC** — nhung nay biet MOT nguoi
-         doc cap +0x08: `_lua_getBonePosInNode` tra ve dung no (y doi dau), xem
-         chu thich trong `keys()`. Ban dung VAN KHONG doc truong nay de ve.
+    do lech = quay( (sx * ax, sy * ay), rot1 )
+    v2 = ceil(x - do lech.x),   v3 = ceil(y - do lech.y)
+
+`ax, ay` la +0x20 / +0x24 — hai truong truoc day ghi "chua giai". Chung la **diem
+neo cua anh, tinh bang pixel CUA CHINH ANH do, khong chuan hoa**: xuong `Body`
+cua Hoplite co neo (72,15; 75,85) tren anh ~150 px, con `Collision` (anh giu cho
+1x1) co neo (0,5; 0,5). Nhan voi (sx, sy), quay theo `rot1`, roi lay vi tri xuong
+tru di — ra GOC TRAI-TREN cua o anh. Nghia cua cap (v2, v3) la vay: **goc trai-
+tren cua o anh**, lam tron len de ban ve khong bi duong ranh giua hai o.
+
+Them mot luat nua: **khi `rot2 - rot1 = 180 do` (mod 360) thi phan x doi dau** —
+dung nhu cocos doi dau `relativeOffset.x` khi lat truc x.
+
+DO BANG HAI DUONG DOC LAP, hai con so khac nhau va khac nhau CO LY DO. Ca hai deu
+nam trong `work/hai_cap.py` (so BANG) va `work/hai_cap_do.py` (do NGUOC do lech
+that: `v2 = ceil(x - d)` nghia la `d` nam trong nua khoang `[x - v2, x - v2 + 1)`,
+nen tu (v2, v3) trong file suy nguoc duoc do lech that roi xem cong thuc nao roi
+vao do):
+
+  do NGUOC (do lech roi dung vao o pixel)         607.943 / 617.664 = **98,43%**
+  so BANG (doi cong thuc ra so roi so bang)       576.347 / 617.664 = **93,31%**
+
+Lech nhau dung 5,12% va do la cau tra loi: **31.598 khung (5,12%) luu do lech THO,
+khong lam tron** — (v2, v3) la so le o nhung khung ay (ZhuGeLiangCircle `Layer000`
+x = 0, y = 1564,4, s = 5 -> v3 = 1564,4 chu khong phai 1565). 93,31 + 5,12 =
+98,43, khop tung phan. Cong thuc dung o ca hai cho; chi la file khong phai luc nao
+cung lam tron. (Ca thay 36.271 khung = 5,87% luu so tho.)
+
+Cac ban khac trong cung phep do NGUOC, de thay cong thuc nay khong phai ban duy
+nhat "tam duoc": khong quay 596.685 (96,60%); quay theo `rot2` 605.438 (98,02%);
+quay theo (rot1+rot2)/2 605.681 (98,06%); lat VO DIEU KIEN tut xuong 575.423
+(93,16%).
+
+LUAT LAT do duoc la dung o phan lon va **SAI o 3.033 keyframe (0,49%)**, sai ca hai
+chieu: co khung hieu = 0 ma van phai lat (ArcherN `Defend` / `Neck`), co khung hieu
+= 180 ma khong lat (ArcherN `WakeLoop` / `Neck`). Nen thu that su quyet dinh co le
+la co lat-theo-bien-the (cocos `isFlipX`) chu khong nam trong ban ghi khung. Ghi
+ra, KHONG suy dien them.
+
+CHUA KHOI PHUC: **7.295 khung (1,18%)** khong ban ung vien nao ra, don vao xuong
+lop HIEU UNG — `LayerName000` (3.670 khung sai), `LayerName002` 1.626, `deng1`
+1.477, `LayerName001` 1.295, `Layer000` 1.244, `Layer002` 969, `deng2` 827… —
+nhung xuong co neo RAT LON (|neo| 3169..3550 px, co mot gia tri rac 1,67e24) va co
+khung `rot1 != rot2` lech khong phai 180 do. Ban dung doc `+0x08` cho
+`_lua_getBonePosInNode` VAN DUNG; cho nay chi anh huong toi xuong hieu ung khong
+nhin thay. Ghi ro la chua khoi phuc, khong doan.
+
+NAM keyframe doi chieu doc lap duoc voi may ao (`work/emu_xuong.py`); bon trong nam
+co neo khac 0 nen phep kiem nay co suc phan biet that:
+
+    ZhangLiangBao Collision (x,y)=(-0,50; -113,50) (sx,sy)=(175,00; 227,50)
+                            neo=(0,5; 0,5) -> ceil(-88,00; -227,25) = (-88, -227)
+    Hoplite       Collision (x,y)=(-45,09; -129,61) (sx,sy)=(54,52; 54,40)
+                            neo=(0,6; 0,6) -> ceil(-77,802; -162,25) = (-77, -162)
+    Gashapon      Collision (x,y)=(-78,85; -72,52) (sx,sy)=(38,00; 44,40)
+                            neo=(1,4; 2,8) -> ceil(-132,05; -196,84) = (-132, -196)
+    ElephantSoldier Collision (x,y)=(-69,17; -69,85) (sx,sy)=(56,84; 39,50)
+                            neo=(0,6; 1,16) -> ceil(-103,27; -115,67) = (-103, -115)
+    YuJin         Head      (x,y)=(0,59; -127,67) (sx,sy)=(1; 1)
+                            neo=(0; 0) -> (1, -127)
+
+Nam so nay dung bang nam so ma ham `_lua_getBonePosInNode` cua ban goc tra ve.
+
+Anh huong toi ban dung: **khong phai doi gi**. Do lech bang 0 o **553.661 khung
+(89,64% so khung hien) vi neo la (0, 0)** — ca xuong than nhan vat nam trong so
+do, nen voi chung `v = ceil(x, y)`, hai cap lech nhau duoi 1 px: ve bang `+0x00`
+(dung khong gian Cocos, neo (0,5; 0,5) — xem `rig/sng_rig.gd`) van dung, con
+`diem_xuong` doc `+0x08` cho lop Lua. Phan lech con lai nam o xuong hieu ung va o
+hop cham (khong nhin thay).
 
   +0x10  la HAI goc RIENG, khong phai mot goc lap lai: **80.620 keyframe
          (12,5%)** co rot1 != rot2. Vd ADou01 `JiWing` 27,87 / 18,07; ADou01
          `图层 2` 180 / 0 — lat MOT truc chu khong lat ca hai.
          Do cung la cap ma `_lua_CollisionSize` dung: `rot1` nhan voi be RONG,
-         `rot2` nhan voi be CAO (xem `cham_ref.py`).
+         `rot2` nhan voi be CAO (xem `cham_ref.py`), va `rot2 - rot1` la thu quyet
+         dinh luat lat o tren.
 
 Muc con cua BO PHAN, 16 byte, o goc header[0x48]:
 
@@ -139,7 +202,7 @@ Quan trong voi nhung nhan vat dat ten anh khong theo bo phan: CaoCao co
 ra dung.
 
 CHUA RO: 12 byte cuoi cua ban ghi 20 byte nay; 48 byte cuoi cua moi khung
-(luon 0 tren mau da xem); va vi sao vi tri cung goc xoay deu duoc luu hai lan.
+(luon 0 tren mau da xem).
 
     python anim.py <file.xml>                # tom tat
     python anim.py <file.xml> --json         # xuat JSON day du
@@ -229,14 +292,14 @@ class Anim(object):
             v = struct.unpack_from('<8f', self.d, q)
             out.append(collections.OrderedDict([
                 ('x', round(v[0], 4)), ('y', round(v[1], 4)),
-                # v2/v3 la cap +0x08. Truoc day ghi "chua ro nghia"; nay biet
-                # MOT nguoi doc: `_lua_getBonePosInNode` cua ban goc tra ve
-                # DUNG cap nay, voi y doi dau — `(v2, -v3)`. Do bang may ao tren
-                # nam xuong (`emu_xuong.py`, muc A/B/D), va doi chieu doc lap
-                # duoc tu du lieu: ZhangLiangBao Collision (-88, -227) -> (-88,
-                # 227), ElephantSoldier (-103, -115) -> (-103, 115), YuJin Head
-                # (1, -127) -> (1, 127), Gashapon (-132, -196),
-                # Hoplite (-77, -162) — khop CA NAM so may ao do.
+                # v2/v3 la cap +0x08 = GOC TRAI-TREN cua o anh (pixel, lam tron
+                # len): `ceil((x,y) - quay((sx*ax, sy*ay), rot1))` voi (ax,ay) la
+                # neo o +0x20/+0x24 — khop 602.002/641.536 keyframe (93,84%),
+                # xem muc "HAI CAP VI TRI" o docstring. Ban goc doc DUNG cap nay:
+                # `_lua_getBonePosInNode` tra `(v2, -v3)`, do bang may ao tren
+                # nam xuong (`emu_xuong.py`) va doi chieu doc lap duoc tu du lieu
+                # (ZhangLiangBao (-88,-227), ElephantSoldier (-103,-115), YuJin
+                # Head (1,-127), Gashapon (-132,-196), Hoplite (-77,-162)).
                 ('v2', round(v[2], 4)), ('v3', round(v[3], 4)),
                 ('rot', round(v[4], 4)),
                 # rot2 la goc THU HAI (+0x14). `_lua_getBoneRectInNode` dung no
