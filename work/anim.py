@@ -28,16 +28,17 @@ Hai truong +0x10 va +0x14 doc duoc bang cach quet 7995 ban ghi cua 411 file:
 Ban ghi xuong, 24 byte, o goc header[0x58]:
 
     +0x00  uint32  str_off, str_len     ten xuong: "HandLeft", "ThighLeft"...
-    +0x08  float   he so (luon 1.0 tren mau da xem)
+    +0x08  float   luon 0x3f800000 (= 1.0) tren CA 132.367 ban ghi xuong cua
+                    418 file, khong phai "mau da xem"
     +0x0c  uint32  0
     +0x10  uint32  key_off              offset vao mang o header 0x5c
     +0x14  uint32  key_count            so khung cua rieng xuong nay
 
 Khung, 80 byte, o goc header[0x5c]:
 
-    +0x00  float x, float y             vi tri
-    +0x08  float x, float y             cung vi tri, da lam tron
-    +0x10  float rot, float rot         goc xoay (do), lap lai
+    +0x00  float x, y                   vi tri
+    +0x08  float x2, y2                 CHUA RO nghia — xem muc "hai cap vi tri"
+    +0x10  float rot1, rot2             HAI goc xoay RIENG (do), khong lap lai
     +0x18  float sx, float sy           ti le
     +0x2C  int32  d    CHI SO ANH dang hien: vi tri trong danh sach sprite cua
                        xuong (header 0x4c); -1 = AN
@@ -59,6 +60,27 @@ vat thuong. Do tren 418 file / 641.538 keyframe cua ca hai ban:
 Nghia doc duoc tren Player000M03W: eff010 cua Fight la (-1,8) (0,3) (0,1)
 (-1,2) — an 8 khung, hien anh 0 bon khung, an 2; eff010 cua YinHuo_Standby
 chay anh 2 -> 3 -> 4 — hoat hinh doi anh tung khung.
+
+HAI CAP VI TRI (+0x00 va +0x08) va HAI GOC XOAY (+0x10 va +0x14)
+
+Truoc day ghi "+0x08 la cung vi tri, da lam tron" va "+0x10 la goc xoay, lap
+lai" — CA HAI DEU SAI. Do tren 418 file / 644.623 keyframe:
+
+  +0x08  chi la BAN LAM TRON cua +0x00 o **30.478 keyframe (4,7%)**, khong phai
+         quy luat. Hai cap nam trong 1 px o 586.832 keyframe, nhung hieu khong
+         phai hang so: xuong `Layer000` cua ZhuGeLiangCircle co **7 hieu khac
+         nhau** tren 143 khoa (co ca 0), va lech lon nhat len toi **3551,25 px**
+         (ZhuGeLiangCircle `yx4`; Hoplite cung co cho lech 1276,28 px).
+         Da thu mot gia thuyet — hieu bang DIEM NEO (px,py) cua anh dang hien —
+         va **khong dung**: xuong `Area_3` / `Collision` cua Hoplite mang anh
+         `Hoplite_res-44` co neo (0, 0) trong khi hieu la ~(31, 41).
+         **Nghia CHUA KHOI PHUC.** Ban dung KHONG doc truong nay.
+
+  +0x10  la HAI goc RIENG, khong phai mot goc lap lai: **80.620 keyframe
+         (12,5%)** co rot1 != rot2. Vd ADou01 `JiWing` 27,87 / 18,07; ADou01
+         `图层 2` 180 / 0 — lat MOT truc chu khong lat ca hai.
+         Do cung la cap ma `_lua_CollisionSize` dung: `rot1` nhan voi be RONG,
+         `rot2` nhan voi be CAO (xem `cham_ref.py`).
 
 Muc con cua BO PHAN, 16 byte, o goc header[0x48]:
 
