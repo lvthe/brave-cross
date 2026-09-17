@@ -53,3 +53,15 @@ work/picmap.pkl
 # (7,1 MB, 13 file) — là tài sản có bản quyền của bản gốc, cùng loại với
 # *.apk ở trên. Chụp lại được bất cứ lúc nào, nên chặn hẳn.
 work/_dom/
+
+# Ảnh chụp màn hình bản gốc cho các phép đo thanh/vòng tiến độ (work/emu_pt.py,
+# 30 MB) — cùng loại với work/_dom/ ở trên: là tài sản của bản gốc, và chụp lại
+# được. Chặn hẳn để một lệnh `git add -A` không đẩy ảnh game lên repo.
+work/_pt/
+
+# Đồ thị lời gọi `bl` của libgame.so (2,3 MB, ~2,8 triệu lệnh Thumb) — sinh lại
+# bằng: python work/blgraph.py --xay
+work/blgraph.json
+
+# Bãi nháp của các phép dò .xml: work/z.json là bản đổ của MỘT file .xml
+work/z.json
