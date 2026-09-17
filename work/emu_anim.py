@@ -13,13 +13,20 @@ bang dang ky luc chay (bang 111 ten, `toAnimationName` o 0x20c0ba — ngay giua
 `giveBackToSpriteCatch` va `updateSettingFile`), khong co trong file .so.
 
 Bang tra trong cong (`data_ref/anim_ref.json`, sinh bang `anim_ref.py`) rut tu
-DU LIEU: `<sAnimation>` co dung 13 muc trong `evil_config.xml`. Con HAI cau hoi
-du lieu khong tu tra loi duoc, va day la hai cau hoi phep do nay tra loi:
+DU LIEU: `<sAnimation>` co dung 13 muc trong `evil_config.xml`, cong them 90 muc
+chi co `<sBaseItem>` tro toi mot trong 13 muc do. Hai cau hoi du lieu khong tu
+tra loi duoc, va day la hai cau hoi phep do nay tra loi:
 
   1. Ham co dung `<sAnimation>` lam ten armature khong, hay tra ve nguyen ten?
   2. `<sBaseItem>` co PHAI la ke thua khong? `Archer_Evil` KHONG co
      `<sAnimation>` rieng, no tro `<sBaseItem>` ve `Archer_VampirE`. Neu ke thua
      thi `Archer_Evil -> Archer`; neu khong thi `Archer_Evil -> Archer_Evil`.
+
+Ket qua luot dau (33 ten, 2026-09-18) tra loi CA HAI: ham doi ten that, va
+`<sBaseItem>` la ke thua that (`Archer_Evil -> Archer`). Luot hai mo rong danh
+sach len 50 ten de phep ke thua khong chi dung o mot vai ca: them 11 ten con
+rai tren muoi goc linh, va 6 ten co chuoi `<sBaseItem>` dai 2-3 buoc ma KHONG
+toi mot `<sAnimation>` nao (chieu nguoc lai — phai tra nguyen ten).
 
 Cach lam: y nhu `emu_tags.py` — thay the file Lua cua game trong may ao (game
 dat `package.path` de thu muc ngoai thang truoc assets trong APK, xem
@@ -53,15 +60,24 @@ TEN = (
     'Berserker_Boss', 'Catapult_VampirE', 'Cavalry_VampirE', 'Defender_VampirE',
     'ElephantSoldier_VampirE', 'Hoplite_VampirE', 'Priest_VampirE',
     'Spearmen_VampirE', 'Witch_VampirE',
-    # con cua chung
+    # con cua chung — luot dau do 7 ten, luot hai do them 11 ten nua rai deu
+    # tren muoi goc linh, de phep ke thua khong chi dung o mot vai ca
     'Archer_Evil', 'Archer_Dong', 'Archer_Shi', 'Archer_Skeleton',
     'Archer_DongBoss', 'Cavalry_VampirEBoss', 'Witch_Evil',
+    'Archer_EvilBoss', 'Archer_ShiBoss', 'Archer_SkeletonBoss',
+    'Archer_VampirEBoss', 'Artillery_Dong', 'Artillery_VampirEBoss',
+    'Catapult_Skeleton', 'Hoplite_EvilBoss', 'Priest_Shi',
+    'Spearmen_SkeletonBoss', 'Witch_DongBoss',
     # khong co gi
     'Archer', 'ArcherN', 'ZhangJiao', 'Player000M03F', 'Archer_WeaponNormal',
     'Archer_Weapon_Wake', 'ZhangJiao_Hair', 'Silk_Short', 'weapon_throw',
     'KhongCoTenNay_12345',
     # bien the nam trong file armature khac ten
     'UITongYong_ItemLight', 'CustomsWin_Star1', 'ItemLight_Level2',
+    # chuoi <sBaseItem> dai (2-3 buoc) ma KHONG toi mot <sAnimation> nao —
+    # phai tra nguyen ten, do la chieu nguoc lai cua phep ke thua
+    'ADou01', 'ArcherN_Weapon_Normal', 'ArcherN_Weapon_Normal2',
+    'ArcherN_Weapon_Wake', 'BaiHuZi', 'BuLianShiExclus',
 )
 
 PROBE = '''

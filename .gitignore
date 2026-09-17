@@ -59,6 +59,15 @@ work/_dom/
 # được. Chặn hẳn để một lệnh `git add -A` không đẩy ảnh game lên repo.
 work/_pt/
 
+# Cây Lua đã vá để đẩy vào máy ảo của work/emu_anim.py (56 KB) — bên trong là
+# bản sao `sc/game.lua` của game gốc, cùng loại với work/_dom/ ở trên. Dựng lại
+# được bằng chính phép đo, nên chặn hẳn.
+work/_emu_anim/
+
+# Bảng chỗ đọc/ghi trường của phép quét vtable CDFSpriteMove* (8 KB) — sinh lại
+# bằng: python work/move_vt.py --json work/move_vt.json
+work/move_vt.json
+
 # Đồ thị lời gọi `bl` của libgame.so (2,3 MB, ~2,8 triệu lệnh Thumb) — sinh lại
 # bằng: python work/blgraph.py --xay
 work/blgraph.json
