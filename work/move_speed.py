@@ -20,8 +20,41 @@ tới một khối `<move>`, và khối đó có
 hero_config.xml) — nên 1.3 ô/s = 130 px/s.
 
 Đo được: gần như mọi sprite đi cùng một tốc độ 1.3 ô/s; khác nhau là ở tốc độ
-CHẠY (bộ binh 3, cung 2.5, kỵ binh 3.5). Còn engine chọn đi hay chạy lúc nào
-thì nằm bên C++ — script này chỉ bê số ra.
+CHẠY (bộ binh 3, cung 2.5, kỵ binh 3.5). Script này chỉ bê số ra.
+
+ENGINE CHỌN ĐI HAY CHẠY LÚC NÀO — ĐÃ ĐO (2026-09-18), bản vn
+-----------------------------------------------------------
+Cờ chạy là byte `+0x295` của đơn vị; cả hai bản `.so` chỉ đụng tới nó ở 4 chỗ:
+xoá trong hàm dựng (`0x412540`), xoá sau mỗi bước chạy (`0x415b18`), và **bật**
+tại `0x413c4c` — trong hàm `0x413bd4`, nơi duy nhất quyết định:
+
+    0x413c12  ldr r3,[pc,#0x44]; add r3,pc; ldr r3,[r3]   ; singleton sàn trận
+    0x413c1c  ldr r0,[r3]; bl 0x462e5e ; 0x462e5e = ldr.w r0,[r0,#0x1b8]
+    0x413c2a  ldr r3,[r0]; ldr.w r3,[r3,#0x270]; blx r3   ; -> bản đồ + 0x180
+    0x413c36  vldr s14,[r0]                               ; BỀ NGANG Ô, tính px
+    0x413c3a  vmul.f32 s15,s14,#4.0
+    0x413c42  vcmpe.f32 s16,s15                           ; |Δx| (s16) với 4 x ô
+    0x413c4c  strbpl.w r0,[r5,#0x295]                     ; xa thì BẬT CHẠY
+
+Nên: **|Δx| tới mục tiêu ≥ 4 ô (400 px) thì chạy**; `>=` chứ không phải `>`
+(`vcmpe` + `it pl`), và chỉ trục X (`vsub` rồi `vabs`, không đụng tới Y).
+
+`W` trong luật ấy là gì — câu này từng để mở, nay chốt: `+0x270` =
+`0x35e73a` = `add.w r0,r0,#0x180; bx lr`. Quét cả file thì đó là **stub duy
+nhất** kiểu `this + 0x180` (35 chỗ cộng hằng 0x180, chỉ 1 chỗ theo kiểu này),
+và nó nằm trong **đúng hai** vtable: `CDFTMXTiledMap` (vt `0x895ac8`, RTTI
+`14CDFTMXTiledMap`) và `cocos2d::CCTMXTiledMap` (vt `0x921780`). Vậy đối tượng
+lấy qua `[sàn trận + 0x1b8]` chắc chắn là **bản đồ tmx**, và `+0x180` là cỡ ô
+tính bằng px = 100 (`map/map_1.tmx` khai `tilewidth="100"`; cùng chỗ đó,
+`0x35f43e` nhân `fLaneWidth` với nó để ra bề ngang làn px).
+
+Còn lại CHƯA đo được: nhánh chạy (`0x415a9a`..`0x415b18`) đẩy vị trí đi một
+bước **cứng 3,8 ô** (`vldr s15,[pc,#0x13c]` = 3.8, nhân với bề ngang ô) rồi gọi
+`+0x2a4(this, bản_đồ, &đích, 0, …)` — tức bản gốc đi theo BƯỚC rồi để armature
+chạy hết quãng đường đó. Màn trận của bản dựng đi LIÊN TỤC theo px/giây nên
+dùng thẳng `<ptRunVector>` (cùng nguồn với `<ptVector>` của đường đi); quan hệ
+giữa bước 3,8 ô kia và `<ptRunVector>` thì chưa đo được (máy ảo không chạy nổi
+bản gốc — SIGSEGV trong RepaleceScene, xem `emu_dom.py`).
 """
 import os
 import re
