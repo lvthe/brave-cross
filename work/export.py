@@ -69,6 +69,72 @@ def index(assets):
     return out, sorted(set(xml) - set(out))
 
 
+def _nguon_khung(geo, ten_sprite):
+    """{ten sprite: [srcW, srcH]} cho MOI sprite, ke ca sprite khong cat duoc PNG.
+
+    `spriteFiles[ten] = None` nghia la "sprite nay khong co anh" (o 0x0 trong
+    atlas nen buoc cat bo qua), nhung O CUA NO van nam trong `.plist`, va
+    `_lua_getBoneRectInNode` can o ay: hop cua mot xuong = o cua ANH xuong dang
+    ve. Do tren `YuJin_res-44` — `spriteFiles` la `None` trong khi `sourceSize`
+    la 1x1, nen thieu ban do nay thi hop xuong `Collision` ra (0, 0) chu khong
+    phai 140,00547790527 x 179,98643493652 ma may ao do duoc (cung the voi
+    `BatFlight` 145,00999450684 x 120, `ZhangLiangBao` 175 x 227,5).
+
+    Ten nao khong co ban ghi trong `.plist` thi KHONG co trong ban do (khong bia
+    so 0) — nguoi doc thay vang mat thi biet la khong tra duoc.
+    """
+    out = collections.OrderedDict()
+    for n in ten_sprite:
+        fr = geo.get(n) or geo.get(n + '.png')
+        if fr is None:
+            continue
+        sw, sh = fr.get('sourceSize', [0.0, 0.0])
+        out[n] = [round(sw, 4), round(sh, 4)]
+    return out
+
+
+def _lam_sach_json(node, dem):
+    """Ban sao cua `node` voi moi so KHONG HUU HAN thay bang `0.0`, dem vao `dem`.
+
+    `json.dump` cua Python ghi thang `NaN`/`Infinity` — khong phai JSON hop le,
+    va `JSON.parse_string` cua Godot TU CHOI CA FILE. Do duoc: bo kiem `rig nhan
+    vat` do ra 1 hong, `ERROR: Parse JSON failed. Error at line 517: Expected
+    'true', 'false', or 'null', got 'NaN'`, tuc rig `XSJiYouHeTiJi` khong dung
+    duoc — va no la file DUY NHAT trong 397 (quet ca cay: dung 2 lan `NaN`).
+
+    Cho rac ay DA BIET va CHUA GIAI, khong phai loi giai ma moi: `anim.py` ghi
+    "13 cho lech deu o BingYing.xml va XSJiYouHeTiJi.xml — hai file do bo cuc
+    khung khac". Hai khoa cuoi cua hai xuong o file nay doc ra `d` = 0xC4800000
+    (=-1024,0 neu doc theo float) va `dur` = 0x3F800000 (= 1,0) — tuc vung
+    float32 chu khong phai ban ghi khung. Vi vay KHONG bia gia tri khac: ghi
+    `0.0` va dem lai, de con so hien ra o dong tong ket chu khong im lang.
+    """
+    if isinstance(node, float):
+        if node != node or node in (float('inf'), float('-inf')):
+            dem[0] += 1
+            return 0.0
+        return node
+    if isinstance(node, dict):
+        return collections.OrderedDict(
+            (k, _lam_sach_json(v, dem)) for k, v in node.items())
+    if isinstance(node, list):
+        return [_lam_sach_json(v, dem) for v in node]
+    return node
+
+
+def _ghi_json(path, doc):
+    """Ghi JSON da lam sach so khong huu han. Tra ve so cho da thay.
+
+    `allow_nan=False` de lan sau con cho nao lot luoi thi `json.dump` nem loi
+    NGAY, chu khong ghi ra mot file hong roi de nguoi doc phia Godot phat hien.
+    """
+    dem = [0]
+    with open(path, 'w', encoding='utf-8') as fp:
+        json.dump(_lam_sach_json(doc, dem), fp, ensure_ascii=False, indent=1,
+                  allow_nan=False)
+    return dem[0]
+
+
 def _entry(fr, png, w, h):
     """Mot muc spriteFiles.
 
@@ -113,17 +179,18 @@ def _rewrite_json(name, xml_p, plist_p, sub):
         fr = geo.get(n) or geo.get(n + '.png') or {}
         merged[n] = _entry(fr, old_e['png'], old_e['w'], old_e['h'])
     doc['spriteFiles'] = merged
+    doc['sourceSize'] = _nguon_khung(geo, doc['sprites'])
     doc['exported'] = prev['exported']
 
-    with open(jp, 'w', encoding='utf-8') as fp:
-        json.dump(doc, fp, ensure_ascii=False, indent=1)
+    nrac = _ghi_json(jp, doc)
 
     nanim = sum(len(g['animations']) for g in doc['groups'])
     nkey = sum(len(b['keys']) for g in doc['groups']
                for an in g['animations'] for b in an['bones'])
     e = doc['exported']
     return (e['pngCount'], e['placeholders'], e['outOfBounds'], nanim, nkey,
-            sum(1 for v in doc['spriteFiles'].values() if v), len(doc['sprites']))
+            sum(1 for v in doc['spriteFiles'].values() if v), len(doc['sprites']),
+            nrac)
 
 
 def export_one(name, paths, outdir, json_only=False):
@@ -140,9 +207,10 @@ def export_one(name, paths, outdir, json_only=False):
 
     # --- pixel
     atlas = Atlas(plist_p)
+    geo = collections.OrderedDict((fr['name'], fr) for fr in atlas.frames())
     files = {}
     empty = oob = 0
-    for fr in atlas.frames():
+    for fr in geo.values():
         rgba, w, h = atlas.cut(fr)
         if rgba is None:
             # Phan biet ro: muc danh dau kich thuoc 0 (binh thuong, moi nhan
@@ -170,18 +238,19 @@ def export_one(name, paths, outdir, json_only=False):
 
     doc['spriteFiles'] = collections.OrderedDict(
         (n, resolve(n)) for n in doc['sprites'])
+    doc['sourceSize'] = _nguon_khung(geo, doc['sprites'])
     doc['exported'] = collections.OrderedDict([
         ('pngCount', len(files)), ('placeholders', empty), ('outOfBounds', oob),
         ('spritesMatched', sum(1 for v in doc['spriteFiles'].values() if v)),
     ])
 
-    with open(os.path.join(sub, name + '.json'), 'w', encoding='utf-8') as fp:
-        json.dump(doc, fp, ensure_ascii=False, indent=1)
+    nrac = _ghi_json(os.path.join(sub, name + '.json'), doc)
 
     nanim = sum(len(g['animations']) for g in doc['groups'])
     nkey = sum(len(b['keys']) for g in doc['groups']
                for an in g['animations'] for b in an['bones'])
-    return len(files), empty, oob, nanim, nkey, doc['exported']['spritesMatched'], len(doc['sprites'])
+    return (len(files), empty, oob, nanim, nkey,
+            doc['exported']['spritesMatched'], len(doc['sprites']), nrac)
 
 
 def main():
@@ -223,15 +292,15 @@ def main():
     if not todo:
         sys.exit('cho ten nhan vat, hoac dung --all / --list')
 
-    tp = te = to = ta = tk = 0
+    tp = te = to = ta = tk = tr = 0
     fail = []
     for i, n in enumerate(todo, 1):
         if n not in idx:
             fail.append((n, 'khong co, hoac thieu file'))
             continue
         try:
-            np_, em, ob, na, nk, matched, nspr = export_one(n, idx[n], a.out, a.json_only)
-            tp += np_; te += em; to += ob; ta += na; tk += nk
+            np_, em, ob, na, nk, matched, nspr, nrac = export_one(n, idx[n], a.out, a.json_only)
+            tp += np_; te += em; to += ob; ta += na; tk += nk; tr += nrac
             print('  [%3d/%3d] %-26s %4d PNG, %2d dong tac, %6d keyframe, sprite khop %d/%d'
                   % (i, len(todo), n[:26], np_, na, nk, matched, nspr))
         except (SpriteError, AnimError, OSError) as e:
@@ -245,6 +314,9 @@ def main():
         print('  muc danh dau kich thuoc 0 (binh thuong): %d' % te)
     if to:
         print('  *** khung ngoai bien atlas (bat thuong): %d ***' % to)
+    if tr:
+        print('  so khong huu han (NaN/Inf) da thay bang 0.0: %d — JSON khong hop le'
+              ' voi Godot, xem _lam_sach_json' % tr)
     if fail:
         print('  that bai: %d' % len(fail))
         for n, e in fail[:6]:

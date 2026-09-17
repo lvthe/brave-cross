@@ -74,7 +74,9 @@ lai" — CA HAI DEU SAI. Do tren 418 file / 644.623 keyframe:
          Da thu mot gia thuyet — hieu bang DIEM NEO (px,py) cua anh dang hien —
          va **khong dung**: xuong `Area_3` / `Collision` cua Hoplite mang anh
          `Hoplite_res-44` co neo (0, 0) trong khi hieu la ~(31, 41).
-         **Nghia CHUA KHOI PHUC.** Ban dung KHONG doc truong nay.
+         **Cong thuc ra hieu ay van CHUA KHOI PHUC** — nhung nay biet MOT nguoi
+         doc cap +0x08: `_lua_getBonePosInNode` tra ve dung no (y doi dau), xem
+         chu thich trong `keys()`. Ban dung VAN KHONG doc truong nay de ve.
 
   +0x10  la HAI goc RIENG, khong phai mot goc lap lai: **80.620 keyframe
          (12,5%)** co rot1 != rot2. Vd ADou01 `JiWing` 27,87 / 18,07; ADou01
@@ -227,7 +229,19 @@ class Anim(object):
             v = struct.unpack_from('<8f', self.d, q)
             out.append(collections.OrderedDict([
                 ('x', round(v[0], 4)), ('y', round(v[1], 4)),
+                # v2/v3 la cap +0x08. Truoc day ghi "chua ro nghia"; nay biet
+                # MOT nguoi doc: `_lua_getBonePosInNode` cua ban goc tra ve
+                # DUNG cap nay, voi y doi dau — `(v2, -v3)`. Do bang may ao tren
+                # nam xuong (`emu_xuong.py`, muc A/B/D), va doi chieu doc lap
+                # duoc tu du lieu: ZhangLiangBao Collision (-88, -227) -> (-88,
+                # 227), ElephantSoldier (-103, -115) -> (-103, 115), YuJin Head
+                # (1, -127) -> (1, 127), Gashapon (-132, -196),
+                # Hoplite (-77, -162) — khop CA NAM so may ao do.
+                ('v2', round(v[2], 4)), ('v3', round(v[3], 4)),
                 ('rot', round(v[4], 4)),
+                # rot2 la goc THU HAI (+0x14). `_lua_getBoneRectInNode` dung no
+                # cho be CAO, y nhu `cham_ref.py` (12,5% keyframe co rot != rot2).
+                ('rot2', round(v[5], 4)),
                 ('sx', round(v[6], 4)), ('sy', round(v[7], 4)),
                 ('d', struct.unpack_from('<i', self.d, q + 0x2C)[0]),
                 ('dur', struct.unpack_from('<I', self.d, q + 0x40)[0]),
