@@ -19,8 +19,8 @@ nay giu ca duong doc lan con so:
          <fLaneOffset>0.1</fLaneOffset>
 
      Cong cu nay boc luon chu thich ay ra truong `chung` de bang giu bang chung.
-  2. CHO ENGINE DUNG hai hang so do: `0x35f43e` (lop `CDFTMXTiledMap`, vtable
-     `0x00895ac8`, RTTI `0x00895de8`):
+  2. CHO ENGINE DUNG hai hang so do: `0x35f43e` (vn) — lop `CDFTMXTiledMap`,
+     vtable `0x00895ac8`, RTTI `0x00895de8`:
 
          0x35f446  bl 0x38c7f0              ; singleton cau hinh
          0x35f44c  vldr s16,[r0,#0x14]      ; fLaneWidth  (+0x18 la fLaneOffset)
@@ -29,17 +29,17 @@ nay giu ca duong doc lan con so:
          0x35f460  vmul.f32 s15,s16,s15
          0x35f464  vstr s15,[r4,#0x264]     ; be ngang lan, PX
 
-     Slot `+0x270` la `0x35e73a` = `return this + 0x180`, tuc cap `(rong, cao)`
-     cua O. Ba bang chung doc lap noi cap ay la CO O TINH BANG PX:
-       * `0x35f068` viet cung `100*(4-idx)` — 100 px moi o;
-       * `InWhichCell` `0x35ec4c` chan diem theo `v270()[0] * v268()[0]` va
+     Slot `+0x270` la `0x35e73a` (vn) = `return this + 0x180`, tuc cap `(rong,
+     cao)` cua O. Ba bang chung doc lap noi cap ay la CO O TINH BANG PX:
+       * `0x35f068` (vn) viet cung `100*(4-idx)` — 100 px moi o;
+       * `InWhichCell` `0x35ec4c` (vn) chan diem theo `v270()[0] * v268()[0]` va
          `v270()[+4] * v268()[+4]` — tuc "co o x so o", roi chia lay chi so o;
        * `map/map_1.tmx` (file TMX duy nhat cua game) khai
          `tilewidth="100" tileheight="100"`, o dat `CDFMapGround 100x100`.
-  3. CONG THUC XEP LAN, tu `0x35f0a4`: `y = y0 + (Location-1) * be_ngang_px +
-     lech_px`. `Location` doc tu ban ghi sprite (1..3, 0 = khong co lan rieng) va
-     bi lam roi bang XOR 4 byte tai `unit+0x484`; ket qua ghi vao `+0x264` (be
-     ngang) va `+0x268` (lech) cua chinh doi tuong do.
+  3. CONG THUC XEP LAN, tu `0x35f0a4` (vn): `y = y0 + (Location-1) * be_ngang_px
+     + lech_px`. `Location` doc tu ban ghi sprite (1..3, 0 = khong co lan rieng)
+     va bi lam roi bang XOR 4 byte tai `unit+0x484`; ket qua ghi vao `+0x264`
+     (be ngang) va `+0x268` (lech) cua chinh doi tuong do.
 
      => lan 1 lech 10 px, lan 2 lech 50 px, lan 3 lech 90 px so voi y0.
 
@@ -47,9 +47,9 @@ nay giu ca duong doc lan con so:
      cau hinh ghi chu `<!-- 军队长度间距 -->` ("do dai & khoang cach cua quan")
      tren bo ba `fArmyLength` / `fArmySpace` / `fArmySpaceInArena`. Do duoc them
      mot bang chung nua: engine co HAI ham doc, khac nhau dung o cho lay o cach:
-     `0x38193c` lay `+0x70` (fArmyLength) va `+0x74` (fArmySpace), con `0x388240`
-     lay `+0x70` va `+0x78` (fArmySpaceInArena) — tuc ban dau la san thuong, ban
-     sau la dau truong (竞技场), dung nhu ten.
+     `0x38193c` (vn) lay `+0x70` (fArmyLength) va `+0x74` (fArmySpace), con
+     `0x388240` (vn) lay `+0x70` va `+0x78` (fArmySpaceInArena) — tuc ban dau la
+     san thuong, ban sau la dau truong (竞技场), dung nhu ten.
   5. SO LAN la so DO, khong phai chon: `Location` cua tung binh chung nam trong
      `config/share/KDBGameArmyConfig.xgg` (91 muc: 48 muc lan 1, 23 muc lan 2,
      19 muc lan 3, 1 muc 0 = tuong nguoi choi). Cong cu dem luon ra day, nen
@@ -65,6 +65,22 @@ Cai gi KHONG doc duoc tu .so, ghi lai cho khoi tuong da do:
     tu file .so.
   * Chu thich cua `CUIGame:Test()` (che do thu cua engine) dat `bDirectBattle` —
     co the dung no de DO tren may ao; xem ROADMAP muc "Cho dung quan".
+
+HAI BAN `.so` — MOI DIA CHI PHAI NOI RO NO THUOC BAN NAO
+--------------------------------------------------------
+Trong `work/` co HAI ban `libgame.so` KHAC NHAU ve bo cuc ma:
+
+    apk/lib/armeabi-v7a/libgame.so    10.231.498 byte, 2017-10-25
+    vn/apk/lib/armeabi-v7a/libgame.so 10.213.832 byte, 2017-12-28
+
+Khong co doan byte nao giong nhau giua hai ban (do), nen dia chi KHONG dung
+chung duoc: cung mot chuoi `DispatchButtonDisable` nam o `0x7c57f8` (apk) va
+`0x7c1bb6` (vn). **Ban `vn` moi la ban tham chieu cua ban dung** — `sc/` va
+`data_ref` cua game lay tu `work/vn/decrypted/assets`. Vi vay moi dia chi duoi
+day ghi ro `vn` hay `apk`, va da do lai TUNG cai tren dung ban ay. Cac dia chi
+cu ghi trong tai lieu (ROADMAP, CLAUDE.md) deu DUNG vi chung o KHONG GIAN VN;
+mot luot "sua lai" truoc day (2026-09-17) doc nham ban apk roi tuong chung sai
+— bai hoc: truoc khi bac bo mot dia chi, phai biet no thuoc ban nao.
 """
 import argparse
 import io
@@ -200,7 +216,7 @@ def main():
         'note': 'hang so san tran cua ban goc: khoi <stage>/<army>/<camera> cua '
                 'map/global_config.xml + co o cua map/map_1.tmx. Don vi cua '
                 'fLaneWidth/fLaneOffset la O (格) — chinh file do ghi chu, va '
-                'engine nhan voi co o tinh bang px (0x35f43e). Sinh bang: '
+                'engine nhan voi co o tinh bang px (0x35f43e, ban vn). Sinh bang: '
                 'python tran_ref.py (brave-cross/work).',
         'o_px': o['rong_px'],
         'co_o': o,
@@ -220,54 +236,96 @@ def main():
         'army': khoi['army'],
         'camera': khoi['camera'],
         'do_duoc': {
-            'hang_so_lan': '0x35f43e: vldr s16,[r0,#0x14] (fLaneWidth) roi nhan '
+            'ban_so': 'moi dia chi duoi day la cua BAN VN (work/vn/apk/...), ban '
+                      'tham chieu cua ban dung; ban apk lech hoan toan (xem dau file)',
+            'hang_so_lan': '0x35f43e (vn): vldr s16,[r0,#0x14] (fLaneWidth) roi nhan '
                            'voi slot ao +0x270 (0x35e73a = this+0x180, cap co o)',
-            'hang_so_lan2': '0x35f43e: vldr s16,[r0,#0x18] (fLaneOffset), cung '
+            'hang_so_lan2': '0x35f43e (vn): vldr s16,[r0,#0x18] (fLaneOffset), cung '
                             'duong, ghi vao +0x268',
-            'xep_lan': '0x35f0a4: y = y0 + (Location-1)*[+0x264] + [+0x268]',
-            'co_o_px': '0x35f068 viet cung 100*(4-idx); 0x35ec4c chan diem theo '
+            'xep_lan': '0x35f0a4 (vn): y = y0 + (Location-1)*[+0x264] + [+0x268]',
+            'co_o_px': '0x35f068 (vn) viet cung 100*(4-idx); 0x35ec4c chan diem theo '
                        'v270()[i]*v268()[i]; map_1.tmx khai 100x100',
-            'o_cach_quan': '0x38193c lay fArmySpace (+0x74), 0x388240 lay '
+            'o_cach_quan': '0x38193c (vn) lay fArmySpace (+0x74), 0x388240 (vn) lay '
                            'fArmySpaceInArena (+0x78) — hai ham doc, hai loai san',
             'so_lan': 'Location cua bang binh chung: %s' % loc['nguon'],
             # Them 2026-09-17. Ba su that doc ra tu .so, dung de chot cho DAT
             # toan linh dua ra (xem `chua_do_duoc` ngay duoi).
-            'do_dai_toan_px': '0x382670: fArmySpace * fArmyLength * co o px '
+            'do_dai_toan_px': '0x382670 (vn): fArmySpace * fArmyLength * co o px '
                               '(1.1 * 4 * 100 = 440 px). Hai he so lay qua hai ham '
                               'doc cau hinh 0x38193c (+0x70 = fArmyLength) va ban '
                               'anh em 0x388240, roi nhan voi cap co o px '
-                              '(this+0x180). Vi du thu BA cua loi "hang so tinh '
-                              'bang O nhan co o px" (sau 0x35f43e va 0x41b538)',
-            'dispatch_khong_tinh_toa_do': '0x45eef0 -> 0x45eda4 (than dispatch()) '
+                              '(this+0x180)',
+            'lech_nua_toan_px': '0x41b538 (vn): X -= fArmyLength * 0.5 * co o px '
+                                '= 200 px (vsub.f32 tai 0x41b58c). Dau THAT do '
+                                '0x414912 quyet dinh: no lat bit dau khi co o '
+                                '`[obj+0x308]` khac 1, nen cung ham ay chay ra '
+                                'cong hoac tru. Day la vi du thu HAI cua loi '
+                                '"hang so tinh bang O nhan co o px"',
+            'dispatch_khong_tinh_toa_do': '0x45eef0 (vn) -> 0x45eda4 (than dispatch()) '
                                           'chi goi 0x466220: danh dau quan (+0x5a4 '
                                           '= 0x44) roi noi vao danh sach cua san '
                                           '(+0x39c). Khong mot phep tinh toa do '
                                           'nao — nen cho dung cua quan dua ra la '
-                                          'cho dung cua TOAN',
+                                          'cho dung cua TOAN (SUY RA, xem duoi)',
+            # Them 2026-09-17 (luot sau): HAI CO nut bam cua lop drama. Truoc day
+            # hai lenh `SeDispatchButtonDisable` / `SetWakeButtonDisable` bi coi la
+            # "lenh trang thai vo nghia, chi ghi nhat ky" — SAI: chung ghi co that.
+            'co_nut_binh_chung': '0x468b54 (vn) = SeDispatchButtonDisable, 0x468b78 '
+                                 '(vn) = SetWakeButtonDisable (ban apk: 0x46af20 / '
+                                 '0x46af44): `r0 = lua_toboolean(arg); eor r0,r0,#1; '
+                                 'strb.w r0,[drama+0x390]` (binh chung) va `+0x391` '
+                                 '(thuc tinh) tai 0x468b6a / 0x468b8e — tuc hai byte '
+                                 'ay la co BAN (1 = bam duoc) va gia tri truyen vao '
+                                 'bi DAO truoc khi ghi',
+            'doc_co_nut': '0x45d554 (vn) doc lai +0x390, 0x462308 (vn) doc +0x391; '
+                          'ca hai tra 0 tru khi `[drama+0x37c] == 1` (ban +0x390 con '
+                          'tra 0 khi `[drama+0x3fd]` khac 0). Ban apk: 0x45f8b4 / '
+                          '0x4646d4. Ban goc GAC o C++ — `CUIGame:TouchArrmy` '
+                          '(sc/user/Battle/CUIGame.lua:4055) goi thang dispatch(), '
+                          'Lua khong he hoi co',
             'chuoi_json_khong_xref_duoc': 'PosX (0x7bc0b7) / PosY / Soldiers / '
-                                          'NpcID / AppearTime nam trong .rodata, '
-                                          'nhung KHONG mot word 4 byte nao trong '
-                                          'ca file tro vao 0x7bc000-0x7bd000 — '
-                                          'nen duong engine -> parse JSON khong '
-                                          'truy duoc bang tinh toan tinh',
+                                          'NpcID / AppearTime nam trong .rodata '
+                                          '(ban apk; ban vn lech), nhung KHONG mot '
+                                          'word 4 byte nao trong ca file tro vao '
+                                          '0x7bc000-0x7bd000 — nen duong engine -> '
+                                          'parse JSON khong truy duoc bang tinh '
+                                          'toan tinh',
         },
         'chua_do_duoc': {
-            # Chot 2026-09-17: KHONG con la "chua do duoc" theo nghia bo ngo.
-            # Cho dung = `Sprite.Troop.PosX` (do trong tran that: 7 o = 700 px,
-            # ai L_N_01_01). Duong may ao da DO va chet — xem ghi chu.
-            'cho_dat_toan_linh': 'Nay da co so: moc cua TOAN = Sprite.Troop.PosX '
+            # Sua 2026-09-17 (luot sau): truoc day cho nay ghi "DA CHOT" va ban
+            # dung da doi `dua_linh` sang dung moc cua toan. Doi xong thi
+            # `do_chien_dich --kichban` TUT tu 9 dat / 0 hong xuong 6 dat / 3 hong,
+            # nen da BO, va ghi lai dung trang thai that.
+            'cho_dat_toan_linh': 'MOC CUA TOAN thi la so DO: Sprite.Troop.PosX '
                                  '(CUIGame:FitBattleArmyPos dat 3.83 / 7.1 / 7 o; '
-                                 'FightLogic:GetSelfFightDataBody mac dinh 7). '
-                                 'dispatch() cua C++ khong tinh toa do nen quan '
-                                 'dua ra dung moc cua toan. CON LAI (chua ro): '
-                                 'nguoi dau tien dung ngay moc hay lech nua toan '
-                                 '(engine co X -= fArmyLength * 0.5 * co o = 200 px '
-                                 'o 0x41b538), va nhip cach giua cac TOAN dua ra '
-                                 '(ta dung fArmySpace). DUONG MAY AO: da do, CHEt — '
-                                 'co bDirectBattle cua CUIGame:Test() chay toi '
-                                 '"TRAN|chen duoc, bDirectBattle = true" roi '
-                                 'SIGSEGV trong RepaleceScene (work/emu_dom.py, '
-                                 'work/emu_tran.py).',
+                                 'FightLogic:GetSelfFightDataBody mac dinh 7; do '
+                                 'trong tran that L_N_01_01 bang `do_chien_dich '
+                                 '--kiem`: 7 o = 700 px). Nhung CHO DAT toan linh '
+                                 'DUA RA thi van la ĐẶT: ban dung dat o o 0 (mep '
+                                 'trai san). DA THU dat ngay moc (2026-09-17) va '
+                                 'PHAI BO — `--kichban` tut 9/0 xuong 6/3, vi toan '
+                                 'dung trong san gap dich som hon ~1,4 giay, tran '
+                                 'KET THUC truoc buoc ke tiep cua kich ban, ma dong '
+                                 'ho kich ban chinh la dong ho tran '
+                                 '(lua/san_tran.lua:78, dung_tran goi T.hen:stop()) '
+                                 'nen kich ban dung han o lenh 27/43. Dat tu mep '
+                                 'cung ra 6/3 — tuc MOI cho dat trong san deu doi '
+                                 'ket qua ai 1. GIA THIET CU ("may do bam nut ke ca '
+                                 'trong cua so CO NUT bi cam") DA BI BAC BO bang '
+                                 'phep do: kich_ban.lua nay giu co that cua '
+                                 'SeDispatchButtonDisable (+0x390, xem `do_duoc`) va '
+                                 'san_tran.lua DEM so lan bam trong luc bi cam — do '
+                                 'duoc 0 lan (lenh cam nam GAN CUOI kich ban, sau '
+                                 'khi quan da ra het). CON LAI: (a) do tren ban goc '
+                                 '(duong may ao da DO va CHET: co bDirectBattle cua '
+                                 'CUIGame:Test() toi "TRAN|chen duoc, bDirectBattle '
+                                 '= true" roi SIGSEGV trong RepaleceScene — '
+                                 'work/emu_dom.py, work/emu_tran.py), hoac (b) cho '
+                                 'may do TUAN THEO co ay. Kem: nguoi dau tien dung '
+                                 'ngay moc hay lech nua toan (X -= fArmyLength * 0.5 '
+                                 '* co o = 200 px o 0x41b538 vn, xem `do_duoc`), va '
+                                 'nhip cach giua cac TOAN dua ra (ban dung lay '
+                                 'fArmySpace = 110 px).',
         },
     }
 

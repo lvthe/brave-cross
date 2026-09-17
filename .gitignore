@@ -64,6 +64,14 @@ work/_pt/
 # được bằng chính phép đo, nên chặn hẳn.
 work/_emu_anim/
 
+# Cây Lua đã vá + ảnh chụp màn hình + tombstone của các lượt dò chỗ đứng quân
+# (work/emu_tran.py): `_tran/sc` và `_tran_dry/sc` là bản sao `sc/game.lua`,
+# `sc/share/`, `sc/user/` của game gốc, còn `_tran/*.png` là ảnh của bản gốc —
+# cùng loại với work/_dom/ và work/_emu_anim/ ở trên. Dựng lại được bằng chính
+# phép đo, nên chặn hẳn để `git add -A` không đẩy chúng lên repo.
+work/_tran/
+work/_tran_dry/
+
 # Bảng chỗ đọc/ghi trường của phép quét vtable CDFSpriteMove* (8 KB) — sinh lại
 # bằng: python work/move_vt.py --json work/move_vt.json
 work/move_vt.json

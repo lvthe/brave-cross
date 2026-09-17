@@ -11,11 +11,14 @@ KET QUA (2026-09-17): DUONG NAY KHONG DI DUOC. Tien trinh vao duoc canh tran
 o `work/_tran/`. Cung loai voi bai hoc FMOD o `emu_dom.py`: thu vien ARM goi qua
 ban dich thi chet. Giu file lai lam bang chung "da thu, khong phai chua lam".
 
-CAU TRA LOI (lay tu duong khac): cho dat = **moc cua TOAN**, tuc
-`Sprite.Troop.PosX` — do trong tran that duoc 7 o = 700 px (ai L_N_01_01). Doc
-`.so` thi `dispatch()` (`0x45eda4` -> `0x466220`) KHONG tinh toa do nao, no chi
-ghi danh quan vao danh sach cua san, nen cho dung cua quan dua ra chinh la cho
-dung cua toan. Xem `ROADMAP.md` §5 "Cho dung quan".
+CAU TRA LOI (lay tu duong khac): MOC cua TOAN = `Sprite.Troop.PosX` — do trong
+tran that duoc 7 o = 700 px (ai L_N_01_01). Doc `.so` BAN VN thi `dispatch()`
+(`0x45eda4` -> `0x466220`) KHONG tinh toa do nao, no chi ghi danh quan vao danh
+sach cua san, nen cho dung cua quan dua ra la cho dung cua toan — nhung do chi la
+SUY RA. Ban dung da THU dat ngay moc (2026-09-17) va PHAI BO: `do_chien_dich
+--kichban` tut tu 9 dat / 0 hong xuong 6 dat / 3 hong, vi tran KET THUC truoc
+buoc ke tiep cua kich ban ma dong ho kich ban chinh la dong ho tran. Cho dat van
+la ĐẶT (o 0). Xem `ROADMAP.md` §5 "Cho dung quan".
 
 VI SAO PHAI DO TREN MAY AO
 --------------------------
