@@ -296,6 +296,11 @@ def main():
             # dung da doi `dua_linh` sang dung moc cua toan. Doi xong thi
             # `do_chien_dich --kichban` TUT tu 9 dat / 0 hong xuong 6 dat / 3 hong,
             # nen da BO, va ghi lai dung trang thai that.
+            #
+            # Sua 2026-09-18 (luot sau nua): LY DO cua lan BO do hoa ra la mot loi
+            # THAT cua ban dung, va loi do DA VA — xem muc (2) duoi day. Nen viec
+            # "dat ngay moc" nay tro lai trang thai CHUA DO (truoc day bi coi la
+            # da bac bo vi ket qua tut).
             'cho_dat_toan_linh': 'MOC CUA TOAN thi la so DO: Sprite.Troop.PosX '
                                  '(CUIGame:FitBattleArmyPos dat 3.83 / 7.1 / 7 o; '
                                  'FightLogic:GetSelfFightDataBody mac dinh 7; do '
@@ -304,15 +309,25 @@ def main():
                                  'DUA RA thi van la ĐẶT: ban dung dat o o 0 (mep '
                                  'trai san). DA THU dat ngay moc (2026-09-17) va '
                                  'PHAI BO — `--kichban` tut 9/0 xuong 6/3, vi toan '
-                                 'dung trong san gap dich som hon ~1,4 giay, tran '
-                                 'KET THUC truoc buoc ke tiep cua kich ban, ma dong '
-                                 'ho kich ban chinh la dong ho tran '
-                                 '(lua/san_tran.lua:78, dung_tran goi T.hen:stop()) '
-                                 'nen kich ban dung han o lenh 27/43. Dat tu mep '
-                                 'cung ra 6/3 — tuc MOI cho dat trong san deu doi '
-                                 'ket qua ai 1. GIA THIET CU ("may do bam nut ke ca '
-                                 'trong cua so CO NUT bi cam") DA BI BAC BO bang '
-                                 'phep do: kich_ban.lua nay giu co that cua '
+                                 'dung trong san gap dich som hon ~1,4 giay va tran '
+                                 'KET THUC truoc buoc ke tiep cua kich ban. LY DO '
+                                 'THAT cua cu tut do (do tiep 2026-09-18): luc ay '
+                                 '`dung_tran` goi `T.hen:stop()`, ma chinh `hen:buoc` '
+                                 'moi la cho BUOC KICH BAN (`kb:buoc`) — nen tran '
+                                 'xong la kich ban dung han (do: nhat ky kich ban '
+                                 'ket o `ChangeFight LvBuEvil Fight`, thieu '
+                                 '`MoveThenDo` / `SetArmyWaiting`). Do la loi cua '
+                                 'ban dung, va DA VA: `dung_tran` nay chi dat '
+                                 '`T.ket`, `hen:buoc` thoi buoc tran nhung van buoc '
+                                 'kich ban cho toi khi kich ban dien xong. (Do luon '
+                                 'thay: dat tu MEP cung ra 6/3 — tuc moi cho dat '
+                                 'trong san deu lam tran xong som, nen phep do cu '
+                                 'khong phan biet duoc "moc" voi "mep".) VI VAY '
+                                 'ket qua "dat ngay moc lam tut kich ban" KHONG con '
+                                 'noi len dieu gi ve viec dat ngay moc — viec do '
+                                 'nay la CHUA DO LAI. GIA THIET CU ("may do bam nut '
+                                 'ke ca trong cua so CO NUT bi cam") DA BI BAC BO '
+                                 'bang phep do: kich_ban.lua nay giu co that cua '
                                  'SeDispatchButtonDisable (+0x390, xem `do_duoc`) va '
                                  'san_tran.lua DEM so lan bam trong luc bi cam — do '
                                  'duoc 0 lan (lenh cam nam GAN CUOI kich ban, sau '
