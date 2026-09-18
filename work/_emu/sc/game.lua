@@ -500,161 +500,139 @@ XGAnalytics:logEventByID(XGAnalytics.EVENT_ID.LOADCONFIG)
 
 
 
--- === CHEN DE DO: xuong cua armature (emu_xuong.py sinh ra) ===
+-- === CHEN DE DO: diem gan armature co mang ti le 1,02 khong (emu_plug.py sinh ra) ===
 do
 	local function goi(ten, f)
-		print("XUONG|goi|" .. ten)
+		print("PLUG|goi|" .. ten)
 		local ok, a, b = pcall(f)
-		print("XUONG|xong|" .. ten .. "|" .. tostring(ok) .. "|"
+		print("PLUG|xong|" .. ten .. "|" .. tostring(ok) .. "|"
 			.. tostring(a) .. "," .. tostring(b))
 		return a, b
 	end
 
 	local function hinh(ten)
 		local ok, a = pcall(getSpriteFromSpriteCatch, ten)
-		print("XUONG|tao|" .. ten .. "|" .. tostring(ok) .. "|" .. tostring(a))
+		print("PLUG|tao|" .. ten .. "|" .. tostring(ok) .. "|" .. tostring(a))
 		if ok then return a end
 		return nil
 	end
 
-	-- Bon so cho MOT xuong: pos/rect voi tham so 2 la chinh armature, roi pos/rect
-	-- bo trong tham so 2. In ten xuong o CA HAI dau de doc ra ngay dong nao ung
-	-- voi xuong nao.
-	local function do_xuong(tien, n, xuong)
-		if n == nil then return end
-		goi(tien .. "|pos-self|" .. xuong,
-			function() return n:_lua_getBonePosInNode(xuong, n) end)
-		goi(tien .. "|pos-nil|" .. xuong,
-			function() return n:_lua_getBonePosInNode(xuong) end)
-		goi(tien .. "|rect-self|" .. xuong,
-			function() return n:_lua_getBoneRectInNode(xuong, n) end)
-		goi(tien .. "|rect-nil|" .. xuong,
-			function() return n:_lua_getBoneRectInNode(xuong) end)
-	end
-
-	print("XUONG|bat-dau")
-	print("XUONG|co-ham|" .. tostring(type(getSpriteFromSpriteCatch)))
+	print("PLUG|bat-dau")
 	pcall(function() loadLevelFile("conf/UI_Main_960_640.xgg") end)
 
-	-- (A) Tung rig: moc `_lua_CollisionSize` truoc, roi bon xuong.
-	for _, t in ipairs({"ZhangLiangBao", "ElephantSoldier", "Hoplite",
-			"BaiHuZi", "YuJin", "Gashapon"}) do
-		local n = hinh(t)
-		if n ~= nil then
-			goi("A|" .. t .. "|ten", function() return n:_Lua_getArmatureName() end)
-			goi("A|" .. t .. "|coll", function() return n:_lua_CollisionSize() end)
-			goi("A|" .. t .. "|cs", function() return n:getContentSize() end)
-			goi("A|" .. t .. "|pos", function() return n:getPosition() end)
-			do_xuong("A|" .. t, n, "Collision")
-			do_xuong("A|" .. t, n, "Collision_1")
-			do_xuong("A|" .. t, n, "Head")
-			do_xuong("A|" .. t, n, "KhongCoXuongNay")
-		end
+	-- Node cha THUONG: node CO SAN cua bo cuc Main (khong tao moi — create() giet
+	-- ca tien trinh tren ban dich ARM). Thu lan luot, in ra node nao dung duoc.
+	local ung_vien = {"spMainUITheme_halloween_4", "ndMain", "ndTop", "ndBottom"}
+	local cha = nil
+	for _, nm in ipairs(ung_vien) do
+		local n = rawget(_G, nm)
+		print("PLUG|ung-vien|" .. nm .. "|" .. tostring(n))
+		if n ~= nil and cha == nil then cha = n end
+	end
+	print("PLUG|cha|" .. tostring(cha))
+
+	local spA = hinh("Gashapon")
+	if spA == nil or cha == nil then
+		print("PLUG|het")
+		return
 	end
 
-	-- (B) Ca "armature khong co xuong Collision" — DaQuZhanShi.
-	local d = hinh("DaQuZhanShi")
-	if d ~= nil then
-		goi("B|DaQuZhanShi|coll", function() return d:_lua_CollisionSize() end)
-		do_xuong("B|DaQuZhanShi", d, "Collision")
-		do_xuong("B|DaQuZhanShi", d, "Head")
-	end
-
-	-- (D) BA RIG MA HAI NGUON KHUNG KHONG THONG NHAT. Xuong `Collision` cua mot
-	-- rig mang anh `_res-44`; khung cua anh ay doc duoc o HAI cho:
-	--   * ban ghi sprite trong .xml  (bang ChamRef dang dung)
-	--   * `sourceSize` cua ban ghi plist (13 float thu 12,13 — o +0x34/+0x38)
-	-- Voi 256 anh `_res-44` thi hai nguon BANG NHAU o 253 muc, lech o DUNG BA:
-	--   BatFlight 2x2 | DragonFlight 2x2 | LvBuZhanShi 1x1   (.xml)
-	--   BatFlight 1x1 | DragonFlight 1x1 | LvBuZhanShi 0x0   (plist sourceSize)
-	-- Kep theo `sx` (co 50-160) thi hai gia tri cach nhau mot khoang thay duoc,
-	-- nen `_lua_CollisionSize` cua ba rig nay noi thang ra nguon nao dung.
-	-- (Va ca ba rig nay CHUA he duoc do lan nao.)
-	-- `LvBuZhanShi_A2` va `LvBuZhanShi_Weapon1` la hai bien the CUNG dung anh ay:
-	-- bang cu (theo .xml) ghi 1x1 nen co mat trong bang; theo `sourceSize` thi
-	-- anh ay 0x0 nen hop bang khong. Hai dong duoi day noi thang ra so nao.
-	for _, t in ipairs({"BatFlight", "DragonFlight", "LvBuZhanShi",
-			"LvBuZhanShi_A2", "LvBuZhanShi_Weapon1"}) do
-		local n3 = hinh(t)
-		if n3 ~= nil then
-			goi("D|" .. t .. "|coll", function() return n3:_lua_CollisionSize() end)
-			do_xuong("D|" .. t, n3, "Collision")
-			do_xuong("D|" .. t, n3, "Head")
-		end
-	end
-
-	-- (C) PHEP DOI KHONG GIAN. Tham so 2 la mot node KHAC voi chinh armature. Da do
-	-- duoc: hai vi tri khac nhau cua node dich cho ra hai ket qua KHAC nhau, va
-	-- hieu hai ket qua DUNG bang hieu hai vi tri nhan -0,980393 — tuc phep doi CO
-	-- that, va co mot he so ti le 1,02 o dau do. Ba phep do con lai o day:
-	--   * node dich o goc toa do (0,0)  -> biet so hang tu do (neo).
-	--   * doi node dich di hai lan khac nhau -> chot lai he so.
-	--   * `_lua_getBoneRectInNode` co doi theo khong (bon so do truoc deu y nguyen).
+	-- Phai nam TRONG CAY thi dong tac moi ap track (xem chu thich cua
+	-- tools/verify_plug.gd); khong thi moi xuong o (0, 0) va phep do vo nghia.
+	-- KHONG hoi so con: tra khoa do tren userdata lam ban dich ARM chet ngay
+	-- (rang buoc ghi o docstring `emu_tags.py`).
 	--
-	-- CACH DO TI LE — DA THU VA DA BO: `getScale` lan `setScale` tren sprite lay
-	-- tu `getSpriteFromSpriteCatch` deu GIET CA TIEN TRINH, va pcall KHONG do duoc
-	-- loi native (do hai luot: dong cuoi truoc khi tat la `C|scale-n2`, roi
-	-- `C|dat-n4-scale2`). Nen ti le khong doc duoc bang hai ham ay; muc (F) di
-	-- duong khac — tim mot node KHONG phai armature de lam node dich.
-	local n2 = hinh("ZhangLiangBao")
-	local n3 = hinh("Hoplite")
-	if n2 ~= nil and n3 ~= nil then
-		goi("C|pos-self", function() return n2:_lua_getBonePosInNode("Collision", n2) end)
-		goi("C|rect-self", function() return n2:_lua_getBoneRectInNode("Collision", n2) end)
-		goi("C|vi-tri-n3-goc", function() return n3:getPosition() end)
-		goi("C|pos-n3-goc", function() return n2:_lua_getBonePosInNode("Collision", n3) end)
-		goi("C|rect-n3-goc", function() return n2:_lua_getBoneRectInNode("Collision", n3) end)
-		goi("C|dat-n3-a", function() n3:setPosition(100, 50) return n3:getPosition() end)
-		goi("C|pos-n3-a", function() return n2:_lua_getBonePosInNode("Collision", n3) end)
-		goi("C|rect-n3-a", function() return n2:_lua_getBoneRectInNode("Collision", n3) end)
-		goi("C|dat-n3-b", function() n3:setPosition(-40, 7) return n3:getPosition() end)
-		goi("C|pos-n3-b", function() return n2:_lua_getBonePosInNode("Collision", n3) end)
+	-- LUOT 2: KHONG them vao cay nua. Luot 1 co them (`cha:addChild(spA)`) va do
+	-- duoc dong tac KHONG ap: Star1 va Star5 ra y het nhau, trong khi
+	-- `PlugIn_4_Hero` phai lech 2,8 theo y. `emu_cham.py` (muc D) do duoc dong tac
+	-- CO ap va no khong them vao cay — nen thu bo buoc them.
+	if rawget(_G, 'PLUG_TREO') then
+		goi("gan-cha", function() cha:addChild(spA) return true end)
+		goi("dat-0", function() spA:setPosition(0, 0) return spA:getPosition() end)
+	else
+		print("PLUG|khong-treo|de nguyen, khong addChild")
 	end
+	goi("play", function() return spA:_Lua_playAnimation("Star1") end)
+	goi("ten-armature", function() return spA:_Lua_getArmatureName() end)
 
-	-- (F) CO NODE NAO KHONG PHAI ARMATURE LAM NODE DICH DUOC KHONG? Cau hoi con
-	-- lai cua muc C: he so 0,980393 thuoc node NGUON hay node DICH. Muon tach
-	-- phai co mot node dich TI LE 1 — ma armature thi khong doc/doi duoc ti le
-	-- (`getScale` lan `setScale` deu giet tien trinh). Vay truoc het xem trong
-	-- `_G` co san node nao khong: bon man goc lay dich tu bien TOAN CUC
-	-- (`cnHeroInfoUIAnimPos`, `CUIHeroInfoFightSoulUI.lua:3075`), va class node
-	-- thuong thi co the tu tao. Muc nay chi DOC, khong goi native nao.
-	local ten = {}
-	for k, v in pairs(_G) do
-		if type(k) == 'string' and (k:sub(1, 2) == 'cn' or k:find('Main') ~= nil) then
-			ten[#ten + 1] = k .. '=' .. tostring(v)
+	-- Doi chung cho "dong tac da ap chua": xương Collision phai khac (0,0).
+	goi("coll", function() return spA:_lua_CollisionSize() end)
+	-- Doi chung 1: TOA DO XUONG Collision doc ra phai TRUNG voi ban dung Godot
+	-- (tools/verify_plug.gd do duoc (-132, 196)). Khong trung thi hai ben dang
+	-- o HAI TU THE khac nhau va moi so sanh tuyet doi la vo nghia.
+	goi("bone-coll", function() return spA:_lua_getBonePosInNode("Collision", spA) end)
+
+	local PLUG = {4, 5, 6, 7}
+
+	local function doc(dich, nhan)
+		if dich == nil then
+			print("PLUG|BO-QUA|" .. nhan .. "|dich nil")
+			return
+		end
+		local ra = {}
+		for _, n in ipairs(PLUG) do
+			local x, y = goi("pos|" .. nhan .. "|" .. n, function()
+				return spA:_lua_getPlugInPositionInNode(n, dich) end)
+			ra[n] = {x, y}
+		end
+		-- Tuyet doi (phu thuoc goc/vi tri cua cha nen chi de tham khao).
+		for _, n in ipairs(PLUG) do
+			if ra[n] ~= nil and ra[n][1] ~= nil then
+				print("PLUG|ABS|" .. nhan .. "|" .. n .. "|" .. ra[n][1] .. "," .. ra[n][2])
+			end
+		end
+		-- HIEU so voi diem gan 6 — day moi la phep do sach: hieu khong dinh gi
+		-- toi goc, diem neo, hay chieu cao cua cha, chi con ti le.
+		if ra[6] ~= nil and ra[6][1] ~= nil then
+			for _, n in ipairs(PLUG) do
+				if n ~= 6 and ra[n] ~= nil and ra[n][1] ~= nil then
+					print("PLUG|HIEU|" .. nhan .. "|" .. n .. "|"
+						.. (ra[n][1] - ra[6][1]) .. "," .. (ra[n][2] - ra[6][2]))
+				end
+			end
+		else
+			print("PLUG|BO-QUA|" .. nhan .. "|khong doc duoc diem gan 6")
 		end
 	end
-	print("XUONG|F|toan-cuc|" .. table.concat(ten, ' ; '))
-	print("XUONG|F|CCNode|" .. tostring(rawget(_G, 'CCNode')))
-	print("XUONG|F|CCSprite|" .. tostring(rawget(_G, 'CCSprite')))
-	print("XUONG|F|cnHeroInfoUIAnimPos|" .. tostring(rawget(_G, 'cnHeroInfoUIAnimPos')))
 
-	-- (G) NODE DICH TI LE 1. Muc (F) cho thay bo cuc Main co san node COCOS
-	-- THUONG (`spMainUITheme_halloween_4` la CCSprite, `btnMainContest` la nut,
-	-- `g_MainUIScrollLayer` la CCScrollLayer) — khac han armature, va day moi la
-	-- loai node ma bon man goc truyen vao tham so 2 (`cnHeroInfoUIAnimPos`).
+	-- HAI phep, chi khac nhau o TINH CHAT cua dich. Ti so giua chung la ti le cua
+	-- NGUON — xem chu thich dau file: dich la CHINH NGUON thi he so cua nguon
+	-- triet tieu (`inv(nguon) * nguon:to_global(v)`), nen hieu ra dung so NEN;
+	-- dich la node THUONG thi hieu ra `so NEN x ti le NGUON`. Ti so = ti le NGUON.
 	--
-	-- KHONG doc duoc ti le: `getScale` GIET CA TIEN TRINH o CA class Cocos thuong
-	-- chu khong rieng armature (do duoc: dong cuoi truoc khi tat la `G|scale`,
-	-- goi tren mot CCSprite). `setScale` cung vay. Nhung khong can doc: do DICH
-	-- CHO hai lan, hieu hai ket qua chia cho hieu hai vi tri ra ngay 1/ti_le cua
-	-- node dich. Voi node dich la armature thi so do ra 1/1,02; con day thi:
-	--   hieu = -(140, 43)        -> node dich ti le 1, va he so 1,02 thuoc NGUON
-	--   hieu = -(137,26, 42,16)  -> ti le 1,02 thuoc chinh node DICH (armature)
-	local nguon = hinh("ZhangLiangBao")
-	local dich = rawget(_G, 'spMainUITheme_halloween_4')
-	if nguon ~= nil and dich ~= nil then
-		goi("G|vi-tri", function() return dich:getPosition() end)
-		goi("G|pos-goc", function() return nguon:_lua_getBonePosInNode("Collision", dich) end)
-		goi("G|rect-goc", function() return nguon:_lua_getBoneRectInNode("Collision", dich) end)
-		goi("G|dat-a", function() dich:setPosition(100, 50) return dich:getPosition() end)
-		goi("G|pos-a", function() return nguon:_lua_getBonePosInNode("Collision", dich) end)
-		goi("G|rect-a", function() return nguon:_lua_getBoneRectInNode("Collision", dich) end)
-		goi("G|dat-b", function() dich:setPosition(-40, 7) return dich:getPosition() end)
-		goi("G|pos-b", function() return nguon:_lua_getBonePosInNode("Collision", dich) end)
+	-- Day moi la phep tra loi cau hoi. Luot truoc lay dich la `Hoplite` (cung la
+	-- doi tuong bat duoc, ti le 1,02) nen ti so ra 1,02 chi la ti le cua DICH —
+	-- khong noi gi ve nguon. Phai lay dich la CHINH `spA`.
+	doc(spA, "self")
+	doc(cha, "thuong")
+
+	-- Doi chieu QUYET DINH: chinh bon xuong ay doc qua duong XUONG
+	-- (`_lua_getBonePosInNode`), cung dich, cung tu the. Hai duong ra HAI so khac
+	-- nhau thi `_lua_getPlugInPositionInNode` KHONG phai la "vi tri cua xuong
+	-- PlugIn_n" — va moi so sanh no voi khoa trong file la so sanh sai doi tuong.
+	local TEN = {[4] = "PlugIn_4_Hero", [5] = "PlugIn_5_Word",
+		[6] = "PlugIn_6_Light", [7] = "PlugIn_7_HeroName"}
+	for _, n in ipairs(PLUG) do
+		local x, y = goi("bone|" .. n, function()
+			return spA:_lua_getBonePosInNode(TEN[n], cha) end)
+		if x ~= nil then
+			print("PLUG|BONE|" .. n .. "|" .. x .. "," .. y)
+		end
 	end
 
-	print("XUONG|het")
+	doc(hinh("Hoplite"), "armature")
+
+	-- Doi chung 2 (QUYET DINH): `PlugIn_4_Hero` la xuong DUY NHAT trong Gashapon
+	-- doi giua Star1 (y = 115,54) va Star5 (y = 112,74). Doc no sau CA HAI dong
+	-- tac: doi thi dong tac CO ap; khong doi thi bon so tuyet doi o tren la TU THE
+	-- NGHI chu khong phai cua Star1, va phep do tuyet doi KHONG noi len gi (con
+	-- phep ti so thi khong phu thuoc tu the nen van dung).
+	goi("play-Star5", function() return spA:_Lua_playAnimation("Star5") end)
+	goi("bone-plug4-sau-Star5", function()
+		return spA:_lua_getBonePosInNode("PlugIn_4_Hero", cha) end)
+	doc(cha, "Star5")
+
+	print("PLUG|het")
 end
 
 do return end

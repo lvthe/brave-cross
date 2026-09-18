@@ -96,13 +96,18 @@ thường** của bố cục Main (`spMainUITheme_halloween_4`): hiệu **đúng
 có, và `rect` **cũng** đi qua phép đổi ấy (khi đích là armature thì hai hệ số
 triệt tiêu nhau nên trước đây bốn số đo đều ra `175 × 227,5`).
 
-**Hệ số 1,02 CHƯA RÕ Ở ĐÂU — ghi lại, không đoán.** Nó thuộc node armature
-(nguồn hoặc đích đều là armature thì tỉ lệ 1,02; đích là node thường thì tỉ lệ
-1). Nhưng **không đọc được `getScale`**: gọi nó **giết cả tiến trình**, và
+**Hệ số 1,02 thuộc CHÍNH ĐỐI TƯỢNG BẮT ĐƯỢC — đã đo xong** (`emu_ti_le.py`,
+2026-09-18). Nó thuộc đối tượng `getSpriteFromSpriteCatch` trả về (`CDFSpriteRole`,
+tức cây armature), nên **nguồn** là armature thì tỉ lệ 1,02, **đích** là armature
+thì tỉ lệ 1,02, còn node Cocos **thường** thì tỉ lệ 1 — và bốn đối tượng bắt được
+khác nhau (Hoplite, Gashapon, YuJin, BaiHuZi) ra y nguyên từng chữ số. `emu_ti_le`
+tách được mà **không cần đọc tỉ lệ**: nó so hộp/dấu của một đối tượng bắt được với
+một node thường của bố cục Main.
+
+Nhưng **không đọc được `getScale`**: gọi nó **giết cả tiến trình**, và
 `setScale` cũng vậy — đo hai lượt, dòng cuối trước khi tắt lần lượt là
 `C|scale-n2` (trên armature) và `G|scale` (trên `CCSprite` thường). pcall không
-đỡ được lỗi native. Vì vậy chưa biết 1,02 là tỉ lệ của chính node armature hay
-của lớp chứa nó. **Cảnh báo cho những lượt đo sau: đừng gọi `getScale` /
+đỡ được lỗi native. **Cảnh báo cho những lượt đo sau: đừng gọi `getScale` /
 `setScale` trong harness này.**
 """
 import argparse
