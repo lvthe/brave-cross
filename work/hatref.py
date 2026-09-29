@@ -37,8 +37,10 @@ import collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-DEFAULT_ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
-DEFAULT_UI = os.path.join(HERE, '..', '..', 'bravecross-game', 'ui_ref')
+import cay
+
+DEFAULT_ASSETS = cay.ASSETS
+DEFAULT_UI = cay.dich_anh('ui_ref')
 
 CO_KHOA = b'maxParticles'      # dau hieu mot plist la dinh nghia hat
 
@@ -114,6 +116,12 @@ def main():
         raise SystemExit('thieu --out')
 
     os.makedirs(a.out, exist_ok=True)
+    # `hat_ref` cua ban VN dang co 34 file anh mu; ban 1.31 co bo hat rieng. Ghi
+    # cung cho thi hai bo de len nhau, khong loi nao nem ra. Xem `cay.giu_cho`.
+    loi = cay.giu_cho(a.out)
+    if loi:
+        sys.exit(loi)
+    cay.danh_dau(a.out)
     index = collections.OrderedDict()
     thieu = []
     for k, p in hats.items():

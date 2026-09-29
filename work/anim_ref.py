@@ -69,8 +69,10 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-MAP = os.path.join(HERE, 'vn/decrypted/assets/map')
+MAP = os.path.join(cay.ASSETS, 'map')
 HO = ('hero', 'heroex', 'player', 'sprite', 'boss', 'evil')
 
 # So do duoc 2026-09-18, de mot lan lech du lieu khong di qua im lang.

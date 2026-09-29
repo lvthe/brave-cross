@@ -13,6 +13,13 @@ Hai bản của cùng một game, dịch ngược song song để đối chiếu
 
 Chung: Cocos2d-x + Lua 5.2.3, lớp engine riêng tiền tố `sng`, `libgame.so` (ARMv7) + FMOD Studio.
 
+> **Bản thứ ba: CN 1.31 `com.wh.dachui` versionName 1.31.20089** (cây
+> `../bravecross-source/cn131/` — xem mục "Dữ liệu 1.31 để ngoài repo" ở
+> `README-131.md`; `libgame.so` 11306184 byte). Đã dịch ngược xong và ghi riêng ở
+> **[`README-131.md`](README-131.md)** — số liệu, chỗ lệch so với hai bản dưới đây,
+> và danh sách những gì KHÔNG dịch được kèm lý do. Chạy bằng `BC_TREE=cn131`
+> (xem `cay.py`); mặc định vẫn là `vn` nên mọi thứ ở tài liệu này giữ nguyên.
+
 ## Kết quả
 
 ```
@@ -402,10 +409,44 @@ Nền sân **không** nằm trong atlas như nhân vật, mà là từng file `.
 trong `assets/png/scene/<cảnh>/`.
 
 `BattleField_<cảnh>_960_640.xgg` mô tả sân ghép từ ~45 mảnh nhỏ cộng một atlas
-`Scene_<cảnh>.plist`. **Texture của atlas đó không có** — không trong APK,
-không trong OBB. Đã kiểm: OBB có 9874 mục, 16 file `Scene_*` đều chỉ là
-`.plist`, và không có file nào tên `Scene_*.png`/`.pkm`. Chúng được tải về lúc
-chạy từ máy chủ vá. Nên phần nền ghép từ 45 mảnh thì **dựng lại không được**.
+`Scene_<cảnh>.plist`. **Texture atlas đó không được đóng gói** — không trong APK,
+không trong OBB. Đã kiểm: OBB có 9874 mục (9728 file + 146 thư mục), 16 file
+`Scene_*` đều chỉ là `.plist`, không có file nào tên `Scene_*.png`/`.pkm`.
+
+Nhưng **khung của atlas thì vẫn còn**: chúng nằm rời trong
+`decrypted/assets/sngSplitData/`. Đo trên cây VN, khớp mảnh theo **cả tên lẫn kích
+thước `sourceSize`**: **378 / 506 khung**, và **11/16 atlas đủ 100%** — Arena 23/23,
+Battlefield 30/30, Cavern 47/47, Desert 53/53, Snow 28/28, **kể cả nền thành chính
+`Scene_Main` 56/56**. Năm atlas còn lại hụt: `Plain` 25/45, `Main3` 2/29,
+`Main2_BuildingIcon` 2/19, `Valley` và `Main2` trắng.
+
+Nên phần nền ghép từ 45 mảnh **dựng lại được** ở 11/16 cảnh: plist còn giữ đủ
+`atlasXY`, `sizeWH`, `offsetXY`, `rotated`. Cách đo và bảng đầy đủ ở
+[`README-131.md`](README-131.md#sngsplitdata--khung-rời-của-những-atlas-thiếu-texture).
+
+**Đừng đếm bằng `os.listdir` hay bằng tên suông** — hai cách đó cho hai con số sai
+khác nhau, và cả hai đều ra kết luận ngược ("nền thành chính mất sạch") mà không
+báo gì: `sngSplitData/` có **27 thư mục con** mà `os.listdir` không đệ quy (→
+415/506); còn khớp mỗi tên thì dính **trùng tên giữa các bộ** — `moku.png` khớp
+một `moku.pkm` chẳng liên quan, và nhiều mảnh cùng tên nhưng là **bản hạ nửa cỡ**
+(`valley_00-01` plist `512x143` ↔ mảnh `256x72`) (→ 471/506). Phải khớp **cả tên
+lẫn cỡ**, ra 378/506.
+
+Phép đo đó đóng thành **`work/split_kiem.py`** — một công cụ, ba bản đều chạy:
+
+```bash
+python split_kiem.py --img              # khung rời của Scene_* (378/506, 11/16 đủ 100%)
+python split_kiem.py --map              # khung rời của 20 atlas thiếu texture
+python split_kiem.py --doi-chieu cn131  # đo lại trên bản khác rồi so TỪNG DÒNG
+python split_kiem.py --chi-tiet         # in tên vài khung không dùng được
+```
+
+Cùng 20 atlas đó, khung **không** hậu tố ngôn ngữ ra **352/352** ở cả hai bản; nhóm
+hậu tố `_vi`/`_en`/`_kr`/… thì **mỗi bản chỉ có thứ tiếng của mình**, nên VN ra
+`61/274` còn 1.31 ra `0/274`. Khung không hậu tố **là tranh chữ tiếng Trung**, bản
+Việt phủ khung `_vi` lên — nên đổi ngôn ngữ là phải **vẽ lại ảnh**, không tráo file
+được. Chi tiết:
+[`README-131.md`](README-131.md#khung-không-hậu-tố-là-tranh-chữ-tiếng-trung).
 
 Bù lại, các lớp **nền đầy màn** thì còn đủ và dùng được ngay: 24 ảnh trên 9
 cảnh, 1024×768 đến 1665×768, vẽ tay.
@@ -440,6 +481,13 @@ python scenes.py --raw vn/decrypted/assets/png/background --out <thư mục>
 
 Cũng như nền cảnh, các atlas `Background_*.plist` mà file bố cục UI tham chiếu
 thì **không có texture** — chỉ có `.plist`. Phần dùng được là các ảnh rời này.
+
+Nhưng **không phải cả họ**: mỗi bản có mảnh rời cho **đúng thứ tiếng của mình**
+trong `sngSplitData/` — VN `Background_vi_B` **79/79** và `Font_vi_T` **121/121**,
+bản 1.31 `Background_zh_Hans_B` **91/91** và `Font_zh_Hans_T` **128/128**. Chín
+atlas tiếng còn lại trắng ở **cả hai** bản (ba atlas `_jp`/`_zh_Hant` chỉ có đúng
+**1 khung** giữ chỗ) — đó là phần tải về lúc chạy, và máy chủ thì vắng mặt. Xem
+[`README-131.md`](README-131.md#mỗi-bản-đóng-gói-đúng-một-thứ-tiếng--đo-mảnh-đừng-đo-plist).
 
 ### Xem nhanh cả một thư mục ảnh (`work/contact.py`)
 

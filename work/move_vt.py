@@ -36,6 +36,7 @@ va vi vay ROADMAP khong duoc phep khang dinh "khong ai doc".
 """
 import argparse
 import bisect
+import cay
 import json
 import pathlib
 import re
@@ -47,7 +48,7 @@ from findstr import dis_all, word  # noqa: E402
 from xref import load  # noqa: E402
 
 _e, SECS = load()
-VTS = HERE / '_vts.json'
+VTS = pathlib.Path(cay.cache('_vts.json'))
 CTOR = 0x415c34
 CTOR_VT = 0x8da858
 # Hai truong can soi. +0x1B8 = ptRunVector (8 byte: 0x1B8 va 0x1BC la hai float).
@@ -151,6 +152,10 @@ def cham(insns):
 
 
 def main():
+    # Dia chi trong file nay do ra tu ban VN — xem cay.kiem_so().
+    loi = cay.kiem_so()
+    if loi:
+        sys.exit(loi)
     ap = argparse.ArgumentParser()
     ap.add_argument('--json')
     ap.add_argument('--vts', action='store_true', help='chi in bang vtable dang dung')

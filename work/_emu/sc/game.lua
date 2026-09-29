@@ -500,139 +500,93 @@ XGAnalytics:logEventByID(XGAnalytics.EVENT_ID.LOADCONFIG)
 
 
 
--- === CHEN DE DO: diem gan armature co mang ti le 1,02 khong (emu_plug.py sinh ra) ===
+-- === CHEN DE CHUP: dung canh bang chinh engine (chup_man_goc.py sinh ra) ===
 do
-	local function goi(ten, f)
-		print("PLUG|goi|" .. ten)
-		local ok, a, b = pcall(f)
-		print("PLUG|xong|" .. ten .. "|" .. tostring(ok) .. "|"
-			.. tostring(a) .. "," .. tostring(b))
-		return a, b
-	end
+	local function ghi(s) print("CHUP|" .. s) end
+	local DS   = {"conf/UI_Main_960_640.xgg","conf/UI_Main_ControlPanel_960_640.xgg"}
+	local CANH = "g_MainUIScene"
 
-	local function hinh(ten)
-		local ok, a = pcall(getSpriteFromSpriteCatch, ten)
-		print("PLUG|tao|" .. ten .. "|" .. tostring(ok) .. "|" .. tostring(a))
-		if ok then return a end
-		return nil
-	end
-
-	print("PLUG|bat-dau")
-	pcall(function() loadLevelFile("conf/UI_Main_960_640.xgg") end)
-
-	-- Node cha THUONG: node CO SAN cua bo cuc Main (khong tao moi — create() giet
-	-- ca tien trinh tren ban dich ARM). Thu lan luot, in ra node nao dung duoc.
-	local ung_vien = {"spMainUITheme_halloween_4", "ndMain", "ndTop", "ndBottom"}
-	local cha = nil
-	for _, nm in ipairs(ung_vien) do
-		local n = rawget(_G, nm)
-		print("PLUG|ung-vien|" .. nm .. "|" .. tostring(n))
-		if n ~= nil and cha == nil then cha = n end
-	end
-	print("PLUG|cha|" .. tostring(cha))
-
-	local spA = hinh("Gashapon")
-	if spA == nil or cha == nil then
-		print("PLUG|het")
-		return
-	end
-
-	-- Phai nam TRONG CAY thi dong tac moi ap track (xem chu thich cua
-	-- tools/verify_plug.gd); khong thi moi xuong o (0, 0) va phep do vo nghia.
-	-- KHONG hoi so con: tra khoa do tren userdata lam ban dich ARM chet ngay
-	-- (rang buoc ghi o docstring `emu_tags.py`).
+	-- HOI ENGINE co that, thay vi suy tu ten tep. Do duoc: ban dung lai ve to
+	-- hon ban goc dung 1/0.83 lan, ma 640/768 = 0.8333 — nen phai biet engine
+	-- coi man hinh rong bao nhieu.
 	--
-	-- LUOT 2: KHONG them vao cay nua. Luot 1 co them (`cha:addChild(spA)`) va do
-	-- duoc dong tac KHONG ap: Star1 va Star5 ra y het nhau, trong khi
-	-- `PlugIn_4_Hero` phai lech 2,8 theo y. `emu_cham.py` (muc D) do duoc dong tac
-	-- CO ap va no khong them vao cay — nen thu bo buoc them.
-	if rawget(_G, 'PLUG_TREO') then
-		goi("gan-cha", function() cha:addChild(spA) return true end)
-		goi("dat-0", function() spA:setPosition(0, 0) return spA:getPosition() end)
+	-- CHI DOC BIEN TOAN CUC, khong goi phuong thuc nao khac: `engine.lua:159`
+	-- da luu san `screenWidth, screenHeight = S_CCDirector:getWinSize()`. Ban
+	-- dau doan nay goi them getWinSizeInPixels / getOpenGLView va game CHET
+	-- ngay — dung ho loi ma emu_tags.py canh bao (tra phuong thuc khong co tren
+	-- userdata lam ban dich ARM cua may ao gay).
+	ghi("screen = " .. tostring(rawget(_G, "screenWidth")) .. " x "
+		.. tostring(rawget(_G, "screenHeight")))
+	local sm = rawget(_G, "g_CSceneManager")
+	if sm ~= nil then
+		ghi("CSceneManager: fScale = " .. tostring(rawget(sm, "fScale"))
+			.. ", Logic = " .. tostring(rawget(sm, "LogicWinSizeW"))
+			.. " x " .. tostring(rawget(sm, "LogicWinSizeH")))
+	end
+
+	-- Tep DAU tao ra CANH; cac tep sau nap VAO canh do, dung nhu CUIMain lam
+	-- voi UIRootLayer.
+	local ok = pcall(function() loadLevelFile(DS[1]) end)
+	ghi("nap " .. DS[1] .. " = " .. tostring(ok))
+
+	local canh = rawget(_G, CANH)
+	if canh == nil then
+		ghi("KHONG co _G." .. CANH .. " sau khi nap")
 	else
-		print("PLUG|khong-treo|de nguyen, khong addChild")
-	end
-	goi("play", function() return spA:_Lua_playAnimation("Star1") end)
-	goi("ten-armature", function() return spA:_Lua_getArmatureName() end)
-
-	-- Doi chung cho "dong tac da ap chua": xương Collision phai khac (0,0).
-	goi("coll", function() return spA:_lua_CollisionSize() end)
-	-- Doi chung 1: TOA DO XUONG Collision doc ra phai TRUNG voi ban dung Godot
-	-- (tools/verify_plug.gd do duoc (-132, 196)). Khong trung thi hai ben dang
-	-- o HAI TU THE khac nhau va moi so sanh tuyet doi la vo nghia.
-	goi("bone-coll", function() return spA:_lua_getBonePosInNode("Collision", spA) end)
-
-	local PLUG = {4, 5, 6, 7}
-
-	local function doc(dich, nhan)
-		if dich == nil then
-			print("PLUG|BO-QUA|" .. nhan .. "|dich nil")
-			return
-		end
-		local ra = {}
-		for _, n in ipairs(PLUG) do
-			local x, y = goi("pos|" .. nhan .. "|" .. n, function()
-				return spA:_lua_getPlugInPositionInNode(n, dich) end)
-			ra[n] = {x, y}
-		end
-		-- Tuyet doi (phu thuoc goc/vi tri cua cha nen chi de tham khao).
-		for _, n in ipairs(PLUG) do
-			if ra[n] ~= nil and ra[n][1] ~= nil then
-				print("PLUG|ABS|" .. nhan .. "|" .. n .. "|" .. ra[n][1] .. "," .. ra[n][2])
-			end
-		end
-		-- HIEU so voi diem gan 6 — day moi la phep do sach: hieu khong dinh gi
-		-- toi goc, diem neo, hay chieu cao cua cha, chi con ti le.
-		if ra[6] ~= nil and ra[6][1] ~= nil then
-			for _, n in ipairs(PLUG) do
-				if n ~= 6 and ra[n] ~= nil and ra[n][1] ~= nil then
-					print("PLUG|HIEU|" .. nhan .. "|" .. n .. "|"
-						.. (ra[n][1] - ra[6][1]) .. "," .. (ra[n][2] - ra[6][2]))
-				end
-			end
-		else
-			print("PLUG|BO-QUA|" .. nhan .. "|khong doc duoc diem gan 6")
-		end
+		local okr = pcall(function() S_CCDirector:replaceScene(canh) end)
+		ghi("replaceScene " .. CANH .. " = " .. tostring(okr))
 	end
 
-	-- HAI phep, chi khac nhau o TINH CHAT cua dich. Ti so giua chung la ti le cua
-	-- NGUON — xem chu thich dau file: dich la CHINH NGUON thi he so cua nguon
-	-- triet tieu (`inv(nguon) * nguon:to_global(v)`), nen hieu ra dung so NEN;
-	-- dich la node THUONG thi hieu ra `so NEN x ti le NGUON`. Ti so = ti le NGUON.
+	-- `UIRootLayer` KHONG phai do CUIManager tao: no la mot NEO trong
+	-- `UI_NormalDlg_960_640.xgg`, va `CSceneManager:OnLoadNextScene`
+	-- (CSceneManager.lua:549) nap tep do vao canh moi truoc tien.
+	-- `CUIManager:GetUIRootLayer()` chi `return _G["UIRootLayer"]`.
+	local KHUNG = "conf/UI_NormalDlg_960_640.xgg"
+	if KHUNG ~= "" then
+		local okk = pcall(function() loadLevelFile(KHUNG, canh) end)
+		ghi("nap khung " .. KHUNG .. " = " .. tostring(okk))
+	end
+
+	-- HUD nap vao UIRootLayer, dung nhu `CUIMain:sngPreLoad` lam (CUIMain.lua:76).
+	local rl = rawget(_G, "UIRootLayer")
+	ghi("UIRootLayer co = " .. tostring(rl ~= nil))
+	local cha = rl or canh
+	for i = 2, #DS do
+		local ok2 = pcall(function() loadLevelFile(DS[i], cha) end)
+		ghi("nap " .. DS[i] .. " = " .. tostring(ok2))
+	end
+
+	-- CANH TI LE — bat buoc, neu khong anh chuan bi NHO di 1,2 lan.
 	--
-	-- Day moi la phep tra loi cau hoi. Luot truoc lay dich la `Hoplite` (cung la
-	-- doi tuong bat duoc, ti le 1,02) nen ti so ra 1,02 chi la ti le cua DICH —
-	-- khong noi gi ve nguon. Phai lay dich la CHINH `spA`.
-	doc(spA, "self")
-	doc(cha, "thuong")
-
-	-- Doi chieu QUYET DINH: chinh bon xuong ay doc qua duong XUONG
-	-- (`_lua_getBonePosInNode`), cung dich, cung tu the. Hai duong ra HAI so khac
-	-- nhau thi `_lua_getPlugInPositionInNode` KHONG phai la "vi tri cua xuong
-	-- PlugIn_n" — va moi so sanh no voi khoa trong file la so sanh sai doi tuong.
-	local TEN = {[4] = "PlugIn_4_Hero", [5] = "PlugIn_5_Word",
-		[6] = "PlugIn_6_Light", [7] = "PlugIn_7_HeroName"}
-	for _, n in ipairs(PLUG) do
-		local x, y = goi("bone|" .. n, function()
-			return spA:_lua_getBonePosInNode(TEN[n], cha) end)
-		if x ~= nil then
-			print("PLUG|BONE|" .. n .. "|" .. x .. "," .. y)
+	-- Ban goc thiet ke o 960x640 nhung engine chay o thiet ke CAO 768 (do duoc:
+	-- `screenWidth x screenHeight` = 1152x768 tren man 960x640, 1429x768 tren
+	-- 1280x720). Chenh do duoc bu bang `CSceneManager:OnLoadNextScene`
+	-- (CSceneManager.lua:556-573): scale uiRootLayer len min(768/640, 1152/960)
+	-- = 1,2 roi canh giua. Doan chen nay nam TRUOC luong do nen phai tu lam.
+	if rl ~= nil then
+		local w, h = 0, 0
+		local okc = pcall(function() w, h = rl:getContentSize() end)
+		local rw = rawget(_G, "screenWidth") or 0
+		local rh = rawget(_G, "screenHeight") or 0
+		if okc and w > 0 and h > 0 and rw > 0 then
+			local s = rh / h
+			if rw / w < s then s = rw / w end
+			pcall(function()
+				rl:setScaleX(s)
+				rl:setScaleY(s)
+				rl:setPosition((rw - w * s) / 2, (rh - h * s) / 2)
+			end)
+			-- Khong dung string.format: chuoi nay con di qua phep `%` cua Python
+			-- trong `build_overrides`, nen moi dau % deu phai nhan doi.
+			ghi("canh ti le: root " .. w .. "x" .. h .. ", man " .. rw .. "x" .. rh
+				.. " -> scale " .. s)
+		else
+			ghi("KHONG canh duoc ti le (contentSize=" .. tostring(w) .. "x" .. tostring(h) .. ")")
 		end
 	end
 
-	doc(hinh("Hoplite"), "armature")
-
-	-- Doi chung 2 (QUYET DINH): `PlugIn_4_Hero` la xuong DUY NHAT trong Gashapon
-	-- doi giua Star1 (y = 115,54) va Star5 (y = 112,74). Doc no sau CA HAI dong
-	-- tac: doi thi dong tac CO ap; khong doi thi bon so tuyet doi o tren la TU THE
-	-- NGHI chu khong phai cua Star1, va phep do tuyet doi KHONG noi len gi (con
-	-- phep ti so thi khong phu thuoc tu the nen van dung).
-	goi("play-Star5", function() return spA:_Lua_playAnimation("Star5") end)
-	goi("bone-plug4-sau-Star5", function()
-		return spA:_lua_getBonePosInNode("PlugIn_4_Hero", cha) end)
-	doc(cha, "Star5")
-
-	print("PLUG|het")
+	print("DOMAN|" .. DS[1] .. "|" .. tostring(ok) .. "|chup")
+	print("DOXONG|chup")
 end
 
 do return end

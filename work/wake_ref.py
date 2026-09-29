@@ -32,9 +32,11 @@ import pathlib
 import re
 import sys
 
+import cay
+
 HERE = pathlib.Path(__file__).resolve().parent
-NGUON = HERE / 'vn' / 'decrypted' / 'assets' / 'map'
-DICH = HERE.parent.parent / 'bravecross-game' / 'data_ref' / 'wake_ref.json'
+NGUON = pathlib.Path(cay.ASSETS) / 'map'
+DICH = pathlib.Path(cay.dich('wake_ref.json'))
 
 SO = re.compile(r'^-?\d+(\.\d+)?$')
 

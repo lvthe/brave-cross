@@ -4,10 +4,25 @@
 Khac voi nhan vat: nen canh khong nam trong atlas ma la tung file .pkm roi
 trong assets/png/scene/<canh>/.
 
-Cac file Scene_*.plist co trong assets nhung TEXTURE CUA CHUNG KHONG CO —
-khong o APK, khong o OBB (da kiem: 9874 muc trong OBB, 16 file Scene_* deu la
-.plist). Nhung atlas do duoc tai ve luc chay tu may chu va. Nen phan nen ghep
-tu 45 manh nho ma BattleField_*.xgg mo ta thi KHONG dung lai duoc.
+Cac file Scene_*.plist co trong assets nhung texture cua chung KHONG duoc dong
+goi: quet ca APK lan OBB deu khong co file nao ten Scene_*.png/.pkm (OBB co
+9874 muc = 9728 file + 146 thu muc; 16 file Scene_* deu chi la .plist).
+
+Nhung KHUNG cua atlas thi con — chung nam roi trong
+decrypted/assets/sngSplitData/. Do tren cay VN, khop manh theo CA TEN LAN KICH
+THUOC sourceSize cua plist: 378/506 khung, 11/16 atlas du 100%, ke ca nen
+thanh chinh Scene_Main (56/56). Nam atlas hut: Valley 0/38, Main2 0/26,
+Main3 2/29, Main2_BuildingIcon 2/19, Plain 25/45. Nen phan nen ghep tu 45 manh
+nho ma BattleField_*.xgg mo ta thi DUNG LAI DUOC o 11/16 canh.
+
+DUNG dem bang os.listdir() hay bang ten suong. Hai cach do ra 415/506 va
+471/506 — ca hai deu ket luan nguoc ("nen thanh chinh mat sach") ma khong bao
+gi. sngSplitData/ co 27 thu muc con ma os.listdir khong de quy; con khop moi
+ten thi dinh trung ten giua cac bo (moku.png khop mot moku.pkm chang lien
+quan) va nhieu manh cung ten nhung la ban ha nua co (valley_00-01 plist
+512x143 <-> manh 256x72). Chi khop ca ten lan co moi ra 378/506.
+
+Chi tiet + bang day du: README-131.md, muc "sngSplitData/".
 
 Bu lai, cac lop nen DAY MAN thi co du: plain_a01..a04, lava_*, siege*... —
 1024x768 hoac 1367x768, ve tay, dung duoc ngay.
@@ -23,9 +38,10 @@ import os, sys, glob, struct, argparse, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import cay
 from sprites import read_pkm, write_png, safe, SpriteError
 
-DEFAULT_SCENES = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'png', 'scene')
+DEFAULT_SCENES = os.path.join(cay.ASSETS, 'png', 'scene')
 ## Nen day man: rong it nhat 960 va cao (sau khi tach alpha) it nhat 600.
 MIN_W, MIN_H = 960, 600
 
@@ -88,13 +104,23 @@ def main():
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
 
+    # Chan MOT LAN o day, cho ca hai duong ghi cua script nay: `--raw` va duong
+    # thuong (ghi theo tung canh vao <out>/<ten canh>/). Dat trong nhanh `--raw`
+    # la khong du — do la loi da bi bat bang phep thu (2026-09-19): ban 'vn' ghi
+    # vao `ui_ref-cn131` qua duong thuong va lot qua sach.
+    if a.out:
+        os.makedirs(a.out, exist_ok=True)
+        loi = cay.giu_cho(a.out)
+        if loi:
+            sys.exit(loi)
+        cay.danh_dau(a.out)
+
     if a.raw:
         if not a.out:
             sys.exit('thieu --out')
         files = sorted(glob.glob(os.path.join(a.raw, '*.pkm')))
         if not files:
             sys.exit('khong co .pkm trong %s' % a.raw)
-        os.makedirs(a.out, exist_ok=True)
         n_ok = n_fail = 0
         for p in files:
             name = safe(os.path.splitext(os.path.basename(p))[0]) + '.png'

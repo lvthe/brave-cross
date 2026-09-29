@@ -28,9 +28,10 @@ import collections
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import cay
 from sprites import read_pkm, write_png, SpriteError
 
-DEFAULT_ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
+DEFAULT_ASSETS = cay.ASSETS
 
 
 def find_pkm(assets):
@@ -71,6 +72,79 @@ def png_size(path):
         return struct.unpack('>2I', head[16:24])
     except OSError:
         return None
+
+
+def jpg_size(path):
+    """(w, h) doc tu marker SOF cua JPEG, hoac None neu khong doc duoc.
+
+    Khong dung thu vien ngoai: trinh doc JPEG that su chi can doc header. Di het
+    cac marker 0xFFxx, bo qua phan du lieu theo do dai ghi trong marker, dung lai
+    o SOF0..SOF15 (tru SOF4/8/12 la marker khac) — do la cho duy nhat co kich
+    thuoc. Anh trong game deu la JPEG thuong, khong phai progressive, nhung
+    duong nay dung ca cho progressive (SOF2).
+    """
+    try:
+        with open(path, 'rb') as fp:
+            if fp.read(2) != b'\xff\xd8':
+                return None
+            while True:
+                b = fp.read(1)
+                while b and b != b'\xff':
+                    b = fp.read(1)
+                if not b:
+                    return None
+                m = fp.read(1)
+                while m == b'\xff':          # byte dem 0xFF truoc marker
+                    m = fp.read(1)
+                if not m:
+                    return None
+                mk = m[0]
+                if mk in (0xd8, 0x01) or 0xd0 <= mk <= 0xd7:
+                    continue                 # marker khong co do dai
+                raw = fp.read(2)
+                if len(raw) < 2:
+                    return None
+                n = struct.unpack('>H', raw)[0]
+                if 0xc0 <= mk <= 0xcf and mk not in (0xc4, 0xc8, 0xcc):
+                    head = fp.read(5)
+                    if len(head) < 5:
+                        return None
+                    h, w = struct.unpack('>2H', head[1:5])
+                    return w, h
+                fp.seek(n - 2, os.SEEK_CUR)
+    except OSError:
+        return None
+
+
+def find_roi(assets, da_co):
+    """Anh ROI nam ngoai .pkm: {khoa: duong dan that}.
+
+    Vi sao phai co. `find_pkm` chi gom `**/*.pkm`, nen **64 anh roi** (37 .jpg +
+    27 .png) khong he co mat trong chi muc — trong do co ca nam anh nen hoi thoai
+    `png/background/v6/ui_background26{2,3}.jpg`, `ui_background436.jpg`,
+    `ui_tongque_bg.jpg`, `juntuanyingdi.jpg`. Ban goc goi chung bang DUONG DAN DAY
+    DU: `lNormalDlgBackGround:initWithFile("png/background/v6/ui_background263.jpg")`
+    (CSceneManager.lua:588, CUIManager.lua:1676).
+
+    Do duoc truoc khi sua: ten ay khong co trong chi muc, nen `UiFrames` rot
+    xuong luat "ten tran trung thi chon sngSplitData/" va tra ve
+    `sngSplitData/v6/ui_background263` — **124x124**, khong phai 1665x768. Man
+    Doanh Trai vi the khong co nen.
+
+    KHONG thay the bang ban .pkm cung ten: `png/background/ui_background263.pkm`
+    (1665x768) la mot ANH KHAC, khong phai ban nen cua tep .jpg — do lech mau
+    trung binh 83/255 khi doi chieu tung diem (lat doc cung 85, nen khong phai
+    loi huong). Phai doc dung tep ma ma goc goi.
+    """
+    out = collections.OrderedDict()
+    for pat in ('*.png', '*.jpg', '*.jpeg'):
+        for p in sorted(glob.glob(os.path.join(assets, '**', pat), recursive=True)):
+            rel = os.path.relpath(p, assets).replace('\\', '/')
+            khoa = rel.rsplit('.', 1)[0]
+            if khoa in da_co or khoa in out:
+                continue                 # .pkm cung ten da co: .pkm la ban chinh
+            out[khoa] = p
+    return out
 
 
 def convert(path):
@@ -127,6 +201,15 @@ def main():
         raise SystemExit('thieu --out')
 
     os.makedirs(a.out, exist_ok=True)
+    # Chan truoc khi giai 7629 anh: thu muc nay thuoc mot BAN cu the. Ban 1.31 co
+    # 7629 file .pkm, ban VN co 15723 file — va ten PNG sinh ra theo TEN TRAN
+    # (`ten_png`), nen hai ban ghi cung cho thi khong phai "lan vao nhau" ma la
+    # DE HAN: cung ten `item_55.png` thi ban sau de ban truoc, khong loi nao nem
+    # ra. Xem `cay.giu_cho`.
+    loi = cay.giu_cho(a.out)
+    if loi:
+        sys.exit(loi)
+    cay.danh_dau(a.out)
     index = collections.OrderedDict()
     ok = fail = copied = reused = 0
     fails = []
@@ -173,6 +256,67 @@ def main():
         ok += 1
         if i % 400 == 0:
             print('  ... %d/%d' % (i, len(pkm)), flush=True)
+
+    # Anh ROI (ngoai .pkm) — xem `find_roi` de biet vi sao can.
+    #
+    # Ten tep: uu tien ten TRAN (de nhan ra trong thu muc), nhung ten tran co the
+    # da bi mot .pkm chiem (`ui_background263.png` la ten cua ban .pkm da giai).
+    # Luc do dat theo ca duong dan. Them duoi `.jpg` cho .jpg nen tran KHONG bao
+    # gio dung nhau giua hai dinh dang.
+    #
+    # KHONG them vao `alias`. Bi danh la duong tra cuu ten TRAN, ma ten tran thi
+    # ban goc chi dung cho khung trong `sngSplitData/`; con anh ROI ban goc goi
+    # bang duong dan day du (xem `find_roi`). Them vao alias se doi ket qua tra
+    # cuu cua nhung ten dang chay dung — rui ro khong can thiet.
+    da_dung = set(v['png'] for v in index.values())
+    roi = find_roi(a.assets, set(pkm))
+    if a.only:
+        roi = collections.OrderedDict((k, v) for k, v in roi.items()
+                                      if k in set(a.only))
+    print('anh roi ngoai .pkm: %d' % len(roi))
+    for name, path in roi.items():
+        # Duoi THAT cua tep, khong phai duoi trong ten. Hai tep
+        # `png/loading/dol_1026A_1366x768_02.jpg` va `png/v6/ui_backgroundtimehero.jpg`
+        # deu la PNG that (magic `89 50 4E 47`). Godot chon trinh doc theo DUOI
+        # ten tep, nen ghi ra `.jpg` thi no dem nap bang trinh doc JPEG va hong
+        # — du noi dung la PNG hoan toan hop le.
+        png_that = is_png(path)
+        if png_that:
+            ext = '.png'
+        else:
+            with open(path, 'rb') as f:
+                magic = f.read(4)
+            if magic[:2] == b'\xff\xd8':
+                ext = '.jpg'
+            else:
+                # Khong phai anh: `sngDefaultTexture_release aaa.png` (55 byte)
+                # mo dau bang `43 43 5A 21` = "CCZ!" — mot go Cocos nen, khong
+                # phai anh. Dem vao chi muc thi `UiFrames` se nap mot tep rac.
+                fail += 1
+                fails.append((name, 'khong phai anh, dau tep %s' % magic.hex()))
+                continue
+        base = name.rsplit('/', 1)[-1]
+        fn = base + ext
+        if fn in da_dung:
+            fn = name.replace('/', '_') + ext
+        while fn in da_dung:                 # van trung: danh so
+            fn = '%s_%d%s' % (base, len(da_dung), ext)
+        da_dung.add(fn)
+        dst = os.path.join(a.out, fn)
+        if not a.force and os.path.isfile(dst) \
+                and os.path.getmtime(dst) >= os.path.getmtime(path):
+            wh = png_size(dst) if png_that else jpg_size(dst)
+        else:
+            with open(path, 'rb') as src, open(dst, 'wb') as out:
+                out.write(src.read())
+            wh = png_size(path) if png_that else jpg_size(path)
+        if not wh:
+            fail += 1
+            fails.append((name, 'khong doc duoc kich thuoc %s' % ext))
+            continue
+        index[name] = collections.OrderedDict([('png', fn), ('w', wh[0]), ('h', wh[1])])
+        ok += 1
+        copied += 1
 
     # Bi danh: ten tran -> khoa day du, CHI khi ten do khong trung. Bo cuc
     # phan lon ghi ten tran, nen tra cuu nhanh; con cho nao ghi ca duong dan

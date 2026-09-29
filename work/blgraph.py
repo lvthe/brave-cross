@@ -41,9 +41,11 @@ import argparse
 import capstone
 from elftools.elf.elffile import ELFFile
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-PATH = os.path.join(HERE, 'vn', 'apk', 'lib', 'armeabi-v7a', 'libgame.so')
-CACHE = os.path.join(HERE, 'blgraph.json')
+PATH = cay.SO
+CACHE = cay.cache('blgraph.json')
 
 md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
 # KHONG co dong nay thi `disasm` DUNG HAN o byte khong dich duoc dau tien — ma

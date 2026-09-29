@@ -13,6 +13,7 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 os.chdir(r'C:\Project\game\brave-cross')
 sys.path.insert(0, os.path.join(os.getcwd(), 'work'))
 import anim
+import cay
 
 
 def khoang(x, v):
@@ -60,7 +61,7 @@ def _goc_bucket(d):
 
 
 def main():
-    root = sys.argv[1] if len(sys.argv) > 1 else 'work/vn/decrypted/assets/map'
+    root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(cay.ASSETS, 'map')
     gioi_han = int(sys.argv[2]) if len(sys.argv) > 2 else 0
 
     d = collections.Counter()

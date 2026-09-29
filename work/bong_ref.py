@@ -69,11 +69,13 @@ import os
 import re
 import sys
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from sprites import read_pkm, write_png
 
-ASSETS = os.path.join(HERE, 'vn', 'decrypted', 'assets')
+ASSETS = cay.ASSETS
 MAP = os.path.join(ASSETS, 'map')
 BONG_PKM = os.path.join(ASSETS, 'png', 'ribbon', 'Shadow.pkm')
 

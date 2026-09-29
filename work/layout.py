@@ -25,9 +25,13 @@ import collections
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import cay
 from xgg import load, XggError
 
-DEFAULT_CONF = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'conf')
+#: Theo BAN dang lam (BC_TREE), khong phai mot ban cung. Ban 1.31 co 313 file
+#: .xgg trong conf, ban VN it hon; tro cung vao mot ban thi man hinh cua ban kia
+#: khong bao gio duoc xuat ra, va khong mot dong nao noi len.
+DEFAULT_CONF = os.path.join(cay.ASSETS, 'conf')
 
 KEEP = ('type', 'typeName', 'cls', 'name', 'zOrder', 'res', 'x', 'y', 'scaleX', 'scaleY',
         'rot', 'anchorX', 'anchorY', 'w', 'h', 'img', 'imgFrom', 'visible')
@@ -163,6 +167,16 @@ def main():
 
     if not a.out and not a.dump:
         raise SystemExit('thieu --out (hoac --print)')
+
+    # Chan mot lan o day chu khong phai trong vong lap: ban 1.31 co 302 man
+    # hinh, ban VN co 296 — ghi cung cho thi khong loi nao nem ra, chi co hai bo
+    # bo cuc lan vao nhau va ten nao trung thi cai sau de cai truoc.
+    if a.out:
+        os.makedirs(a.out, exist_ok=True)
+        loi = cay.giu_cho(a.out)
+        if loi:
+            raise SystemExit(loi)
+        cay.danh_dau(a.out)
 
     total = nodes = fail = skip = 0
     for p in paths:

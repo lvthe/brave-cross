@@ -57,11 +57,13 @@ import os
 import struct
 import sys
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import cham_ref                                        # noqa: E402
 
-MAP = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'map')
+MAP = os.path.join(cay.ASSETS, 'map')
 ANIM_REC = cham_ref.ANIM_REC
 
 

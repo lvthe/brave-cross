@@ -96,10 +96,10 @@ for _d in (sys.stdout, sys.stderr):
     except (AttributeError, OSError):
         pass
 
+import cay
 import xgg
 
-CONF = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    'vn', 'decrypted', 'assets', 'conf')
+CONF = os.path.join(cay.ASSETS, 'conf')
 PT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_pt')
 
 # Tên cột, đúng thứ tự của tuple mà `fix_of` trả về: (mx, my, o40, ...).

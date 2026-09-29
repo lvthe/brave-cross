@@ -113,7 +113,7 @@ def decode_etc1(data, width, height):
 
 
 def read_pkm(path):
-    """(rgb, width, height) tu mot file .pkm."""
+    """(rgb, ew, eh, ow, oh) tu mot file .pkm."""
     d = open(path, 'rb').read()
     if len(d) < 16 or d[:6] != PKM_MAGIC:
         raise SpriteError('khong phai PKM 10')
@@ -124,6 +124,30 @@ def read_pkm(path):
     if len(d) < need:
         raise SpriteError('thieu du lieu: can %d co %d' % (need, len(d)))
     return decode_etc1(d[16:], ew, eh), ew, eh, ow, oh
+
+
+def read_sprite_pkm(path):
+    """(rgba, w, h) tu mot .pkm DUNG MOT sprite — anh roi trong `sngSplitData/`.
+
+    Cung dinh dang ETC1 "nua tren mau / nua duoi alpha" nhu atlas, nhung chi
+    chua dung mot sprite va KHONG xoay. Do tren 417 khung co anh roi cua 21
+    armature thieu atlas: `(ow, oh//2)` bang dung `sourceSize` cua khung trong
+    `.plist` o MOI khung, ke ca nhung khung `.plist` danh dau `rotated` — xoay
+    la buoc XEP sprite vao atlas, con tep roi thi khong bi xep nen khong xoay.
+    """
+    rgb, ew, eh, ow, oh = read_pkm(path)
+    if oh % 2:
+        raise SpriteError('chieu cao le (%d): khong phai dang nua mau / nua alpha' % oh)
+    h = oh // 2
+    out = bytearray(ow * h * 4)
+    for y in range(h):
+        s, a, d = y * ew * 3, (y + h) * ew * 3, y * ow * 4
+        for x in range(ow):
+            out[d + x * 4] = rgb[s + x * 3]
+            out[d + x * 4 + 1] = rgb[s + x * 3 + 1]
+            out[d + x * 4 + 2] = rgb[s + x * 3 + 2]
+            out[d + x * 4 + 3] = rgb[a + x * 3]
+    return out, ow, h
 
 
 # ------------------------------------------------------------------ PNG

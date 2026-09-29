@@ -4,8 +4,14 @@ Dịch ngược game **"Búa Tạ / Siêu Anh Hùng"** (Cocos2d-x + Lua, 2017 �
 cửa, không còn server), rồi dùng kết quả đó làm nền để **làm một game mới cùng
 dòng**.
 
-Hai bản được phân tích song song: bản CN `com.xh.dachui.xsj` 1.25.78923 và bản
-VN `com.cmn.buatanew` 1.26.81485.
+Ba bản được phân tích song song: bản CN `com.xh.dachui.xsj` 1.25.78923, bản VN
+`com.cmn.buatanew` 1.26.81485, và bản CN mới nhất `com.wh.dachui` 1.31.20089
+(`base.apk` 254 MB, 19/09/2026).
+
+Bản 1.31 có tài liệu riêng ở **[`work/README-131.md`](work/README-131.md)** —
+số liệu, chỗ lệch so với hai bản kia, và danh sách những gì **không** dịch được
+kèm lý do. Chọn bản bằng biến môi trường `BC_TREE` (`cay.py`); mặc định vẫn là
+`vn` nên mọi số liệu dưới đây giữ nguyên.
 
 Phần dịch ngược coi như xong. Trọng tâm hiện tại đã chuyển sang game mới — xem
 mục [Hướng đi](#hướng-đi-làm-game-mới) bên dưới.
@@ -18,6 +24,8 @@ mục [Hướng đi](#hướng-đi-làm-game-mới) bên dưới.
 | [`work/offline/`](work/offline/README.md) | lớp giả lập server chạy trong client |
 | `work/server-spec/` | đặc tả API bản CN — 584 hàm server |
 | `work/server-spec-vn/` | đặc tả API bản VN — 614 hàm server |
+| `../bravecross-source/server-spec-131/` | đặc tả API bản CN 1.31 — 638 hàm server |
+| [`work/README-131.md`](work/README-131.md) | dịch ngược bản CN 1.31 `com.wh.dachui` |
 
 Mở `work/server-spec-vn/rpc-reference.html` để tra cứu API có tìm kiếm.
 
@@ -41,6 +49,16 @@ python build_spec.py
 Đã kiểm chứng: dựng lại từ file gốc cho ra cây thư mục **trùng từng byte** với
 bản đang dùng (3984 file bản CN, 9728 file bản VN), và đặc tả sinh ra cũng
 trùng khít.
+
+Mọi thứ thuộc bản 1.31 — cây giải nén, dữ liệu dẫn xuất, đặc tả server — nằm
+**ngoài repo**, gom vào một kho duy nhất: `../bravecross-source/`. Lý do:
+`.gitignore` che `data_ref/` và `layout_ref/` nhưng **không** che tên thêm hậu tố
+bản, nên `data_ref-cn131/` hiện ra trong `git status` dạng `??` — chỉ một lệnh
+`git add -A` là dữ liệu có bản quyền vào thẳng lịch sử. Cùng lỗ ấy với
+`work/cn131/` (1,1 GB), mà `.gitignore` cũng không chạm tới. Đã chữa bằng cách
+dời ra ngoài thay vì sửa `.gitignore` — sửa ignore mỗi lần thêm bản là cách chữa
+phải nhớ, và sẽ quên. `cay.py` (`KHO`, `NGAN`, `goc_cua()`) là chỗ duy nhất biết
+đường; chạy `BC_TREE=cn131 python cay.py` để in ra đường dẫn thật.
 
 ## Hướng đi: làm game mới
 
@@ -239,6 +257,10 @@ Phần dịch ngược — **đã xong**:
   `.plist` và bản `.xml`) — 0 lỗi trên toàn bộ cây
 * Xuất được nội dung: 397 atlas hoạt ảnh (~289 nhân vật/quân chủng/trang phục),
   12.820 PNG, 641.538 keyframe
+* Bản CN 1.31 `com.wh.dachui` — **đã xong**: định dạng nhị phân không đổi (sáu
+  phép `--scan` đều 0 lỗi, 434 atlas / 14.229 khung / 700.127 keyframe), chỉ
+  phải dò lại địa chỉ trong `libgame.so` (11.306.184 byte, khác cả hai bản kia)
+  và tách dữ liệu theo bản. Chi tiết: [`work/README-131.md`](work/README-131.md)
 
 Lớp offline — **tạm dừng**: chặn ở `CallServer`/`CallLocal`, tái dùng chính luật
 chơi client đã mang sẵn, kho dữ liệu 33 bảng lưu ra JSON. Đạt **9/614 handler**;

@@ -24,6 +24,7 @@
 require("offline.log")
 require("offline.store")
 require("offline.router")
+require("offline.luc_chien")
 
 local R = OfflineRouter
 
@@ -160,6 +161,14 @@ R:on("ClientPlayLottery", function(ctx, nLotteryType, bTest)
 	-- Trả đúng hàm client nhận: OnServerLotteryFinish(nLotteryMode, tResult,
 	-- bTest, tHeroData). tHeroData để rỗng: UI đọc tData là chính; chưa gặp chỗ
 	-- cần tHeroData qua đường thật.
+	--
+	-- Tướng VỪA quay ra chưa có lực chiến (máy chủ thật gửi kèm số ấy trong
+	-- GameUserHero — xem offline/luc_chien.lua), nên điền ngay tại đây; không
+	-- thì nó hiện "Lực 0" cho tới lần vào game sau.
+	if not bTest then
+		OfflineLucChien:bo_sung()
+	end
+
 	ctx:call("G_LotteryLogic", "OnServerLotteryFinish",
 		nLotteryType, tData or ketQua, bTest and true or false, {})
 end)

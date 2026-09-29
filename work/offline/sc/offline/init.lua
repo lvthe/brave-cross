@@ -14,6 +14,8 @@ require("offline.log")
 require("offline.store")
 require("offline.router")
 require("offline.bootstrap")
+require("offline.thong_ke")
+require("offline.luc_chien")
 require("offline.net")
 
 -- các nhóm handler; thêm file mới thì require thêm ở đây
@@ -64,6 +66,29 @@ function Offline:start()
 
 	patchDataManager()
 	OfflineNet:install()
+
+	--[[ Bọc phễu thể lực. `init.lua` được nạp từ cuối `sc/user/require.lua`,
+	    tức SAU khi toàn bộ lớp client đã định nghĩa xong — chỗ này vá được
+	    `CDataManager` thì cũng thấy được `G_UserLogic`. Vẫn kiểm và NÓI RA nếu
+	    không thấy, đừng để mốc "quà mốc chương" chết im lặng. ]]
+	if OfflineThongKe:dam_bao() then
+		OfflineLog:info("da boc G_UserLogic:AddFatigueValue — thong ke "
+			.. OfflineThongKe.KHOA .. " duoc ghi theo the luc da tieu")
+	else
+		OfflineLog:err("KHONG boc duoc G_UserLogic:AddFatigueValue — "
+			.. OfflineThongKe.KHOA .. " se khong tang, moc 3000 dung yen")
+	end
+
+	--[[ Lực chiến: nối vào sự kiện `OnEnterGame` của client chứ không gọi thẳng
+	    từ handler đăng nhập — vì `ctx:call` chỉ ĐẨY vào hàng đợi, khung hình sau
+	    mới chạy, nên gọi thẳng ở đó là chạy trước khi dữ liệu vào tới client.
+	    Đo được và giải thích đầy đủ ở `offline/luc_chien.lua`. ]]
+	if OfflineLucChien:noi_su_kien() then
+		OfflineLog:info("da noi OfflineLucChien vao su kien OnEnterGame")
+	else
+		OfflineLog:err("KHONG noi duoc OfflineLucChien vao OnEnterGame — "
+			.. "luc chien se dung nguyen so 0 cua bang Reset")
+	end
 
 	OfflineLog:info(string.format(
 		"san sang — %d handler, file luu: %s",

@@ -91,8 +91,11 @@ import sys
 import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_MAP = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'map')
-DEFAULT_CFG = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'config')
+
+import cay
+
+DEFAULT_MAP = os.path.join(cay.ASSETS, 'map')
+DEFAULT_CFG = os.path.join(cay.ASSETS, 'config')
 
 ## Bang binh chung cua ban goc — nguon cua `Location` (so lan).
 BANG_LINH = os.path.join('share', 'KDBGameArmyConfig.xgg')
@@ -194,8 +197,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--map', default=DEFAULT_MAP, help='mac dinh: %(default)s')
     ap.add_argument('--config', default=DEFAULT_CFG, help='mac dinh: %(default)s')
-    ap.add_argument('--out', default=os.path.join(
-        HERE, '..', '..', 'bravecross-game', 'data_ref'))
+    ap.add_argument('--out', default=cay.dich(),
+                    help='mac dinh: %(default)s')
     a = ap.parse_args()
     cfg = os.path.join(a.map, 'global_config.xml')
     tmx = os.path.join(a.map, 'map_1.tmx')
@@ -348,6 +351,10 @@ def main():
               % (SO_O, o['rong_px'], o['cao_px']))
 
     os.makedirs(a.out, exist_ok=True)
+    loi = cay.giu_cho(a.out)
+    if loi:
+        sys.exit(loi)
+    cay.danh_dau(a.out)
     dich = os.path.join(a.out, 'tran_ref.json')
     with io.open(dich, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(b, f, ensure_ascii=False, indent=1, sort_keys=True)

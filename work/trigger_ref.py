@@ -50,9 +50,11 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
+import cay
+
 HERE = pathlib.Path(__file__).resolve().parent
-BANKS = HERE / 'vn' / 'apk' / 'assets' / 'banks'
-DICH = HERE.parent.parent / 'bravecross-game' / 'data_ref' / 'trigger_ref.json'
+BANKS = pathlib.Path(cay.BANKS)
+DICH = pathlib.Path(cay.dich('trigger_ref.json'))
 
 
 def _doc(ten, ma):
@@ -167,7 +169,7 @@ def bank_theo_armature():
 
 def _co_armature():
     """Ten armature ta CO (assets_ref/<Ten>/<Ten>.json)."""
-    goc = HERE.parent.parent / 'bravecross-game' / 'assets_ref'
+    goc = pathlib.Path(cay.dich_anh())
     if not goc.is_dir():
         return None
     return {p.name for p in goc.iterdir() if p.is_dir()}

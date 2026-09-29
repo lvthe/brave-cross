@@ -24,6 +24,8 @@ sys.path.insert(0, WORK)
 
 from sng_encrypt import pack
 
+import cay
+
 HOOK = '\n\n-- === lop offline: gia lap server ngay trong client ===\nrequire("offline.init")\n'
 
 
@@ -65,8 +67,8 @@ def encrypt_tree(plain_dir, sng_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--assets', default=os.path.join(WORK, 'vn', 'decrypted', 'assets'),
-                    help='thu muc assets da giai ma cua ban dich (mac dinh: ban VN)')
+    ap.add_argument('--assets', default=cay.ASSETS,
+                    help='thu muc assets da giai ma (mac dinh: ban dang lam, BC_TREE)')
     a = ap.parse_args()
 
     plain = os.path.join(HERE, 'deploy', 'plain')
