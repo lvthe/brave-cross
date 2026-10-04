@@ -51,6 +51,7 @@ CAY = HERE / 'tags_cay.json'
 GAN = 0.51          # khop khit: sai lech vi tri cho phep (px)
 NOI = 24.0          # khop gan dung, khi engine da doi node theo co anh that
 HINH = 1.0          # sai lech cho phep khi doi chieu HINH (chi de kiem, khong de ghep)
+LOP_CUON = ('CCScrollLayer', 'CCScrollLayerList')   # lop ma engine boc them mot lop chua
 
 
 def ten(n):
@@ -73,6 +74,19 @@ def _moi_node(node):
             yield n
 
 
+def diem_ung_vien(uv, con_engine):
+    """Bao nhiêu con của `uv` đứng đúng chỗ engine báo — điểm phân xử.
+
+    Tách ra khỏi `chon_ung_vien` vì có chỗ cần biết ĐIỂM chứ không chỉ cần
+    người thắng: điểm 0 nghĩa là không có căn cứ nào để chọn, và như vậy thì
+    bỏ qua còn hơn lấy bừa phần tử đầu danh sách.
+    """
+    vi_tri = {(round(c['x'], 1), round(c['y'], 1))
+              for c in uv.get('children', [])}
+    return sum(1 for o in con_engine
+               if (round(o['x'], 1), round(o['y'], 1)) in vi_tri)
+
+
 def chon_ung_vien(ung_vien, con_engine):
     """Chọn node nào trong số trùng tên, bằng cách so vị trí các con.
 
@@ -86,10 +100,7 @@ def chon_ung_vien(ung_vien, con_engine):
         return ung_vien[0]
     tot, diem_tot = None, -1
     for uv in ung_vien:
-        vi_tri = {(round(c['x'], 1), round(c['y'], 1))
-                  for c in uv.get('children', [])}
-        diem = sum(1 for o in con_engine
-                   if (round(o['x'], 1), round(o['y'], 1)) in vi_tri)
+        diem = diem_ung_vien(uv, con_engine)
         if diem > diem_tot:
             tot, diem_tot = uv, diem
     return tot
@@ -202,6 +213,51 @@ def theo_chi_so(nut, phan):
     return nut
 
 
+def theo_chi_so_cau(nut, phan, tk):
+    """Đi xuống theo CHỈ SỐ CON, BỎ QUA LỚP CHỨA mà engine sinh trong lớp cuộn.
+
+    Cùng cái lệch một mức mà đường VỊ TRÍ đã bắc (`ghep_qua_lop_chua`), nhưng ở
+    đường CHỈ SỐ CON thì nó lộ ra thành một mức trong ĐƯỜNG: engine báo `X/1` là
+    lớp chứa, còn file thì con 1 là một mắt THẬT. Nên `X/1/k` của engine mới ứng
+    với con thứ k của file.
+
+    Luật ở đây là luật CẤU TRÚC, không phải luật bằng chứng. Đo trên 283 màn
+    (`do_a2b.py`, không dùng phép ghép nào nên không vòng tròn): trong 94 node
+    LỚP CUỘN có tên DUY NHẤT và có đường engine đi qua, **94/94 engine báo ĐÚNG
+    MỘT con trực tiếp, và luôn là chỉ số 1**; node THƯỜNG thì engine báo đúng số
+    con của file (318/318 với 2 con, 210/210 với 3, 150/150 với 4, 524/532 với
+    5). Tức lớp chứa có mặt ở MỌI lớp cuộn, không phải chuyện phải chứng minh
+    từng lượt.
+
+    Luật BẰNG CHỨNG (mọi mắt cháu khớp một con riêng của lớp, như nửa A) chỉ phủ
+    54 trong 468 lượt lớp cuộn, nên nó bỏ sót chứ không sai — dùng nó thì 414
+    mức lệch còn nguyên.
+
+    Trả về (node, số mức đã bắc, đường có DỪNG NGAY TRÊN lớp chứa không). Dừng
+    ngay trên lớp chứa thì không có node nào của file ứng với đường ấy — chỗ gọi
+    KHÔNG được ghi tag (giống hệt cầu của đường vị trí: bắc qua thì không phát
+    tag, chỉ để đi tiếp xuống dưới).
+    """
+    bac = 0
+    dung_tren_lop_chua = False
+    for i, phan_tu in enumerate(phan):
+        if phan_tu == '1' and (nut.get('typeName') or '') in LOP_CUON:
+            bac += 1
+            tk['bac'] += 1
+            dung_tren_lop_chua = (i == len(phan) - 1)
+            continue
+        try:
+            k = int(phan_tu) - 1
+        except ValueError:
+            return None, bac, False
+        con = nut.get('children', [])
+        if k < 0 or k >= len(con):
+            return None, bac, False
+        nut = con[k]
+        dung_tren_lop_chua = False
+    return nut, bac, dung_tren_lop_chua
+
+
 def ghep_chi_so(doc, cay_man, tk):
     """Ghép tag theo CHỈ SỐ CON — đường chính xác (xem docstring đầu file).
 
@@ -217,8 +273,23 @@ def ghep_chi_so(doc, cay_man, tk):
     # ...nhưng "không dùng được" chỉ đúng khi tên ấy mơ hồ. Tên LỒNG mà trong
     # file chỉ có ĐÚNG MỘT node mang nó thì chỉ số con tính từ chính node đó là
     # đường đi thẳng, y như đường từ gốc thật — không phải phỏng đoán gì.
-    # Đo trên 146 màn đã đi cây: 12.326 đường bị bỏ ở nhánh cũ, trong đó 11.223
-    # đường có tên LỒNG duy nhất (0 đường không tìm thấy tên, 0 đường trùng tên).
+    #
+    # TÊN MƠ HỒ THÌ PHÂN XỬ, ĐỪNG BỎ. Trước đây chỗ này bỏ cả cây con khi tên
+    # neo mơ hồ, và đó là lỗi nặng nhất của đường ghép: `lMainToolbarRight` của
+    # màn Main có HAI node — lớp icon (có tên, 106x560, 5 con) và tấm nền trượt
+    # (KHÔNG tên, `cls='lMainToolbarRight'`, 106x68, 1 con). `ten()` lấy `cls`
+    # khi `name` rỗng, nên hai node cùng "tên", cả nhánh `lMainToolbarRight/1..5`
+    # bị bỏ, và 5 icon mất tag đo được (1,2,5,3,4) — hậu quả là
+    # `CUIMainMenuTool.lua:263` `getChildByTag(1)` ra nil, `sortUIItem` `break`
+    # ngay lượt đầu, `nRightToolButtonSizeLengh` ở lại 0, và thanh công cụ bên
+    # phải KHÔNG BAO GIỜ trượt ra: `SetToolBarStatus` cho cả hai chiều cùng một
+    # đích (x, h - 0) = (x, h).
+    #
+    # Phân xử bằng chính thứ đã dùng cho trùng tên ở gốc: vị trí các con. Đo
+    # được ở đây là phân xử DỨT KHOÁT, không phải đoán: 5 con của lớp icon đứng
+    # đúng (53.0, 249.104/154.85/60.598/342.207/436.46) — trùng khít cả 5 vị trí
+    # engine báo, còn tấm nền được 0. Điểm 0 thì vẫn bỏ như cũ, để không có chỗ
+    # nào lấy bừa phần tử đầu danh sách.
     bang_ten = {}
     for r in doc.get('roots', []):
         for n in _moi_node(r):
@@ -226,49 +297,88 @@ def ghep_chi_so(doc, cay_man, tk):
             if t:
                 bang_ten.setdefault(t, []).append(n)
     da_ghi = set()
+    # Một node có thể tới được bằng NHIỀU đường engine, và các đường ấy không
+    # phải lúc nào cũng nói cùng một tag. Đo trên 296 bộ cục: 8.054 node có từ
+    # hai đường trở lên, trong đó 30 node bị hai đường đặt HAI TAG KHÁC NHAU.
+    #
+    # Nguồn của chuyện đó: engine có những node LÚC CHẠY mà file không có.
+    # `CCScrollLayerList` sinh thêm một lớp chứa bên trong, nên đường đi qua nó
+    # lệch đúng MỘT mức so với file: engine `lMainToolbarRightButton/1/1/1` là
+    # lớp icon (106x560), còn theo chỉ số con của file thì ba mắt ấy rơi xuống
+    # tận `btnMainToolbarRightIconTask` (80x80). Đường ấy thắng chỉ vì nó SÂU
+    # hơn nên được ghi sau, và nó ghi tag 0 lên icon vừa được đường đúng đặt
+    # tag 1 — thanh công cụ lại về 0.
+    #
+    # Phân xử bằng HÌNH: engine báo hộp nào thì node phải đúng hộp ấy. Đây mới
+    # là chỗ dùng thật của phép đối chiếu hình mà chú thích dưới đây nói tới —
+    # trước giờ nó chỉ đếm chứ không quyết định gì. Đo được: trong 30 node kể
+    # trên, 27 node có ĐÚNG MỘT đường khớp hình, 0 node không đường nào khớp, và
+    # cả 27 lần giá trị đang có trong file đều là của đường khớp hình ấy.
+    de_xu = {}
     for duong in sorted(cay_man, key=lambda d: (d.count('/'), d)):
         phan = duong.split('/')
         neo = goc.get(phan[0])
         neo_ten = False
         if neo is None:
             uv = bang_ten.get(phan[0]) or []
-            if len(uv) != 1:
+            if not uv:
                 tk['goc-khac'] += 1
                 continue
             neo = uv
             neo_ten = True
             tk['neo-ten'] += 1
+            if len(uv) > 1:
+                tk['neo-nhieu'] += 1
         if len(phan) == 1:
             tk['goc'] += 1
             continue
+        # Con của NEO (không phải của `duong`): `ung_vien` là các node tên
+        # `phan[0]` — một tên TRẦN, nên con của neo luôn ở độ sâu 1. Lấy con
+        # của `duong` là sai hẳn: với `duong = 'lMainToolbarRight/1'` thì đó là
+        # con của chính node tag 1, điểm mọi ứng viên đều 0, và chỗ đáng ghép
+        # nhất lại thành chỗ bị bỏ.
+        con_engine = [cay_man[d] for d in cay_man
+                      if d.startswith(phan[0] + '/') and d.count('/') == 1]
         ung_vien = neo
         if len(ung_vien) == 1:
             nut = ung_vien[0]
         else:
-            # Nhiều node gốc trùng tên: phân xu bằng vị trí các con, cùng cách
+            # Nhiều node trùng tên: phân xu bằng vị trí các con, cùng cách
             # mà đường vị trí đang dùng.
-            con_engine = [cay_man[d] for d in cay_man
-                          if d.startswith(duong + '/') and d.count('/') == 1]
             nut = chon_ung_vien(ung_vien, con_engine)
+            if neo_ten and diem_ung_vien(nut, con_engine) <= 0:
+                # Không có căn cứ nào để chọn: bỏ, như đường cũ.
+                tk['neo-bo'] += 1
+                continue
+            if neo_ten:
+                tk['neo-chon'] += 1
         if nut is None:
             tk['lech-cay'] += 1
             continue
-        nut = theo_chi_so(nut, phan[1:])
+        nut, so_bac, dung_tren_lop_chua = theo_chi_so_cau(nut, phan[1:], tk)
         if nut is None:
             tk['lech-cay'] += 1
+            continue
+        if dung_tren_lop_chua:
+            # Đường dừng đúng trên lớp chứa: file KHÔNG có node nào ứng với nó.
+            # Ghi tag ở đây chính là lỗi cũ — nó đặt tag 0 của lớp chứa lên con
+            # thật đầu tiên của lớp cuộn.
+            tk['bac-cuoi'] += 1
             continue
         o = cay_man[duong]
         t = so_tag(o)
         if t is None:
             tk['khong-co-tag'] += 1
             continue
-        # Đối chiếu HÌNH — không dùng để ghép, dùng để biết đường chỉ số có
-        # đáng tin không. Lệch hình thường là do engine nới lớp phủ theo cửa sổ,
-        # đúng những chỗ đường vị trí trượt; vẫn ghi, nhưng đếm riêng.
-        if (abs(o.get('x', 0) - nut['x']) <= HINH
+        # Đối chiếu HÌNH — dùng để QUYẾT ĐỊNH khi nhiều đường nói khác nhau,
+        # và để đếm khi chỉ có một đường. Lệch hình thường là do engine nới lớp
+        # phủ theo cửa sổ (SetWHScaleToWinSize: 1366 -> 1429 trên máy ảo), đúng
+        # những chỗ đường vị trí trượt — nên lệch hình KHÔNG tự nó là sai.
+        khop_hinh = (abs(o.get('x', 0) - nut['x']) <= HINH
                 and abs(o.get('y', 0) - nut['y']) <= HINH
                 and abs(o.get('w', 0) - nut['w']) <= HINH
-                and abs(o.get('h', 0) - nut['h']) <= HINH):
+                and abs(o.get('h', 0) - nut['h']) <= HINH)
+        if khop_hinh:
             tk['khop-hinh'] += 1
             if neo_ten:
                 tk['neo-khop'] += 1
@@ -276,6 +386,20 @@ def ghep_chi_so(doc, cay_man, tk):
             tk['lech-hinh'] += 1
             if neo_ten:
                 tk['neo-lech'] += 1
+        de_xu.setdefault(id(nut), (nut, []))[1].append(
+                (khop_hinh, phan.count('/'), duong, t))
+
+    # Chọn cho từng node: ưu tiên đường KHỚP HÌNH, rồi tới đường NÔNG hơn
+    # (càng ít mức thì càng ít cơ hội lệch mức), rồi tới tên đường — để hai lần
+    # chạy luôn ra cùng kết quả.
+    for nut, ds in de_xu.values():
+        if len(ds) > 1:
+            tk['nhieu-duong'] += 1
+            if len({d[3] for d in ds}) > 1:
+                tk['duong-cheo'] += 1
+                if not any(d[0] for d in ds):
+                    tk['cheo-khong-hinh'] += 1
+        t = min(ds, key=lambda d: (not d[0], d[1], d[2]))[3]
         cu = nut.get('tag')
         if cu is None:
             tk['moi'] += 1
@@ -303,11 +427,71 @@ def ghep_cay(doc, cay_man, tk):
     return ghep_chi_so(doc, cay_man, tk)
 
 
+def con_do(cay, duong):
+    """Các mắt con TRỰC TIẾP của `duong` trong bảng đường dẫn đo được."""
+    sau = duong.count('/') + 1
+    return [cay[d] for d in cay
+            if d.startswith(duong + '/') and d.count('/') == sau]
+
+
+def muc_con_khop(cha, con_o):
+    """Mọi mắt engine của `con_o` có khớp một mắt con RIÊNG của `cha` không.
+
+    Khớp bằng VỊ TRÍ khít (GAN = 0,51 px) và mỗi mắt con của file chỉ được dùng
+    một lần — hai mắt engine không được đòi chung một mắt file.
+    """
+    dung = set()
+    for e in con_o:
+        for k in cha.get('children', []):
+            if id(k) in dung:
+                continue
+            if (abs(k['x'] - e['x']) <= GAN and abs(k['y'] - e['y']) <= GAN):
+                dung.add(id(k))
+                break
+        else:
+            return False
+    return True
+
+
+def ghep_qua_lop_chua(cha, con_o):
+    """Mắt này có phải LỚP CHỨA mà engine sinh thêm bên trong lớp cuộn không.
+
+    `ghep_chi_so` đã ghi nguồn của chuyện lệch mức: `CCScrollLayerList` sinh thêm
+    một lớp chứa bên trong, nên đường đi qua nó lệch đúng MỘT mức so với file.
+    Đường vị trí không bắc được qua mức ấy — file KHÔNG có node nào ứng với lớp
+    chứa, nên `chon_con` trượt, rồi cả cây con dưới nó trượt theo (`cha is None`).
+
+    Luật bắc, đo trên 283 màn: trong 351 lượt `chon_con` trượt, 18 lượt có con và
+    cha là lớp cuộn; 17 lượt thoả "MỌI mắt engine của mắt này khớp một mắt con
+    RIÊNG của lớp, sai lệch <= 0,51 px" — và ở cả 17, hộp lớp chứa engine báo bằng
+    hộp lớp cuộn (hai lượt `g_MainUIScrollLayer` lệch 1366 -> 1429 là do nới lớp
+    phủ theo cửa sổ, không phải lệch thật), tức lớp chứa đúng là bản sao của lớp.
+    Lượt thứ 18 (`RechargeActivity_descScroll`) có 0 con trong file mà engine báo
+    1 mắt con — chính luật "mọi mắt phải khớp" từ chối nó, không bắc.
+
+    Đo bằng một bộ dò tạm (không nằm trong repo): siết thêm "mỗi mắt con chỉ dùng
+    một lần" không đổi lấy một con số nào, nên luật chặt được giữ luôn.
+
+    Trượt thì KHÔNG bắc — luật này chỉ-thêm, không được đoán bừa.
+    """
+    return (bool(con_o)
+            and (cha.get('typeName') or '') in LOP_CUON
+            and muc_con_khop(cha, con_o))
+
+
 def ghep_mot_man(doc, cay):
-    """Trả về (số khớp, số không khớp). Gắn thẳng 'tag' vào node của doc."""
+    """Trả về (số khớp, số không khớp, sổ đếm). Gắn thẳng 'tag' vào node của doc.
+
+    Sổ đếm ghi riêng phần do CẦU QUA LỚP CHỨA làm ra (`bac` = số lượt bắc,
+    `moi`/`doi`/`trung` = tag cầu ghi mới / ghi đè khác đi / trùng tag cũ), vì
+    đó đúng là phần thay đổi so với khi chưa có cầu.
+    """
+    tk = collections.Counter()
     goc = {}
     da_dung = set()
     da_giai = set()          # node bo cuc da duoc mot duong engine nhan
+    goc_bac = set()          # đường của LỚP CHỨA đã bắc qua
+    duoi_bac = set()         # đường nằm DƯỚI một lớp chứa đã bắc qua
     khop = truot = 0
     # Sap theo do sau de cha luon duoc giai truoc con.
     for duong in sorted(cay, key=lambda d: d.count('/')):
@@ -340,14 +524,31 @@ def ghep_mot_man(doc, cay):
         o_cha = cay.get(duong_cha) or {}
         ti_le = (o_cha.get('w', 0) / cha['w'] if cha.get('w') else 1.0,
                  o_cha.get('h', 0) / cha['h'] if cha.get('h') else 1.0)
-        sau = duong.count('/') + 1
-        con_engine = [cay[d] for d in cay
-                      if d.startswith(duong + '/') and d.count('/') == sau]
+        con_engine = con_do(cay, duong)
         con = chon_con(cha, o, da_dung, ti_le, con_engine)
+        duoi_cau = duong_cha in goc_bac or duong_cha in duoi_bac
         if con is None:
+            # CẦU QUA LỚP CHỨA: xem `ghep_qua_lop_chua`. Cha là lớp cuộn và mọi
+            # mắt engine của mắt này khớp các con của lớp — thì mắt này CHÍNH LÀ
+            # lớp chứa engine sinh thêm, và nó ứng với chính lớp cuộn ấy.
+            if ghep_qua_lop_chua(cha, con_engine):
+                goc[duong] = cha
+                goc_bac.add(duong)
+                tk['bac'] += 1
+                continue
             truot += 1
             continue
-        con['tag'] = int(phan[-1])
+        t = int(phan[-1])
+        cu = con.get('tag')
+        if duoi_cau:
+            if cu is None:
+                tk['moi'] += 1
+            elif cu == t:
+                tk['trung'] += 1
+            else:
+                tk['doi'] += 1
+            duoi_bac.add(duong)
+        con['tag'] = t
         da_dung.add(id(con))
         khop += 1
         # Node nay da duoc mot duong khac nhan thi KHONG di tiep xuong con
@@ -360,7 +561,7 @@ def ghep_mot_man(doc, cay):
             continue
         da_giai.add(id(con))
         goc[duong] = con
-    return khop, truot
+    return khop, truot, tk
 
 
 def main():
@@ -380,19 +581,27 @@ def main():
     print('co du lieu do cho %d man' % len(nodes))
 
     tong_khop = tong_truot = tong_man = 0
+    tk_vt = collections.Counter()
     for man, cay in sorted(nodes.items()):
         f = LAYOUT / (man.replace('.xgg', '') + '.json')
         if not f.exists():
             continue
         doc = json.loads(f.read_text('utf-8'))
-        khop, truot = ghep_mot_man(doc, cay)
+        khop, truot, tk = ghep_mot_man(doc, cay)
         tong_khop += khop
         tong_truot += truot
         tong_man += 1
+        tk_vt.update(tk)
         if a.ghi:
             f.write_text(json.dumps(doc, ensure_ascii=False), encoding='utf-8')
     print('%d man: %d node gan duoc tag theo VI TRI, %d khong khop duoc'
           % (tong_man, tong_khop, tong_truot))
+    print('   trong do %d luot BAC QUA LOP CHUA (engine sinh them mot muc):'
+          % tk_vt['bac'])
+    print('   %-12s %6d   (node duoi lop chua, truoc khong co tag)'
+          % ('moi', tk_vt['moi']))
+    print('   %-12s %6d   (tag CU khac tag do lai)' % ('doi', tk_vt['doi']))
+    print('   %-12s %6d   (tag CU dung bang tag do lai)' % ('trung', tk_vt['trung']))
     print('(chay lai voi --ghi de ghi vao layout_ref)')
 
     # --- Đường thứ hai: ghép theo CHỈ SỐ CON (emu_tags.py --cay) ---
@@ -419,9 +628,19 @@ def main():
     print('\n%d man ghep lai theo CHI SO CON (trong do %d man dau do di KHONG tron):'
           % (tk['man'], tk['man-thieu']))
     for k in ('moi', 'trung', 'doi', 'lech-hinh', 'khop-hinh', 'khong-co-tag',
-              'lech-cay', 'goc', 'goc-khac', 'neo-ten', 'neo-khop', 'neo-lech'):
+              'lech-cay', 'bac', 'bac-cuoi', 'goc', 'goc-khac', 'neo-ten',
+              'neo-nhieu', 'neo-chon',
+              'neo-bo', 'neo-khop', 'neo-lech', 'nhieu-duong', 'duong-cheo',
+              'cheo-khong-hinh'):
         print('   %-12s %6d' % (k, tk[k]))
     print('   ("moi" = node nay truoc khong co tag; "doi" = tag CU khac tag do lai)')
+    print('   ("bac" = so muc BAC QUA LOP CHUA cua lop cuon; "bac-cuoi" = duong'
+          ' DUNG ngay tren lop chua, khong co node file nao ung voi no nen KHONG'
+          ' ghi tag — truoc day cho nay dat tag cua lop chua len con that dau)')
+    print('   ("neo-nhieu" = ten neo mo ho; "neo-chon" = phan xu duoc bang vi tri'
+          ' con; "neo-bo" = mo ho ma khong co can cu, bo qua)')
+    print('   ("nhieu-duong" = node co >=2 duong engine toi; "duong-cheo" = chung'
+          ' noi tag KHAC nhau; "cheo-khong-hinh" = cheo ma khong duong nao khop hinh)')
     if a.ghi:
         print('da ghi vao layout_ref')
 

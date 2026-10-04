@@ -82,3 +82,8 @@ work/blgraph.json
 
 # Bãi nháp của các phép dò .xml: work/z.json là bản đổ của MỘT file .xml
 work/z.json
+
+# Bãi nháp mồ côi của một phép dò mô hình (442 KB): work/_h.json là bảng xương và
+# điểm gắn của Hoplite, nhưng KHÔNG script nào trong work/ sinh hay đọc nó — nên
+# không dựng lại được bằng lệnh nào. Chặn để `git add -A` không đẩy lên repo.
+work/_h.json

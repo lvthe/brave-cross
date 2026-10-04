@@ -129,6 +129,14 @@ R:on("ClientEnterGame", function(ctx)
 		bNew and "nguoi choi moi" or "nap tu file luu", OfflineStore:count()))
 
 	-- errCode, tGameUserData, sngData, tOtherData, tServerConfig
+	--
+	-- Lực chiến KHÔNG điền ở đây. Máy chủ thật tính sẵn số ấy rồi mới gửi khối
+	-- dữ liệu xuống (share_HeroLogic.lua:113), nên lớp này phải làm thay — nhưng
+	-- phải làm SAU khi khối dữ liệu vào tới client, mà `ctx:call` chỉ ĐẨY vào
+	-- hàng đợi rồi khung hình sau mới chạy (net.lua:116 -> :235). Đo được:
+	-- đặt ở đây thì `offline.log` ghi `luc chien: dien 0/0 tuong` và nhãn `Lực`
+	-- vẫn ra 0. Việc điền nối vào sự kiện `OnEnterGame` — xem
+	-- `OfflineLucChien:noi_su_kien` (offline/luc_chien.lua).
 	ctx:call("G_GameWorld", "OnServerEnterGame",
 		0, tUserData, {}, otherData(), serverConfig())
 end)

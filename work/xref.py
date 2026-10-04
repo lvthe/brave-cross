@@ -7,7 +7,9 @@ import struct
 import sys
 from elftools.elf.elffile import ELFFile
 
-PATH = 'vn/apk/lib/armeabi-v7a/libgame.so'
+import cay
+
+PATH = cay.SO
 
 
 def load(path=PATH):

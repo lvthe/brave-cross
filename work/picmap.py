@@ -19,7 +19,9 @@ import capstone
 from armdis import TEXT
 
 BASE, DATA = TEXT
-CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'picmap.pkl')
+import cay
+
+CACHE = cay.cache('picmap.pkl')
 _md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
 
 

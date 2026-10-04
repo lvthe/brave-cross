@@ -3,8 +3,14 @@
 
     python bank.py --json                       # kiem ke moi bank
     python bank.py --json --out bank_ref.json
-    python bank.py --all --out ../../bravecross-game/assets_ref/audio
+    python bank.py --all --out <cay.dich_anh()>/audio
     python bank.py --bank Archer --out /tmp/thu
+    python bank.py --setup                      # bang setup Vorbis + kiem chieu lai
+
+Duong ra NEN lay tu `cay.dich_anh()` chu dung viet thang
+`../../bravecross-game/assets_ref/audio`: ban 1.31 ghi vao do se tron 1647
+subsound vao cho 1498 subsound cua ban VN. `main()` goi `cay.giu_cho()` nen
+viec do bi chan, nhung lay dung duong ngay tu dau thi hon.
 
 Vi sao phai tu boc: trong ca cay du an KHONG co mot file am thanh thuong nao
 (ogg/mp3/wav/m4a/aac/caf/flac/mid/xm/it/mod — 0 hit), va tren may khong co
@@ -45,30 +51,69 @@ Ba tang, do het chu khong suy:
    tu `libfmod.so` roi tu kiem bang chinh bo doc — libfmod doi thi no bao loi
    ngay, chu khong im lang xuat rac.
 
-   Tim lai bang: `python vorbis_probe.py vn/apk/lib/armeabi-v7a/libfmod.so`.
+   VI TRI DOI THEO BAN, DO DAI THI KHONG. Ba goi setup cua ban VN 1.26 va ban CN
+   1.31 GIONG HET NHAU tung byte (md5 dd43ce39 / fb6b5d94 / 9d869d5b), chi nam o
+   cho khac: 0x84d3ac87 tu 1039812 -> 807563, 0xc55efa16 tu 1018984 -> 821784,
+   0x38aa59ce tu 1035416 -> 848345. Nen `SETUP_DAI` dung chung, con `SETUP_OFF`
+   tach theo ban. Ban nao chua co trong `SETUP_OFF` thi `_quet_setup()` tu quet
+   lay — xem `python bank.py --setup`.
+
+   Tim lai bang bang tay: `python vorbis_probe.py <libfmod.so>`.
 
 4. SO KENH: truong `channels` cua FSB5 KHONG phai so kenh cua dong Vorbis. Do
    bang chinh trinh giai ma cua Godot (libvorbis) tren 18 file ghep tu 6
    subsound, moi subsound ghep o ba cach khai 1/2/6 kenh — xem `chon_kenh()`.
    Tom tat: 56/1498 subsound phai DOI so kenh so voi FSB5 ghi moi doc duoc.
 """
+import hashlib
 import os
 import struct
 import sys
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-LIBFMOD = os.path.join(HERE, 'vn', 'apk', 'lib', 'armeabi-v7a', 'libfmod.so')
-BANKS = os.path.join(HERE, 'vn', 'apk', 'assets', 'banks')
+LIBFMOD = cay.LIBFMOD
+BANKS = cay.BANKS
 
 RATES = [4000, 8000, 11000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 96000]
 KENH = {0: 1, 1: 2, 2: 6, 3: 8}
 
-# setup_id -> (offset trong libfmod.so, do dai goi setup)
-SETUP_AT = {
-    0x84d3ac87: (1039812, 3189),
-    0x38aa59ce: (1035416, 3832),
-    0xc55efa16: (1018984, 3547),
+# setup_id -> do dai goi setup. DO DAI la thu khong doi giua cac ban.
+SETUP_DAI = {
+    0x84d3ac87: 3189,
+    0x38aa59ce: 3832,
+    0xc55efa16: 3547,
 }
+
+# setup_id -> md5 cua goi setup. Do la thu phan biet 'dung khoi' voi 'khoi khac
+# ma tinh co cung do dai'. Do lai o CA HAI ban, ra dung ba gia tri nhu nhau:
+#
+#   0x84d3ac87  dd43ce3944a7f50f0676c694f6206ec8
+#   0x38aa59ce  9d869d5b04a8691e2e27fa629e1b7d79
+#   0xc55efa16  fb6b5d944eda9a6bfdad4ba28f52e382
+#
+# `chon_kenh()` doi chieu md5 sau khi doc, nen mot libfmod khac di ma goi setup
+# doi noi dung thi no BAO LOI — phep kiem do dai mot minh khong bat duoc truong
+# hop do (khoi dai bang nhau, noi dung khac, ra .ogg nghe duoc nhung sai).
+SETUP_MD5 = {
+    0x84d3ac87: 'dd43ce3944a7f50f0676c694f6206ec8',
+    0x38aa59ce: '9d869d5b04a8691e2e27fa629e1b7d79',
+    0xc55efa16: 'fb6b5d944eda9a6bfdad4ba28f52e382',
+}
+
+# Vi tri tung goi trong libfmod.so, theo ban. Ba goi setup GIONG HET NHAU tung
+# byte giua ban VN 1.26 va ban CN 1.31 (da doi chieu md5 ca ba: dd43ce39 /
+# fb6b5d94 / 9d869d5b), nhung nam o cho khac — nen offset phai theo ban, con
+# do dai thi dung chung.
+SETUP_OFF = {
+    'vn':    {0x84d3ac87: 1039812, 0xc55efa16: 1018984, 0x38aa59ce: 1035416},
+    'cn131': {0x84d3ac87:  807563, 0xc55efa16:  821784, 0x38aa59ce:  848345},
+}
+
+# setup_id -> (offset, do dai) cho BAN DANG LAM. Dien boi _nap_setup() o lan
+# dung dau: ban co bang thi lay bang, ban chua co thi tu quet libfmod.
+SETUP_AT = {}
 
 # vgmstream (vorbis_custom_utils_fsb.c) co dinh hai co khoi nay cho MOI setup
 # cua FSB5: vorbis_get_blocksize_exp(2048) va (256). Do la ly do mot setup
@@ -269,6 +314,86 @@ def doc_setup(b, pos, kenh=2):
 _cache_setup = {}
 
 
+def quet_setup(b):
+    """Quet `b` tim khoi setup, nhan theo DO DAI. Tra {do_dai: [offset...]}.
+
+    Bo doc nghiem ngat den muc bit framing cuoi cung phai bang 1, nen chuoi
+    `\\x05vorbis` nam trong du lieu khac cung truot theo — khong the nhan nham
+    mot khoi rac. Mot cho co the doc duoc o NHIEU so kenh va ra nhieu do dai
+    khac nhau, nen ghi HET, khong dung o cai dau tien: dung som thi mot cho
+    vua doc duoc o so kenh sai ma tinh ra dung do dai se che mat cho that.
+    """
+    ra = {}
+    i = -1
+    while True:
+        i = b.find(b'\x05vorbis', i + 1)
+        if i < 0:
+            break
+        for k in range(1, 9):
+            try:
+                n, _ncb, _fl = doc_setup(b, i, k)
+            except (ValueError, IndexError):
+                continue
+            if n in SETUP_DAI.values():
+                ra.setdefault(n, set()).add(i)
+    return ra
+
+
+def _quet_setup():
+    """Ban chua co bang offset: tu quet libfmod.so de dung bang.
+
+    Do dai goi setup khong doi giua cac ban (da doi chieu md5 ca ba goi giua ban
+    VN 1.26 va ban CN 1.31), con offset thi doi theo ban. Nen cho nay nhan khoi
+    bang do dai.
+
+    Khop nhieu cho, hoac hai setup id cung ra mot cho: BAO LOI, khong tu chon
+    bua. Chon sai thi `chon_kenh` van doc ra mot khoi hop le — ket qua sai se
+    hoan toan im lang, dung loai loi te nhat.
+    """
+    if not os.path.isfile(LIBFMOD):
+        raise IOError('khong thay %s' % LIBFMOD)
+    with open(LIBFMOD, 'rb') as f:
+        b = f.read()
+    theo = quet_setup(b)
+    ra, thieu, nhieu = {}, [], []
+    for sid, dai in sorted(SETUP_DAI.items()):
+        cho = sorted(theo.get(dai, ()))
+        if not cho:
+            thieu.append('0x%08x (dai %d)' % (sid, dai))
+        elif len(cho) > 1:
+            nhieu.append('0x%08x (dai %d): %d cho %s'
+                         % (sid, dai, len(cho), ' '.join(str(c) for c in cho)))
+        else:
+            ra[sid] = (cho[0], dai)
+    dung_cho = {}
+    for sid, (off, _dai) in sorted(ra.items()):
+        if off in dung_cho:
+            nhieu.append('0x%08x va 0x%08x cung ra cho %d' % (dung_cho[off], sid, off))
+        dung_cho[off] = sid
+    if thieu or nhieu:
+        raise ValueError(
+            'ban %r: khong dung duoc bang setup tu dong\n  thieu: %s\n  mo ho: %s\n'
+            '  (lien quan: %s)' % (
+                cay.TEN, ', '.join(thieu) or 'khong',
+                '; '.join(nhieu) or 'khong', LIBFMOD))
+    return ra
+
+
+def _nap_setup():
+    """Dien SETUP_AT cho BAN DANG LAM, tra ve chinh dict do.
+
+    Ban co bang thi lay bang (khong quet, cho nhanh); ban chua co thi quet.
+    """
+    if SETUP_AT:
+        return SETUP_AT
+    if cay.TEN in SETUP_OFF:
+        SETUP_AT.update({sid: (off, SETUP_DAI[sid])
+                         for sid, off in SETUP_OFF[cay.TEN].items()})
+    else:
+        SETUP_AT.update(_quet_setup())
+    return SETUP_AT
+
+
 def chon_kenh(sid, kenh_fsb):
     """Tra (bytes goi setup, {mode: co khoi}, so_kenh_dung, lech).
 
@@ -300,14 +425,25 @@ def chon_kenh(sid, kenh_fsb):
     if sid in _cache_setup:
         goi, dung, lech, fl = _cache_setup[sid]
         return goi, _khoi(fl), dung, lech
+    _nap_setup()
     if sid not in SETUP_AT:
-        raise KeyError('setup id la: 0x%08x' % sid)
+        raise KeyError('setup id la: 0x%08x (ban %s)' % (sid, cay.TEN))
     if not os.path.isfile(LIBFMOD):
         raise IOError('khong thay %s' % LIBFMOD)
     off, dai = SETUP_AT[sid]
     with open(LIBFMOD, 'rb') as f:
         f.seek(off)
         goi = f.read(dai)
+    # Do dai mot minh khong du: khoi khac hoan toan van co the dai y het, va luc
+    # do `doc_setup()` van doc tron ven — ra .ogg nghe duoc nhung sai, khong mot
+    # loi nao. Doi chieu md5 moi bat duoc truong hop do.
+    md5 = SETUP_MD5.get(sid)
+    if md5 and hashlib.md5(goi).hexdigest() != md5:
+        raise ValueError(
+            'setup 0x%08x @%d trong %s: md5 la %s, khong phai %s.\n'
+            '  Goi setup da doi noi dung; phep kiem do dai khong bat duoc loi nay.\n'
+            '  Do lai roi cap nhat SETUP_MD5, dung chay tiep.'
+            % (sid, off, LIBFMOD, hashlib.md5(goi).hexdigest(), md5))
     thu = [kenh_fsb] + [x for x in range(1, 9) if x != kenh_fsb]
     dung = None
     fl = None
@@ -320,8 +456,10 @@ def chon_kenh(sid, kenh_fsb):
             dung, fl = k, f_k
             break
     if dung is None:
-        raise ValueError('setup 0x%08x: khong so kenh nao doc het %d byte'
-                         % (sid, dai))
+        raise ValueError('setup 0x%08x: khong so kenh nao doc het %d byte doc tu '
+                         '%s @%d. Offset sai thi ra dung loi nay chu khong im lang '
+                         'xuat rac — xem lai SETUP_OFF / _quet_setup().'
+                         % (sid, dai, LIBFMOD, off))
     lech = (dung != kenh_fsb)
     _cache_setup[sid] = (goi, dung, lech, fl)
     return goi, _khoi(fl), dung, lech
@@ -627,6 +765,40 @@ def _gdignore(out):
             f.write('# sinh boi brave-cross/work/bank.py - xem _gdignore()\n')
 
 
+def lam_setup():
+    """In bang setup dang dung, va doi chieu voi mot lan QUET DOC LAP.
+
+    Bang cung (SETUP_OFF) chi la con so chep lai tu mot lan do truoc. Cho nay
+    quet lai libfmod.so roi doi chieu: khop thi bang cung dang tin, lech thi
+    bao ngay. Do la thu phan biet 'da do' voi 'da chep'.
+    """
+    bang = dict(_nap_setup())
+    print('ban %s  %s' % (cay.TEN, LIBFMOD))
+    with open(LIBFMOD, 'rb') as f:
+        b = f.read()
+    for sid, (off, dai) in sorted(bang.items()):
+        md5 = hashlib.md5(b[off:off + dai]).hexdigest()
+        mong = SETUP_MD5.get(sid)
+        print('  0x%08x  @%-9d dai %-5d md5 %s%s'
+              % (sid, off, dai, md5,
+                 '' if mong is None else ('  khop md5' if md5 == mong
+                                          else '  LECH MD5 (mong %s)' % mong)))
+    theo = quet_setup(b)
+    print('quet doc lap: %d khoi nhan duoc (theo do dai)'
+          % sum(len(v) for v in theo.values()))
+    lech = 0
+    for sid, (off, dai) in sorted(bang.items()):
+        cho = sorted(theo.get(dai, ()))
+        if cho == [off]:
+            print('  0x%08x  khop (quet cung ra @%d)' % (sid, off))
+        else:
+            lech += 1
+            print('  0x%08x  LECH: bang ghi @%d, quet ra %s'
+                  % (sid, off, ' '.join('@%d' % c for c in cho) or 'khong cho nao'))
+    print('ket luan: %s' % ('khop het' if not lech else 'LECH %d muc' % lech))
+    return 1 if lech else 0
+
+
 def main():
     import argparse
     import json
@@ -636,8 +808,12 @@ def main():
     ap.add_argument('--all', action='store_true', help='quet het moi bank')
     ap.add_argument('--bank', action='append', default=[],
                     help='chi lam bank co ten nay (lap lai duoc)')
+    ap.add_argument('--setup', action='store_true',
+                    help='in bang setup Vorbis dang dung + doi chieu lai bang quet')
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
+    if a.setup:
+        return lam_setup()
 
     paths = duong_bank()
     if a.bank:
@@ -646,6 +822,17 @@ def main():
                  if os.path.basename(p)[:-5].lower() in muon]
     if not a.all and not a.bank and not a.json:
         ap.error('chon --json hoac --all hoac --bank <ten>')
+
+    # Chan ghi de vao cho cua BAN KHAC truoc khi lam bat cu viec gi. Ban 1.31 co
+    # 1647 subsound, ban VN co 1498: ghi cung cho thi khong loi nao nem ra, chi
+    # co hai bo am thanh lan vao nhau. Kiem mot lan o day, khong phai moi file.
+    if a.out and not a.json:
+        os.makedirs(a.out, exist_ok=True)
+        loi = cay.giu_cho(a.out)
+        if loi:
+            sys.exit(loi)
+        cay.danh_dau(a.out)
+        _gdignore(a.out)
 
     kiem_ke = []
     hong = []
@@ -670,8 +857,6 @@ def main():
             if lech:
                 lech_kenh += 1
             if a.out and not a.json:
-                os.makedirs(a.out, exist_ok=True)
-                _gdignore(a.out)
                 with open(os.path.join(a.out, ten_file_), 'wb') as f:
                     f.write(ogg)
 

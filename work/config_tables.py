@@ -22,9 +22,11 @@ import pathlib
 import shutil
 import sys
 
+import cay
+
 HERE = pathlib.Path(__file__).resolve().parent
-NGUON = HERE / 'vn' / 'decrypted' / 'assets' / 'config'
-DICH = HERE.parent.parent / 'bravecross-game' / 'data_ref' / 'config'
+NGUON = pathlib.Path(cay.ASSETS) / 'config'
+DICH = pathlib.Path(cay.dich('config'))
 
 
 def main() -> int:

@@ -477,15 +477,48 @@ class Xgg(object):
 
     # Offset cua cap (str_off, str_len) chua TEN ANH, theo tung co ban ghi.
     # CHUA doc tu libgame.so — do bang thong ke roi tu kiem chung, nen phai
-    # coi la PHONG DOAN cho toi khi doc duoc ham nap that su:
+    # coi la PHONG DOAN cho toi khi doc duoc ham nap that su.
     #
-    #   co 244 -> +0xEC   90% node sprite suy ra dung kich thuoc
-    #   co 260 -> +0xF4   97%
-    #   co 248 -> +0xF0    4%  <- khong dung duoc, bo han
+    # CO BAN GHI = LOAI NODE, khong phai kich thuoc tinh co (do tren 580 file:
+    # 216 CCNode/CCScene, 220 CCLayer, 232 CCParticleSystemQuad, 244 CCSprite,
+    # 248 CCScale9Sprite, 252 CCScrollLayer, 256 CCProgressTimer, 260 CCButton,
+    # 312 CCLayerGradientEx, 320 CCLayerColorRoundRect/CCLabelTTF, 324 CCEditBox,
+    # 352 CCLabelTTF).
     #
-    # Cac co khac (216, 220, 320, 352) khong co ten anh nao — dung, vi chung
-    # la layer va label.
-    IMG_FIELD = {244: 0xEC, 260: 0xF4, 256: 0xEC, 324: 0xF0}
+    #   co 244 -> +0xEC   CCSprite         10.591 node, 99,9% khop kich thuoc
+    #   co 248 -> +0xF0   CCScale9Sprite    4.126 node, 16,4% khop kich thuoc
+    #   co 256 -> +0xEC   CCProgressTimer     323 node
+    #   co 260 -> +0xF4   CCButton          1.037 node, 99,9%
+    #   co 324 -> +0xF0   CCEditBox            40 node
+    #
+    # **CO 248 TUNG BI BO O DAY, VA DO LA MOT PHEP DO SAI.** Ghi chep cu noi
+    # "+0xF0 chi 4% dung" roi bo han — nhung "dung" o day la phep tu kiem
+    # `_xac_nhan`, tuc doi kich thuoc O CUA NODE bang kich thuoc GOC cua sprite
+    # trong section C. Voi CCScale9Sprite thi O bi keo 9-slice con sprite thi
+    # khong, nen kich thuoc gan nhu KHONG BAO GIO bang nhau: 16,4% khop la
+    # dung nhu phai the, khong phai bang chung chong lai. So sanh: cung phep
+    # do ay cho CCSprite (khong keo) ra 99,9%. Bo 248 vi ly do ay da lam
+    # **4.126 node mat anh** tren ca 296 bo cuc — xem duoi.
+    #
+    # Doi chung DOC LAP, khong dung offset nao: kho chuoi ghi lien nhau
+    # "<uuid36><ten lop><ten instance><tai nguyen>", nen chuoi NGAY SAU ten
+    # instance phai chinh la tai nguyen cua node do. Tren 377 node 248 byte co
+    # ten: **377/377** chuoi o +0xF0 nam ngay sau ten (210 cai lien ke, 141 cai
+    # cach vai byte vi co them o tieng dong truoc no). Khong cai nao khong thay.
+    #
+    # Do anh huong truoc khi doi: 5.189 node 248 byte thi **3.607 node truoc
+    # khong co anh nao nay co anh**, 503 node ten Y HET ten dang suy theo kich
+    # thuoc (hai duong doc lap cung ra mot ket qua), chi **16 node doi ten** —
+    # va 16 cho do dung la cho phep khop kich thuoc chon nham hang xom
+    # (`v6/ui_background098.png` -> `...099.png`, `...100.png`).
+    #
+    # Con `+0xE0` cua ban ghi 248 byte: chi **19 node** co, va toan bo la
+    # `../png/guide/ui_guide_background.png` — mot o rieng (anh nen cua lop
+    # huong dan), KHONG phai o anh chung. Khong dung.
+    #
+    # Cac co khac (216, 220, 252, 312, 320, 352) khong co ten anh nao — dung,
+    # vi chung la layer, scroll, gradient va label.
+    IMG_FIELD = {244: 0xEC, 248: 0xF0, 256: 0xEC, 260: 0xF4, 324: 0xF0}
 
     def _anh_theo_co(self, nd):
         """Khop anh ROI (section D) theo kich thuoc node.

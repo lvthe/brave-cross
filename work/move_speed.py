@@ -64,7 +64,10 @@ import glob
 import argparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_MAP = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'map')
+
+import cay
+
+DEFAULT_MAP = os.path.join(cay.ASSETS, 'map')
 
 ## 1 ô = 100 px.
 O_PX = 100.0
@@ -132,8 +135,8 @@ def quet(thu_muc):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--map', default=DEFAULT_MAP, help='mac dinh: %(default)s')
-    ap.add_argument('--out', default=os.path.join(
-        HERE, '..', '..', 'bravecross-game', 'data_ref'))
+    ap.add_argument('--out', default=cay.dich(),
+                    help='mac dinh: %(default)s')
     a = ap.parse_args()
     if not os.path.isdir(a.map):
         raise SystemExit('khong thay %s' % a.map)
@@ -141,6 +144,10 @@ def main():
     if not bang:
         raise SystemExit('khong doc duoc toc do nao')
     os.makedirs(a.out, exist_ok=True)
+    loi = cay.giu_cho(a.out)
+    if loi:
+        sys.exit(loi)
+    cay.danh_dau(a.out)
     dich = os.path.join(a.out, 'move_ref.json')
     with open(dich, 'w', encoding='utf-8') as fp:
         json.dump({

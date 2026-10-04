@@ -371,6 +371,54 @@ class Anim(object):
             out.append(self._name_at(p))
         return out
 
+    def sprite_anchors(self, off, count):
+        """Diem neo cua tung anh: cap float (x, y) o +0x08 cua ban ghi tham chieu.
+
+        Neo nam TRONG O ANH CUA CHINH ANH AY (khong phai toa do xuong), va no la
+        thuoc tinh cua ANH chu khong cua xuong: do tren 397 file .xml thi
+        15.237/15.238 ten anh khai CUNG mot neo o moi rig dung chung — ngoai le
+        duy nhat la `ZhaoYun_Eff-Line_instant`, va 12.761/12.957 (98,5%) neo nam
+        gon trong o anh cua no.
+
+        Ban goc doc dung cap nay: `rig/sng_rig.gd` truoc day bo qua no va dat
+        CANH DAY anh len goc xuong, do ra thi neo cua chinh anh trung goc xuong
+        chi 2.977/27.948 cap xuong->anh (10,7%).
+
+        Tra ve dict ten -> [x, y]; ten trung thi giu cai dau tien. Tra ve LIST chu
+        khong phai tuple de `export._lam_sach_json` di xuong duoc — no chi de quy
+        vao dict/list, nen mot tuple lot luoi se lam `json.dump(allow_nan=False)`
+        nem loi thay vi ghi ra file JSON hong.
+        """
+        out = collections.OrderedDict()
+        for j in range(count):
+            p = self.ref_base + off + j * REF_REC
+            if p + REF_REC > self.size:
+                raise AnimError('tham chieu sprite vuot cuoi file')
+            ten = self._name_at(p)
+            if ten in out:
+                continue
+            out[ten] = list(struct.unpack_from('<2f', self.d, p + 0x08))
+        return out
+
+    def all_anchors(self):
+        """Gop `sprite_anchors` cua MOI ban ghi tham chieu trong file.
+
+        Chi `parts()` mang ban ghi tham chieu sprite (`bones()` khong co), va do
+        cung dung la duong `sng_rig.gd:_sprite_for()` doc, nen quet het `parts()`
+        la phu het duong ve cua ban dung.
+        """
+        out = collections.OrderedDict()
+        for i in range(self.u(0x20)):
+            r = self.part_base + i * 0x10
+            sub_off, sub_n = self.u(r + 8), self.u(r + 0xc)
+            for k in range(sub_n):
+                q = self.part_sub + sub_off + k * 0x10
+                for ten, neo in self.sprite_anchors(self.u(q + 8),
+                                                    self.u(q + 0xc)).items():
+                    if ten not in out:
+                        out[ten] = neo
+        return out
+
     def parts(self):
         out = []
         for i in range(self.u(0x20)):
@@ -396,6 +444,9 @@ class Anim(object):
             ('file', self.name), ('size', self.size),
             ('parts', self.parts()),
             ('sprites', self.sprites()),
+            # Neo theo TUNG ANH (xem `all_anchors`). `rig/sng_rig.gd` dung no de
+            # dat anh sao cho neo nam tren goc xuong — do la luat cua ban goc.
+            ('spriteAnchors', self.all_anchors()),
             ('groups', self.groups()),
         ])
 

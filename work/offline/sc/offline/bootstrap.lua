@@ -84,12 +84,18 @@ function OfflineBootstrap:baseInfo()
 	t.CharacterName = self.NAME      -- ĐẶT
 	t.DeviceId = "offline-device"    -- ĐẶT
 	t.CreateTime = os.time()         -- ĐẶT: lúc tạo nhân vật (CUIMainTopTool đọc)
-	-- Giới tính nhân vật chính: bản gốc cho người chơi CHỌN lúc tạo, offline
-	-- không có bước đó nên ĐẶT. HeroLogic:GetHeroSpriteName trả "PlayerM" khi
-	-- Gender bật, "PlayerW" khi tắt -> chữ thứ 7 của tên armature (M/W), quyết
-	-- định hình nhân vật chính trên sân. Để FALSE = nữ, khop nhan vat chinh
-	-- (co gai) cua ban goc.
-	t.Gender = false                 -- ĐẶT: nữ (Player000W03W)
+	-- Gioi tinh nhan vat chinh: ban goc cho nguoi choi CHON luc tao, offline
+	-- khong co buoc do nen phai DAT. HeroLogic:GetHeroSpriteName tra "PlayerM"
+	-- khi Gender bat, "PlayerW" khi tat -> chu thu 7 cua ten armature (M/W),
+	-- quyet dinh hinh nhan vat chinh tren san.
+	--
+	-- Gia tri lay tu CHINH BANG CAU HINH CUA BAN GOC, khong suy tu anh: muc
+	-- GameUserBaseInfoReset trong data_ref/config/share/KDBGameCommonConfig.xgg
+	-- ghi Gender = True, HeroID = 25 -> nhan vat chinh mac dinh la NAM
+	-- (Player000M03W). Cho nay truoc day DAT false (nu) voi ly do "khop nhan
+	-- vat chinh (co gai) cua ban goc" — ly do ay SAI voi du lieu, va no la
+	-- nguon cua hinh nhan vat sai.
+	t.Gender = true                  -- ĐO: GameUserBaseInfoReset.Gender
 	return t
 end
 
@@ -223,11 +229,13 @@ function OfflineBootstrap:ensure()
 			g.FirstEnterGameTime = os.time()
 			OfflineStore.dirty = true
 		end
-		-- Bù cho bản lưu cũ dat Gender = true (nam). Doi ve nu de khop nhan vat
-		-- chinh ban goc (xem baseInfo).
+		-- Bu cho ban luu cu tao luc cho nay con DAT false: `false` ay khong
+		-- phai nguoi choi chon (offline khong co buoc tao nhan vat) ma la gia
+		-- tri SAI cua chinh ta, nen sua thang ve gia tri that cua ban goc
+		-- (GameUserBaseInfoReset.Gender = True — xem baseInfo).
 		local b = OfflineStore.data.GameUserBaseInfo
-		if type(b) == "table" and b.Gender ~= false then
-			b.Gender = false
+		if type(b) == "table" and b.Gender ~= true then
+			b.Gender = true
 			OfflineStore.dirty = true
 		end
 		return false

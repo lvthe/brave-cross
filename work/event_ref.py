@@ -60,13 +60,14 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import bank  # noqa: E402
+import cay  # noqa: E402
 
 # Ba bang nay NAM SAN trong APK dang XML tran (khong ma hoa) — doc thang, khong
 # chep lai mot ban.
-BANK_XML = HERE / 'vn' / 'apk' / 'assets' / 'banks'
-DICH = HERE.parent.parent / 'bravecross-game' / 'data_ref' / 'event_ref.json'
+BANK_XML = pathlib.Path(cay.BANKS)
+DICH = pathlib.Path(cay.dich('event_ref.json'))
 SC_LUA = HERE.parent.parent / 'bravecross-game' / 'sc'
-LIBGAME = HERE / 'vn' / 'apk' / 'lib' / 'armeabi-v7a' / 'libgame.so'
+LIBGAME = pathlib.Path(cay.SO)
 
 EVENT = re.compile(r'event:/[^"<\'\s\\\x00]{1,80}')
 DUOI = re.compile(r'[\d_\s]+$')

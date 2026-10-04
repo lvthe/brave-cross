@@ -76,6 +76,7 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 os.chdir(r'C:\Project\game\brave-cross')
 sys.path.insert(0, os.path.join(os.getcwd(), 'work'))
 import anim
+import cay
 
 
 def _c(z):
@@ -246,7 +247,7 @@ def khoa_tho(root, rig, an_ten, xuong, gioi_han=4):
 
 
 def main():
-    root = sys.argv[1] if len(sys.argv) > 1 else 'work/vn/decrypted/assets/map'
+    root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(cay.ASSETS, 'map')
     if len(sys.argv) > 4:
         khoa_tho(root, sys.argv[2], sys.argv[3], sys.argv[4])
         return

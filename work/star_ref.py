@@ -81,14 +81,16 @@ import sys
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
+import cay
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-MAP = os.path.join(HERE, 'vn', 'decrypted', 'assets', 'map')
+MAP = os.path.join(cay.ASSETS, 'map')
 GLOBAL = os.path.join(MAP, 'global_config.xml')
 
 ## File armature xuat ra cua BAN DUNG (do `work/export.py` ghi). Dung de doi
 ## chieu ten: moi `<item>` phai la mot BIEN THE co that.
-VAI_MAC_DINH = os.path.join(HERE, '..', '..', 'bravecross-game', 'assets_ref',
-                            'StarLevelEffect', 'StarLevelEffect.json')
+VAI_MAC_DINH = os.path.join(cay.dich_anh(), 'StarLevelEffect',
+                            'StarLevelEffect.json')
 
 CHU_THICH = re.compile(r'<!--.*?-->', re.S)
 KHOI_SAO = re.compile(r'<star>(.*?)</star>', re.S)
