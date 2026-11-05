@@ -4515,3 +4515,52 @@ idempotent, 500/250/100 KC, 4007, cascade) · `test:nap_api` 16/16 · `test:hoat
 **Chưa nối vào client:** 16 khoá `G_TournamentLogic` (và 13 khoá WCS) vẫn là lớp chắn — màn giải
 đấu trong game cần đọc giao thức `CUITournament*` (bracket/quiz/playback) rồi mới trả lời được.
 Lớp chắn vẫn **78 khoá**.
+
+# 🏯 4/11 (tiếp 16) — GIẢI ĐẤU: 3 KHOÁ ĐẦU ĐÃ NỐI VÀO CLIENT
+
+`handlers/giai_dau.lua` nối ba khoá có hình dữ liệu đọc rõ trong client (ba khoá này rút khỏi lớp
+chắn — còn **76 khoá**):
+
+| khoá | callback client | dữ liệu |
+|---|---|---|
+| `G_TournamentLogic.ClientGetContestInfo` | `g_ContestLogic:OnGetContestInfo(err, tData)` | `ContestDataManager:OnGetContestInfo` |
+| `G_TournamentLogic.ClientGetOtherInfo` | `OnGetOtherInfo(err, tData)` | `ContestHelper:OnGetOtherInfo` |
+| `G_TournamentLogic.ClientSignUp` | `OnSignUp(err)` | — |
+
+**Ánh xạ trạng thái server → bước client** (`TournamentDef`): `dang_ky` → **1** (đăng ký) ·
+`dang_dien_ra` → **3** (hải tuyển) · `xong` → **14** (kết thúc). `IsApplied` đọc từ danh sách suất;
+`StepStartTime/StepFinishTime` lấy `created_ts/start_ts/now_ts/round_seconds` (server trả epoch);
+`ChampionId` lấy người thắng trận cuối khi đã xong; `CanDoQuiz=false`, `Score=0`.
+
+Mỗi lượt đọc gọi **`POST /api/tournament/tick` trước** (idempotent) ⇒ người chơi mở màn hình là
+bracket tự tiến, không cần cron. Đăng ký hỏi danh sách giải, chọn giải `dang_ky` mới nhất, gọi
+`/api/tournament/register`, rồi **đẩy lại** `OnGetContestInfo` để nút đổi sang "đã đăng ký".
+Không có HTTP/tài khoản/giải ⇒ **4401** (`TournamentCode.Closed`) trung thực.
+
+**13 khoá còn lại GIỮ NGUYÊN lớp chắn** (battle report · 32强/16强/8强/4强/决赛 · quiz · playback ·
+shop · fight test): hình dữ liệu là cả một hệ (seats/quiz/replay) — trả nửa vời sẽ làm UI ném lỗi.
+
+**Đo:** `_kiem_cu_phap` **106 tệp · 0 lỗi** · `_chay_het` **64 tệp · 1435 phép · 0 đỏ** ·
+`run_tests` **163 · 0** · bộ thử mới `_thu_giai_dau.lua` **22/22** · server `test:tournament_api`
+**20/20** · `test:nap_api` 16/16 · `test:hoat_dong_api` 19/19 · `tsc` sạch. Đã deploy 5 chỗ.
+
+**Chưa chạy trong game** (luật repo server: không tự bật game). Nghiệm thu tay: mở game → nút
+**Đấu Trường/DauTruong** trên Main → màn lịch giải hiện bước "đăng ký"; bấm Đăng ký phải thành
+công (xem `offline.log`: `giai dau: da dang ky giai N`) và nút đổi trạng thái. Muốn có giải để
+đăng ký: `curl -X POST http://127.0.0.1:8787/api/tournament/create -H "content-type: application/json" -d '{"name":"Giải tuần","max_entries":32,"round_seconds":600,"prizes":[500,250,100]}'`.
+
+# 🖥️ 4/11 (tiếp 17) — TRANG QUẢN TRỊ `/admin` (server) + KẾT QUẢ ĐO ÂM CỦA NHÓM BATTLE REPORT
+
+Server riêng nay phục vụ **`GET /admin`** — một trang HTML tự chứa, 5 tab (Nhật ký · Nạp · Mã đổi ·
+Hoạt động · Giải đấu), dùng đúng các API đã dựng; thêm ba API đọc `/api/stats`,
+`/api/recharges`, `/api/redeem/codes`. Chi tiết + số đo ở README của `bravecross-server`
+(mục “5/11 (tiếp 3)”). Không xác thực phiên — chỉ dùng trên LAN dev.
+
+**KẾT QUẢ ĐO ÂM — nhóm màn battle report / 32强 / finals / playback KHÔNG dựng trung thực được:**
+`CUIContestBattleInfo` đọc `tData.Players[i].Data` (GameUserHero/Equipment/MagicWeapon…),
+`tData.Rand`, `tData.WinIndex` — tức **log replay của trận thật**, thứ máy chủ gốc sinh ra khi chạy
+trận; mô hình giải đấu của ta chỉ kết toán bằng sức mạnh + băm nên **không có** replay. Vì vậy
+**13 khoá đó vẫn nằm trong lớp chắn** (lớp chắn còn **76 khoá**); phần “xem” phục vụ bằng `/admin`.
+
+Đo lượt này (server): `test:admin_api` **13/13** · `test:nap_api` 16/16 · `test:hoat_dong_api`
+19/19 · `test:tournament_api` 20/20 · `test:do_phu` 0 đỏ · `tsc` sạch. Client không đổi trong lượt này.

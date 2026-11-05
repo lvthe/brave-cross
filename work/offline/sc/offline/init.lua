@@ -58,6 +58,7 @@ require("offline.handlers.canh")
 -- Dịch vụ ngoài thay SDK chết (5/11): mã đổi thưởng · bình luận · nhận khoản nạp.
 require("offline.handlers.ma_doi")
 require("offline.handlers.binh_luan")
+require("offline.handlers.giai_dau")
 require("offline.nap_api")
 require("offline.hanh_dong")
 require("offline.handlers.vong_quay")

@@ -63,12 +63,12 @@ local function maCuoi() return RSP[#RSP] and RSP[#RSP][3] end
 io.write('\n-- 1. dang ky\n')
 local dong = 0
 for _, h in pairs(R.handlers) do dong = dong + 1 end
-check(dong == 78, 'dang ky DU 78 khoa (da rut 2 khoa trang bi doc quyen + 2 khoa canh + 2 khoa dich vu ngoai)', dong)
+check(dong == 76, 'dang ky DU 76 khoa (da rut 2 khoa trang bi doc quyen + 2 canh + 2 dich vu ngoai + 2 giai dau)', dong)
 
 --=========================================================== 2. MÃ GỐC THEO NHÓM
 io.write('\n-- 2. ma goc theo nhom\n')
 local DS = {
-    { 'G_TournamentLogic.ClientGetContestInfo', 4401, 'giai dau -> 4401 Closed' },
+    { 'G_TournamentLogic.ClientGetBattleReport', 4401, 'giai dau (nhom chua noi) -> 4401 Closed' },
     { 'G_WCSProtocol.ClientGetWCSInfo', 5201, 'xuyen may chu -> 5201 Closed' },
     { 'G_ActivityRankLogic.ClientGetPlayerDiamondConsume', 4001, 'hoat dong -> 4001' },
     { 'G_ActivityWushuang.ClientGetWushuangRankList', 4001, 'hoat dong khac -> 4001' },

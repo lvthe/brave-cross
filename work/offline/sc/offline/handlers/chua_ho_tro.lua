@@ -39,7 +39,7 @@ local function chuaHoTro(strObj, strFunc, nMa, strViSao)
 end
 
 -- G_TournamentLogic — giai dau do may chu van hanh theo vong — offline khong co bracket
-R:on("G_TournamentLogic.ClientGetContestInfo", chuaHoTro("G_TournamentLogic", "ClientGetContestInfo", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
+-- `ClientGetContestInfo` DA LAM THAT (5/11 — `handlers/giai_dau.lua`, đọc động cơ giải trên server).
 R:on("G_TournamentLogic.ClientGetBattleReport", chuaHoTro("G_TournamentLogic", "ClientGetBattleReport", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientGetFinalsInfo", chuaHoTro("G_TournamentLogic", "ClientGetFinalsInfo", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientGetBattleArray", chuaHoTro("G_TournamentLogic", "ClientGetBattleArray", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
@@ -50,7 +50,7 @@ R:on("G_TournamentLogic.ClientGetQuizInfo", chuaHoTro("G_TournamentLogic", "Clie
 R:on("G_TournamentLogic.ClientGetBattleDetailsReport", chuaHoTro("G_TournamentLogic", "ClientGetBattleDetailsReport", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientGetPlayback", chuaHoTro("G_TournamentLogic", "ClientGetPlayback", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientSendBenefitReward", chuaHoTro("G_TournamentLogic", "ClientSendBenefitReward", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
-R:on("G_TournamentLogic.ClientGetOtherInfo", chuaHoTro("G_TournamentLogic", "ClientGetOtherInfo", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
+-- `ClientGetOtherInfo` DA LAM THAT (5/11 — `handlers/giai_dau.lua`).
 R:on("G_TournamentLogic.ClientGetFinal32Info", chuaHoTro("G_TournamentLogic", "ClientGetFinal32Info", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientRequestFightTest", chuaHoTro("G_TournamentLogic", "ClientRequestFightTest", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
 R:on("G_TournamentLogic.ClientBuyTournamentGoods", chuaHoTro("G_TournamentLogic", "ClientBuyTournamentGoods", 4401, "giai dau do may chu van hanh theo vong — offline khong co bracket"))
@@ -187,6 +187,6 @@ R:on("G_ServerActivityFightCap.ClientGetInfoReq", chuaHoTro("G_ServerActivityFig
 -- G_ActivitySingleRecharge — chua co du lieu/luat trong ban offline
 R:on("G_ActivitySingleRecharge.ClientGetSingleRechargePrize", chuaHoTro("G_ActivitySingleRecharge", "ClientGetSingleRechargePrize", 4001, "chua co du lieu/luat trong ban offline"))
 
-OfflineLog:info("chua ho tro: da dang ky 78 khoa (lop chan, chua lam that)")
+OfflineLog:info("chua ho tro: da dang ky 76 khoa (lop chan, chua lam that)")
 
 return true
