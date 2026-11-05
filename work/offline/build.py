@@ -16,7 +16,7 @@ keo vao toan bo lop client — dung cho de moc them mot dong.
 
     python build.py [--assets ../vn/decrypted/assets]
 """
-import os, sys, shutil, argparse
+import os, sys, shutil, argparse, time, stat
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WORK = os.path.dirname(HERE)
@@ -43,11 +43,46 @@ def build_require(assets, out_dir):
     return dst
 
 
+def xoa_cay(path, so_lan=5):
+    """Xoa cay thu muc, chiu duoc WinError 5 (Access is denied) tren Windows.
+
+    NGUYÊN NHÂN ĐO ĐƯỢC (31/10): thư mục `handlers` mang thuộc tính **R
+    (read-only)** — `cmd attrib` in ra `R` — và trên Windows **không xoá được
+    thư mục read-only** (`rmdir` → Access denied) dù nó đã RỖNG. Vì
+    `shutil.rmtree` xoá tệp trước rồi mới `rmdir`, nó chết SAU khi đã dọn sạch
+    cây ⇒ để lại một cây CỤT trông như đã xoá xong. Đó chính là cái suýt xoá
+    công ba ngày (28–30/10) lúc chép `sc/offline` ⇄ `deploy/plain`.
+
+    Nên: gỡ cờ read-only của TỪNG mục (tệp lẫn thư mục) rồi thử lại, và vẫn
+    thử lại vài lượt vì trình quét virus có thể giữ handle trong giây lát.
+    """
+    if not os.path.exists(path):
+        return
+
+    def go_co_ro(fn, p, _exc):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            fn(p)
+        except OSError:
+            pass
+
+    for lan in range(so_lan):
+        try:
+            try:
+                shutil.rmtree(path, onexc=go_co_ro)      # Python >= 3.12
+            except TypeError:
+                shutil.rmtree(path, onerror=go_co_ro)    # Python <= 3.11
+            return
+        except PermissionError:
+            if lan == so_lan - 1:
+                raise
+            time.sleep(0.3 * (lan + 1))
+
+
 def copy_offline(out_dir):
     src = os.path.join(HERE, 'sc', 'offline')
     dst = os.path.join(out_dir, 'sc', 'offline')
-    if os.path.exists(dst):
-        shutil.rmtree(dst)
+    xoa_cay(dst)
     shutil.copytree(src, dst)
     return sum(len(f) for _, _, f in os.walk(dst))
 
@@ -74,8 +109,7 @@ def main():
     plain = os.path.join(HERE, 'deploy', 'plain')
     sng = os.path.join(HERE, 'deploy', 'sng')
     for d in (plain, sng):
-        if os.path.exists(d):
-            shutil.rmtree(d)
+        xoa_cay(d)
         os.makedirs(d)
 
     n_off = copy_offline(plain)

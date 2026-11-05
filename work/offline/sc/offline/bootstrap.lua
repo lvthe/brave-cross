@@ -81,7 +81,15 @@ function OfflineBootstrap:baseInfo()
 	-- nên GetCharacterName trả lỗi và CUILogin:OnServerEnterGame dừng ở
 	-- CUILogin2.lua:3594, không bao giờ tới cảnh chính.
 	t.Uid = self.UID                 -- ĐẶT
-	t.CharacterName = self.NAME      -- ĐẶT
+	--[[ TÊN NHÂN VẬT chỉ đặt khi lớp gọi CHỈ ĐỊNH (chế độ cũ `OfflineBootstrap.NAME`).
+
+		2/11: từ khi có tài khoản, người chơi TỰ tạo nhân vật ở màn tạo nhân vật
+		của client (`ClientCreateCharacter`). Đặt sẵn một cái tên ở đây là bỏ qua
+		màn ấy. Vì vậy khi đăng nhập, lớp offline để `NAME = nil` ⇒ trường VẮNG
+		MẶT ⇒ `ClientEnterGame` trả 1001 `NeedCreateCharacter`. ]]
+	if self.NAME ~= nil then
+		t.CharacterName = self.NAME
+	end
 	t.DeviceId = "offline-device"    -- ĐẶT
 	t.CreateTime = os.time()         -- ĐẶT: lúc tạo nhân vật (CUIMainTopTool đọc)
 	-- Gioi tinh nhan vat chinh: ban goc cho nguoi choi CHON luc tao, offline

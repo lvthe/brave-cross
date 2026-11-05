@@ -29,6 +29,11 @@ PKG = 'com.cmn.buatanew'
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 CANDIDATES = [
+    # ĐÚNG gốc thứ nhất của package.path: LGG_GetExternalStorageDirectory() trả
+    # /storage/emulated/0/assets, nên nhánh "external" là
+    # /storage/emulated/0/assets/sc — đo bằng cách hook fopen trên LDPlayer
+    # (2026-10-26). Các nhánh dưới vẫn đẩy cho chắc, nhưng chỉ nhánh này ăn.
+    '/storage/emulated/0/assets',
     '/sdcard/Android/data/%s/files' % PKG,
     '/sdcard/%s' % PKG,
     '/sdcard',

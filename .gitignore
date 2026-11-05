@@ -87,3 +87,11 @@ work/z.json
 # điểm gắn của Hoplite, nhưng KHÔNG script nào trong work/ sinh hay đọc nó — nên
 # không dựng lại được bằng lệnh nào. Chặn để `git add -A` không đẩy lên repo.
 work/_h.json
+
+# Bản giải APK bằng apktool (work/offline/_tools/apk_giai/) — bên trong là toàn
+# bộ nội dung game gốc (smali + assets/sc/...), cùng loại với work/apk/ ở trên.
+# Dựng lại bằng: _tools/apktool.jar d …  Chặn để `git add` không đẩy lên repo.
+work/offline/_tools/
+
+# Ảnh chụp màn hình LDPlayer của các lượt đo (test artifact, chụp lại được).
+work/offline/_*.png

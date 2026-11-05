@@ -75,10 +75,14 @@ Mock:tick(1)
 local sl = G_Login.tLast and G_Login.tLast.serverlist
 check(sl ~= nil and #sl == 1, "tra ve 1 may chu")
 check(sl and sl[1].name == "Offline", "ten may chu", sl and sl[1].name)
--- Client doc danh sach o RecomendList (CUILoginServerList.lua:490).
+-- RecomendList phai RONG: moi muc con bi doc nhu HO SO NHAN VAT
+-- (CUILoginServerList.lua:849-944 -> CUITavern:GetHeroExPercentage), thieu
+-- Level/Ex la "KDebug: Arg must be number!" va vo ca luong dang nhap —
+-- da gap that tren LDPlayer 2026-10-26. May chu that chi dua vao day may chu
+-- ma tai khoan DA co nhan vat; tai khoan offline moi toanh thi khong co.
 local rl = G_Login.tLast and G_Login.tLast.RecomendList
-check(rl ~= nil and #rl == 1 and rl[1].state == 1,
-      "RecomendList co 1 may chu, trang thai IDLE (1)")
+check(rl ~= nil and next(rl) == nil,
+      "RecomendList rong (tai khoan moi chua co nhan vat)", rl and #rl)
 
 print("\n=== 3. ket noi + bat tay + vao game ===")
 Mock:reset()
@@ -126,9 +130,39 @@ for _ in pairs(ud or {}) do nTables = nTables + 1 end
 -- Cach tim 4 bang kia: quet moi GetUserDataWithName("...") trong 973 file roi
 -- tru di danh sach dang co.
 --
--- LUU Y: GameUserCavern cung thuoc TU_DUNG nhung KHONG nam trong TABLES, nen no
--- khong tinh vao 38 — 38 la so ten trong kho, khong phai so bang thuoc TU_DUNG.
-check(nTables == 36, "du 36 bang", nTables)
+-- LUU Y: GameUserCavern thuoc TU_DUNG (client tu dung khi nil) va DA vao TABLES
+-- ngay 28/10 de luu duoc hang Ma Khu — nhung luc khoi dong no VAN vang mat, nen
+-- KHONG tinh vao so bang.
+--
+-- 38 (28/10) = 36 ban dau + GameUserFortuneWheel (vong quay) + DailyTaskList
+-- (danh sach nhiem vu ngay — KHONG phai GameUserDailyTask, xem
+-- share_CDataManagerPrivate.lua:975). Them vao TABLES thi khoi userData moi co.
+--
+-- 39 (31/10) = 38 + **GameUserBuilding**: `offline/nha_cua.lua:330-334` TỰ thêm
+-- bang nay vao `OfflineStore.TABLES` luc nạp (nó là hệ VIẾT MỚI 30/10). Đây là
+-- phép kiểm ĐẦU TIÊN bắt được việc ấy: bộ thử PC chạy trên `sc/offline`, mà cây
+-- ấy đã TỤT LẠI sau 28/10 (chỉ `deploy/plain` được sửa) nên suốt 30–31/10
+-- `run_tests.py` đo một cây CŨ và vẫn XANH. Sau khi đồng bộ hai cây (31/10) nó
+-- ĐỎ đúng một phép — chính phép này.
+-- 40 (31/10, tiếp) = 39 + **GameUserHeroPractice**: đo trong game thấy handler
+-- gán tướng chạy đúng (callback `Statistics.OnPracticeHero`) nhưng file lưu
+-- KHÔNG có khoá ⇒ `PracticeStates` mất sau mỗi lần vào game. Đã thêm vào
+-- `OfflineStore.TABLES` (`store.lua`). Bảng KHÔNG thuộc `TU_DUNG` — client tự
+-- dựng `PracticeStates = {}` khi thiếu.
+-- 39 (31/10, tiếp 6) = 40 − **GameUserStarSoul**: đo trong game thấy panel Chiêm
+-- Tinh gửi `G_StarSoulProtocol.ClientGetReq` mà lớp offline không trả lời, nên
+-- `_isServerInited` mãi false và panel mở nửa vời. `GetUserStarSoulData` chỉ tự
+-- lành khi bảng là NIL (không lành với `{}`), nên bảng phải VẮNG MẶT lúc khởi
+-- động ⇒ thêm vào `TU_DUNG` (vẫn ở `TABLES` để lưu được sau khi client dựng).
+-- 40 (3/11, CẦU RPC) = 39 + **GameUserSubtitle**: nhóm `G_SubtitleLogic` đi qua cầu
+-- thì phụ đề nằm ở bảng này (`phu_de.ts`, Mốc 49). Lớp offline tự lưu ở
+-- `ClientCommonData`, nên trước đó bảng không cần có; thêm vào `TABLES` để
+-- `syncFromClient` lưu được (thiếu thì phụ đề qua cầu MẤT sau khi mở lại).
+check(nTables == 40, "du 40 bang", nTables)
+check(OfflineStore.TU_DUNG.GameUserStarSoul == true,
+      "GameUserStarSoul thuoc TU_DUNG (client tu dung InitData)")
+check(ud and ud.GameUserStarSoul == nil,
+      "khoi userData KHONG chua GameUserStarSoul, de client thay nil")
 check(ud and ud.GameUserGuildData ~= nil, "co bang GameUserGuildData")
 
 print("\n=== 4. luu va nap lai ===")
@@ -354,14 +388,21 @@ local ud3 = OfflineBootstrap:newUserData()
 check(ud3.GameUserCloudShop == nil,
 	"khoi userData KHONG chua bang cua hang Van Du, de client thay nil")
 
--- Hợp đồng đọc: phải trả (0, nil) chứ không phải một mã lỗi. Mã khác 0 thì
--- `KDebug.ProcessError(bRetCode)` đúng và client `goto Exit0` — nhánh
--- `tUserCloudShop == nil` mà chính bản gốc viết ra sẽ không bao giờ tới được.
--- (Số 0 là truthy trong Lua nên `not 0` = false, đúng như bản gốc trông cậy.)
+--[[ Hợp đồng đọc: mã 0 (KHÔNG phải mã lỗi — mã khác 0 thì
+	`KDebug.ProcessError(bRetCode)` đúng và client `goto Exit0`).
+
+	4/11 (tiếp 9) ĐỔI KỲ VỌNG nil → `{ComeTime = 0}`: bản `nil` làm
+	`GetUserDataWithName` (share_CDataManager.lua:225) KHÔNG cache được (nil),
+	nên cảnh Main gọi lại mỗi khung hình — đo trong game ≥20 lần/giây. Năm chỗ
+	đọc `GameUserCloudShop` cho cùng kết quả với nhánh nil của client; khác biệt
+	duy nhất là trả bảng thì cache được. Bảng KHÔNG thuộc HINH_AN_TOAN vẫn nil. ]]
 local nErrC, tDataC = CDataManager:initUserDataFromDB("GameUserCloudShop")
-check(nErrC == 0 and tDataC == nil,
-	"initUserDataFromDB tra (0, nil) cho bang cua hang Van Du",
+check(nErrC == 0 and type(tDataC) == "table" and tDataC.ComeTime == 0,
+	"initUserDataFromDB tra (0, {ComeTime = 0}) cho bang cua hang Van Du",
 	tostring(nErrC) .. ", " .. tostring(tDataC))
+local nErrN, tDataN = CDataManager:initUserDataFromDB("GameUserEndlessChapter")
+check(nErrN == 0 and tDataN == nil,
+	"bang TU_DUNG KHONG co HINH_AN_TOAN van tra nil (khong doi)", tostring(tDataN))
 
 --[[ Bang xep hang: cung loai voi ClientGetGuildInfo cua bang hoi — can NGUOI
 	CHOI KHAC. Tra rong chu khong dung ten gia. Hinh dang {} / 0 / 0 khong phai
@@ -396,8 +437,12 @@ local DS_RPC = {
 	"ClientSwap", "ClientStopSwap", "ClientSwapImmediately",
 	"ClientBuyChallengesCount", "ClientGetEndlessChapterFirstPrize",
 }
+--[[ Tra theo ĐÚNG bộ ba (obj, func) như `net.lua` làm: `ClientCompeleteFight`
+	có ở HAI hệ (G_EndlessChapterLogic và G_CavernLogic), nên handler của họ này
+	đăng ký có tiền tố obj — `OfflineRouter:get(ten)` trơ sẽ không thấy. ]]
 for _, ten in ipairs(DS_RPC) do
-	check(OfflineRouter:get(ten) ~= nil, "co handler cho " .. ten)
+	check(OfflineRouter:getFor("G_EndlessChapterLogic", ten) ~= nil,
+		"co handler cho " .. ten)
 end
 for _, ten in ipairs(DS_RPC) do
 	Mock:reset()
@@ -769,6 +814,279 @@ OfflineStore.data = nil
 OfflineStore.phien_ban = nil
 OfflineStore:load()
 check(OfflineStore:nangCap() == 0, "nang cap lai lan hai khong bo gi (idempotent)")
+
+--[[ Router khoá theo BỘ BA (module, objName, funcName) như `CallLocal` của bản
+	gốc — hai hệ KHÁC nhau được phép trùng tên hàm. Đo 27/10: `ClientCompeleteFight`
+	có ở CẢ `G_CavernLogic` lẫn `G_EndlessChapterLogic`, tham số khác hẳn; router
+	khoá trơ theo tên hàm thì cái sau đè cái trước và lượt gọi đi nhầm hàm. ]]
+print("\n=== 17. router: khoa theo (obj, func) ===")
+do
+	local daGoi = nil
+	OfflineRouter:on("TEST.TrungTen", function () daGoi = "obj" end)
+	OfflineRouter:on("TrungTen", function () daGoi = "tran" end)
+
+	check(OfflineRouter:getFor("TEST", "TrungTen") ~= nil,
+		"getFor tim thay handler co obj")
+	check(OfflineRouter:getFor("KHAC", "TrungTen") ~= nil,
+		"getFor roi ve ten tran khi obj khac")
+
+	daGoi = nil
+	CallServer(5, "TEST", "TrungTen")
+	check(daGoi == "obj", "dispatch CHON ban co obj khi obj trung", daGoi)
+
+	daGoi = nil
+	CallServer(5, "KHAC", "TrungTen")
+	check(daGoi == "tran", "dispatch roi ve ban ten tran khi obj khac", daGoi)
+
+	daGoi = nil
+	CallServer(5, "", "TrungTen")
+	check(daGoi == "tran", "dispatch voi obj rong dung ban ten tran", daGoi)
+
+	-- Dọn: không để lại handler thử trong bảng đăng ký của lớp thật.
+	OfflineRouter.handlers["TEST.TrungTen"] = nil
+	OfflineRouter.handlers["TrungTen"] = nil
+end
+
+--[[ KHOÁ ĐĂNG KÝ của các nhóm thêm trong 30–31/10.
+
+	Đây KHÔNG phải bộ thử hành vi (mỗi nhóm đã có `_thu_*.lua` riêng, chạy bằng
+	`_chay_het.py`). Phép này đo ĐÚNG MỘT việc mà bộ thử tĩnh KHÔNG đo được:
+	khoá đăng ký có khớp cặp (objName, funcName) mà `CallServer` thật gử i hay
+	không — sai tiền tố obj là handler KHÔNG BAO GIỜ chạy mà cũng không có lỗi
+	nào (chỉ một dòng "THIEU" trong offline.log). ]]
+print("\n=== 18. khoa dang ky cua cac nhom 30-31/10 + 1/11 ===")
+do
+	local DS = {
+		{ "G_FormationLogic", "ClientUpgrade" },
+		{ "G_FormationLogic", "ClientActiveRareFormation" },
+		{ "G_FormationLogic", "ClientSelectAdvancedFormation" },
+		{ "G_MonthlyCardLogic", "ClientGetReward" },
+		{ "G_ClothingLogic", "ClientComposeClothing" },
+		{ "G_ClothingLogic", "ClientGetClothingPrize" },
+		{ "G_ClothingLogic", "ClientSetClothingPrizeUseStatus" },
+		{ "G_HeroPracticeLogic", "ClientPracticeHero" },
+		{ "G_HeroPracticeLogic", "ClientGetPracticePrize" },
+		{ "G_HeroPracticeLogic", "ClientGetPracticeInfo" },
+		{ "G_ActivityFund", "ClientBuyActivityFund" },
+		{ "G_ActivityFund", "ClientGetLevelFundPrize" },
+		{ "G_ActivityFund", "ClientGetTimeFundPrize" },
+		{ "G_ActivityCumulativeRecharge", "ClientGetUserState" },
+		{ "G_ActivityCumulativeRecharge", "ClientGetPrize" },
+		{ "G_ActivityCumulativeConsume", "ClientGetUserState" },
+		{ "G_ActivityCumulativeConsume", "ClientGetPrize" },
+		{ "G_MailLogic", "ClientSaveMailPrizeWithMailID" },
+		{ "G_ChapterLogic", "ClientBuyChapterBattleResetCount" },
+		{ "G_ChapterLogic", "ClientBuyChapterSweepCount" },
+		{ "G_SevenDaysGiftLogic", "ClientSevenDaysGift" },
+		{ "G_MidasTouchLogic", "ClientRunMidasTouchWithCount" },
+		{ "G_ChapterLogic", "ClientGetChapterTargetReward" },
+		{ "G_RankLogic", "ClientGet5HeroPowerRank" },
+		{ "G_RankLogic", "ClientGetPveNormalRank" },
+		{ "G_RankLogic", "ClientGetPveEliteRank" },
+		{ "G_RankLogic", "ClientGetPveStarRank" },
+		{ "G_RankLogic", "ClientGetGuildRank" },
+		{ "G_ItemLogic", "ClientBuyItem" },
+		{ "G_ItemLogic", "ClientBuyItemBatch" },
+		{ "G_EquipmentLogic", "ClientRefineEquip" },
+		{ "G_ItemLogic", "ClientRefineItem" },
+		{ "G_HeroLogic", "ClientShowWing" },
+		{ "G_HeroLogic", "ClientShowMagicWing" },
+		{ "G_HeroLogic", "ClientUpdateHeroSkyFate" },
+		{ "G_HeroLogic", "ClientResetHeroSkyFate" },
+		{ "G_HeroLogic", "ClientConvertUniversalFragment" },
+		{ "G_HeroLogic", "ClientSetExclusiveSkinState" },
+		{ "G_HeroLogic", "ClientUpHeroFightSoul" },
+		{ "G_SubtitleLogic", "ClientSetUserCopySubtitle" },
+		{ "G_SubtitleLogic", "ClientGetCopySubtitle" },
+		{ "G_GameWorld", "ClientGetRandomName" },
+		{ "G_GuildLogic", "ClientCreateGuild" },
+		{ "G_GuildLogic", "ClientGetGuildInfo" },
+		{ "G_GuildLogic", "ClientModifyNotice" },
+		{ "G_GuildLogic", "ClientGetGuildLogList" },
+		{ "G_GuildLogic", "ClientGetGuildApplyList" },
+		{ "G_GuildLogic", "ClientExitGuild" },
+		{ "G_GuildLogic", "ClientCancelGuild" },
+		{ "G_GuildLogic", "ClientDonateGuild" },
+		{ "G_FriendLogic", "ClientGetUserRelations" },
+		{ "G_FriendLogic", "ClientApplyForFriend" },
+		{ "G_FriendLogic", "ClientReceiveGift" },
+		{ "G_GuildWarLogic", "QueryScore" },
+		{ "G_GuildWarLogic", "AttackWarBoss" },
+		-- COG / công thành xuyên máy chủ (2/11): HAI obj GỬI khác nhau nhưng cùng
+		-- một obj NHẬN (`g_COGProtocol`). Sai tiền tố obj là handler không bao giờ chạy.
+		{ "G_COGProtocol", "ClientGetBriefInfo" },
+		{ "G_COGProtocol", "ClientGetCOGInfo" },
+		{ "G_COGProtocol", "ClientGetCityInfo" },
+		{ "G_COGProtocol", "ClientGetMyTeamList" },
+		{ "G_COGProtocol", "ClientGetGuildTeamProfile" },
+		{ "G_COGProtocol", "ClientGetGuildTeamList" },
+		{ "G_COGProtocol", "ClientGetGuildBattleReport" },
+		{ "G_COGProtocol", "ClientGetCityReport" },
+		{ "G_COGProtocol", "ClientGetPlayerBattleReport" },
+		{ "G_COGProtocol", "ClientGetCityPlayback" },
+		{ "G_COGProtocol", "ClientGetPlayerPlayback" },
+		{ "G_COGProtocol", "ClientSignUp" },
+		{ "G_COGProtocol", "ClientSetTargetCity" },
+		{ "G_COGProtocol", "ClientSetGuildMsg" },
+		{ "G_COGProtocol", "ClientAddTeam" },
+		{ "G_COGProtocol", "ClientUpdateTeam" },
+		{ "G_COGProtocol", "ClientRemoveTeam" },
+		{ "G_COGProtocol", "ClientDispatchTeam" },
+		{ "G_COGProtocol", "ClientBuyGoods" },
+		{ "G_COGCityDefendMission", "ClientGetCityDefendMission" },
+		{ "G_COGCityDefendMission", "ClientManualRefreshMission" },
+		{ "G_COGCityDefendMission", "ClientGetPrize" },
+		{ "G_COGCityDefendMission", "ClientRepairCity" },
+		{ "G_COGCityDefendMission", "ClientAttackCity" },
+		{ "G_COGCityDefendMission", "ClientGetDailyOccupyPrize" },
+		-- Bang hội phần nâng cao (2/11): quản lý thành viên, thiết lập, tìm/join,
+		-- thuế công nghệ, xúc xắc, điều tướng.
+		{ "G_GuildLogic", "ClientAcceptApply" },
+		{ "G_GuildLogic", "ClientRejectApply" },
+		{ "G_GuildLogic", "ClientSetHead" },
+		{ "G_GuildLogic", "ClientSetManager" },
+		{ "G_GuildLogic", "ClientCancelManager" },
+		{ "G_GuildLogic", "ClientKickGuild" },
+		{ "G_GuildLogic", "ClientModifyGuildSetting" },
+		{ "G_GuildLogic", "ClientIsHaveGuildRedPoint" },
+		{ "G_GuildLogic", "ClientUploadWeChatGroup" },
+		{ "G_GuildLogic", "ClientImpeachHeadman" },
+		{ "G_GuildLogic", "ClientGetRandGuildList" },
+		{ "G_GuildLogic", "ClientSearchGuild" },
+		{ "G_GuildLogic", "ClientJoinGuild" },
+		{ "G_GuildLogic", "ClientApplyGuild" },
+		{ "G_GuildLogic", "ClientCancelApply" },
+		{ "G_GuildLogic", "ClientDonateGuildTechnology" },
+		{ "G_GuildLogic", "ClientGetDiceGameData" },
+		{ "G_GuildLogic", "ClientPlayDiceGame" },
+		{ "G_GuildLogic", "ClientGetDiceGameReward" },
+		{ "G_GuildLogic", "ClientDispatchHero" },
+		{ "G_GuildLogic", "ClientQuerySelfDispatchList" },
+		{ "G_GuildLogic", "ClientGetDispatchHeroList" },
+		{ "G_GuildLogic", "ClientPickGuildHero" },
+		{ "G_GuildLogic", "ClientEmployDispatchHero" },
+		-- Phó bản bang hội (2/11): 18 khoá G_GuildChapterLogic.
+		{ "G_GuildChapterLogic", "ClientQueryGuildChapterListInfo" },
+		{ "G_GuildChapterLogic", "ClientQueryGuildChapterInfo" },
+		{ "G_GuildChapterLogic", "ClientOpenGuildChapter" },
+		{ "G_GuildChapterLogic", "ClientResetGuildChapter" },
+		{ "G_GuildChapterLogic", "ClientPrepareGuildChapter" },
+		{ "G_GuildChapterLogic", "ClientGiveUpGuildChapterPrepare" },
+		{ "G_GuildChapterLogic", "ClientGuildChapterFightBegin" },
+		{ "G_GuildChapterLogic", "ClientGuildChapterFightComplete" },
+		{ "G_GuildChapterLogic", "ClientGuildChapterRewardInfo" },
+		{ "G_GuildChapterLogic", "ClientQueryReqestRewardMember" },
+		{ "G_GuildChapterLogic", "ClientDivideReward" },
+		{ "G_GuildChapterLogic", "ClientQueryGuildChapterRewardRecord" },
+		{ "G_GuildChapterLogic", "ClientQuerySelfRequestPrize" },
+		{ "G_GuildChapterLogic", "ClientChapterRequestDetailed" },
+		{ "G_GuildChapterLogic", "ClientRequestReward" },
+		{ "G_GuildChapterLogic", "ClientQueryGuildChapterInjuryRank" },
+		{ "G_GuildChapterLogic", "ClientQueryGuildChapterServerInjuryRank" },
+		{ "G_GuildChapterLogic", "ClientChapterGetCommonDropData" },
+		-- Đấu trường điểm APR (2/11): 13 khoá G_ScoreCompetitivePlayProtocol.
+		{ "G_ScoreCompetitivePlayProtocol", "ClientGetOpenInfoReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientBeginPlayReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientViewPlayerReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientBeginFightReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientEndFightReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientAdjustDefTeamReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientGetRankRewardReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientGetReportReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientGetReplayReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientGetRankListReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientRevengeBeginReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientRevengeEndReq" },
+		{ "G_ScoreCompetitivePlayProtocol", "ClientFailRecoverReq" },
+		-- BXH chế độ ải đặc biệt (2/11): 14 khoá G_RankLogic.
+		{ "G_RankLogic", "ClientGetSelfHJRQRankScore" },
+		{ "G_RankLogic", "ClientGetSelfSYZLBRankScore" },
+		{ "G_RankLogic", "ClientGetSelfSCSZLRankScore" },
+		{ "G_RankLogic", "ClientGetSelfDJSJFRankScore" },
+		{ "G_RankLogic", "ClientGetSelfXZWCRankScore" },
+		{ "G_RankLogic", "ClientGetHjrqRank" },
+		{ "G_RankLogic", "ClientGetSYZLBRank" },
+		{ "G_RankLogic", "ClientGetSCSZLRank" },
+		{ "G_RankLogic", "ClientGetDJSJFRank" },
+		{ "G_RankLogic", "ClientGetXZWCRank" },
+		{ "G_RankLogic", "ClientGetTGZZRank" },
+		{ "G_RankLogic", "ClientGetDKRank" },
+		{ "G_RankLogic", "ClientGetArenaDefendPowerRank" },
+		{ "G_RankLogic", "ClientGetGuildWarScoreRank" },
+		-- Chế độ ải đặc biệt (2/11): 16 khoá G_ChapterLogic.
+		{ "G_ChapterLogic", "ClientChapterHJRQComplete" },
+		{ "G_ChapterLogic", "ClientChapterSCSComplete" },
+		{ "G_ChapterLogic", "ClientChapterDJSJFComplete" },
+		{ "G_ChapterLogic", "ClientChapterXZWCComplete" },
+		{ "G_ChapterLogic", "ClientChapterTGZZComplete" },
+		{ "G_ChapterLogic", "ClientChapterPetBossComplete" },
+		{ "G_ChapterLogic", "ClientChapterDKComplete" },
+		{ "G_ChapterLogic", "ClientChapterTGZZSweep" },
+		{ "G_ChapterLogic", "ClientChapterDKSweep" },
+		{ "G_ChapterLogic", "ClientChapterHJRQSweep" },
+		{ "G_ChapterLogic", "ClientChapterSYZLBAndXZWCSweep" },
+		{ "G_ChapterLogic", "ClientGetChapterDropData" },
+		{ "G_ChapterLogic", "ClientGetSCSChapterNPCData" },
+		{ "G_ChapterLogic", "ClientGetDKChapterFaction" },
+		{ "G_ChapterLogic", "ClientReviveInBattle" },
+		{ "G_ChapterLogic", "ClientUserOverHJRQ" },
+		-- Ải vô tận (2/11): 9 khoá G_EndlessChapterLogic.
+		{ "G_EndlessChapterLogic", "ClientFight" },
+		{ "G_EndlessChapterLogic", "ClientCompeleteFight" },
+		{ "G_EndlessChapterLogic", "ClientGotoNextProsees" },
+		{ "G_EndlessChapterLogic", "ClientInspire" },
+		{ "G_EndlessChapterLogic", "ClientResetEndlessChapter" },
+		{ "G_EndlessChapterLogic", "ClientBuyChallengesCount" },
+		{ "G_EndlessChapterLogic", "ClientSwap" },
+		{ "G_EndlessChapterLogic", "ClientStopSwap" },
+		{ "G_EndlessChapterLogic", "ClientSwapImmediately" },
+		-- Chiến dịch anh hùng (2/11): 5 khoá G_EpicChapterLogic.
+		{ "G_EpicChapterLogic", "ClientSetTodayChapterDifficult" },
+		{ "G_EpicChapterLogic", "ClientEpicResetDaily" },
+		{ "G_EpicChapterLogic", "ClientEpicChapterCompeleteFight" },
+		{ "G_EpicChapterLogic", "ClientSweepEpicChapter" },
+		{ "G_EpicChapterLogic", "ClientBuyEpicGoods" },
+		-- Năm khoá toàn cục còn sống (2/11).
+		{ "", "ClientGetSpeechContent" },
+		{ "", "ClientCheckNewEquipment" },
+		{ "G_ArenaLogic", "ClientSetArenaHero" },
+		{ "", "ClientSetArenaHero" },
+		{ "G_Login", "ClientBindingAccount" },
+		{ "", "ClientBindingAccount" },
+		{ "", "ClientReturnHome" },
+	}
+	local thieu = {}
+	for _, cap in ipairs(DS) do
+		if OfflineRouter:getFor(cap[1], cap[2]) == nil then
+			thieu[#thieu + 1] = cap[1] .. "." .. cap[2]
+		end
+	end
+	check(#thieu == 0, "moi khoa trong danh sach deu dang ky duoc",
+		table.concat(thieu, ", "))
+
+	-- Khoá TOÀN CỤC (objName rỗng) của chuỗi vào game.
+	check(OfflineRouter:getFor("", "ClientGetActivityList") ~= nil,
+		"ClientGetActivityList dang ky (obj rong)")
+
+	-- Lịch hoạt động: LevelFund phải có CẢ trạng thái LẪN cấu hình, nếu không
+	-- `GetActivityWithType` trả nil và tab không hiện.
+	local tt, ch = OfflineHoatDong:layDanhSach()
+	check(tt.LevelFund ~= nil and ch.LevelFund ~= nil,
+		"lich: LevelFund co ca trang thai lan cau hinh")
+	check(tt.LevelFund and tt.LevelFund.ActivityID ~= 0, "lich: ActivityID khac 0")
+	check(OfflineHoatDong:moKhong("CumulativeRecharge") == true,
+		"lich: hoat dong KHONG mo duoc co ghi ly do")
+
+	-- Nhịp "việc máy chủ làm mỗi ngày" (1/11): nếu móc này không nối được vào
+	-- `OnEnterGame` thì quà 7 ngày đứng ở ngày 1 và lượt điểm kim thủ cộng dồn
+	-- vĩnh viễn — không có lỗi nào khác để thấy.
+	check(type(OfflineQuaNgay) == "table" and type(OfflineQuaNgay.kiem_ngay) == "function",
+		"qua ngay: co OfflineQuaNgay:kiem_ngay")
+	check(type(OfflineQua7Ngay) == "table" and type(OfflineQua7Ngay.kiem_ngay) == "function",
+		"qua 7 ngay: co OfflineQua7Ngay:kiem_ngay")
+	check(type(OfflineKimThu) == "table" and type(OfflineKimThu.kiem_ngay) == "function",
+		"kim thu: co OfflineKimThu:kiem_ngay")
+end
 
 print(string.format("\n===== dat %d, hong %d =====", nPass, nFail))
 os.exit(nFail == 0 and 0 or 1)

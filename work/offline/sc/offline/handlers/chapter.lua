@@ -157,6 +157,55 @@ local function danhSachRoiRong()
 	return { DropConfig = {}, Drop = {} }
 end
 
+--[[ Ghi nhật ký danh sách rơi — CHỈ để đối chiếu, KHÔNG trao gì.
+
+	Việc trao đã do CHÍNH luật gốc làm: `chapterCompleteSuccess` →
+	`chapterVictoryHandle` (:2811) → `SetDataWithDropList` (:4028) →
+	`SetDataWithPrizeData` (:4258, hàm của máy chủ gốc, client thừa kế nguyên
+	vẹn). Hàm ấy phủ các nhóm 2 Vật phẩm · 3 Tài nguyên · 4 User · 5 Tướng ·
+	6 Mảnh tướng · 9 Thời trang · 10 Cánh.
+
+	Nay chỉ còn MỘT chỗ phải vá: `SetDataWithDropList` nhận `tReportsData`
+	(chiến báo) — phía máy chủ mới có — và ghi `tReportsData["DropCount_…"]`
+	khi ải có config `DropData` (144/461 ải). `chapterVictoryHandle` truyền
+	nil, nên với ải đó phép ghi ấy ném lỗi giữa vòng trao. Lớp offline thay
+	bằng một bảng tạm (xem `boc_SetDataWithDropList`) — mỗi món vẫn trao đúng
+	MỘT lần, qua đúng hàm gốc. ]]
+local tLoaiTen = {
+	[1] = "Giap", [2] = "Vat pham", [3] = "Tai nguyen", [4] = "User",
+	[5] = "Tuong", [6] = "Manh tuong", [7] = "Nha", [8] = "Nguyen lieu",
+	[9] = "Thoi trang", [10] = "Canh", [11] = "The thang", [12] = "KN tuong",
+}
+
+local function ghiNhatKyRoiDo(tRoi, strNguon)
+	if type(tRoi) ~= "table" then return end
+	local tCfg, tDrop = tRoi.DropConfig, tRoi.Drop
+	if type(tCfg) ~= "table" or type(tDrop) ~= "table" then return end
+	local da, ds = {}, {}
+	for _, dsKhoa in pairs(tDrop) do
+		if type(dsKhoa) == "table" then
+			for _, khoa in ipairs(dsKhoa) do
+				if da[khoa] == nil then
+					da[khoa] = true
+					local pd = tCfg[khoa] and tCfg[khoa].PrizeData
+					if type(pd) == "table" then
+						local nLoai = tonumber(pd.PrizeResType) or 0
+						ds[#ds + 1] = string.format("%s(id %s x%s)",
+							tLoaiTen[nLoai] or ("loai " .. nLoai),
+							tostring(pd.PropID), tostring(pd.PrizeResCount))
+					end
+				end
+			end
+		end
+	end
+	if #ds > 0 then
+		OfflineLog:info(strNguon .. ": " .. #ds .. " mon roi — "
+			.. table.concat(ds, ", "))
+	else
+		OfflineLog:info(strNguon .. ": khong roi mon nao")
+	end
+end
+
 --[[ Hàm CHỈ SERVER GỐC có. chapterVictoryHandle gọi
 	self:CheckActivityIsDoublePrize(ChapterKey) (share_ChapterLogic.lua:2747)
 	nhưng không file nào của client định nghĩa nó — phần server của lớp
@@ -168,8 +217,43 @@ end
 	CheckActivityIsOpenWithType). Offline không có hoạt động nào (danh sách
 	hoạt động rỗng, handlers/login.lua) nên luôn là KHÔNG nhân đôi. Nếu một ngày
 	hoạt động đó mở thì hệ số nhân không biết lấy ở đâu — kêu lên, không đoán. ]]
+--[[ Bọc `SetDataWithDropList` để nhận `tReportsData = nil`.
+
+	`chapterVictoryHandle:2811` truyền `tReportsData`, mà biến ấy là nil ở
+	đường này (chỉ phía máy chủ mới có chiến báo). Với ải CÓ config `DropData`
+	(144/461), `SetDataWithDropList:4128` ghi `tReportsData["DropCount_…"]` sau
+	MỖI món trao được ⇒ ném lỗi giữa vòng, phần còn lại không được trao, và
+	`chapterCompleteSuccess` trả false. Bảng tạm dưới đây chỉ hứng mấy phép
+	ghi ấy; chiến báo thật của offline do `saveVictoryReport` tự dựng bên
+	trong (`GetBattleReportsData`), không đi qua đây. ]]
+local daBocDrop = false   -- cờ ở đây, KHÔNG ở class table: `class()` chỉ có
+                          -- `__newindex` (share/class.lua:56-60), nên đọc lại
+                          -- `ClientChapterLogic.<tên cờ>` luôn ra nil ⇒ bọc chồng
+                          -- lớp mỗi lần vào một trận.
+local function boc_SetDataWithDropList()
+	if daBocDrop then
+		return
+	end
+	if G_ChapterLogic == nil or G_ChapterLogic.SetDataWithDropList == nil then
+		return
+	end
+	daBocDrop = true
+	local goc = G_ChapterLogic.SetDataWithDropList
+	ClientChapterLogic.SetDataWithDropList = function(self, tDropList, nCountMultiple,
+			strPrizeFrom, tReportsData, tChapterConfig)
+		if tReportsData == nil then
+			tReportsData = {}
+		end
+		return goc(self, tDropList, nCountMultiple, strPrizeFrom, tReportsData, tChapterConfig)
+	end
+end
+
 local function gan_ham_chi_server()
-	if G_ChapterLogic == nil or G_ChapterLogic.CheckActivityIsDoublePrize ~= nil then
+	if G_ChapterLogic == nil then
+		return
+	end
+	boc_SetDataWithDropList()
+	if G_ChapterLogic.CheckActivityIsDoublePrize ~= nil then
 		return
 	end
 	ClientChapterLogic.CheckActivityIsDoublePrize = function(self, strKey)
@@ -255,19 +339,41 @@ R:on("ClientChapterCompleteSuccess", function(ctx, strKey, tClientData)
 	-- Số sao do client tính (CUIGame:getRating theo số tướng còn sống).
 	local nRating = tonumber(cd.RatingType) or 1
 
-	-- Lọc danh sách rơi theo những con ĐÃ GIẾT, bằng chính hàm luật của bản
-	-- gốc (ChapterLogic:filterKillDropList). Client gom KillIdList từ
-	-- `OnKillEnemy` mà sân trận gọi (lua/san_tran.lua).
+	--[[ Lọc danh sách rơi theo những con ĐÃ GIẾT — CHỈ khi client có gửi.
+
+		ĐO 27/10: `CUIGame:OnLevelCompleteCallServer` (:3196-3220) chỉ gửi
+		`ChapterData` (RatingType/PotionList/Statistics…), **KHÔNG có
+		`KillIdList`**. Chỉ các ải ĐẶC BIỆT mới có: `OnSCSCallServer` (:3235),
+		`OnXZWCCallServer`, `OnDKCallServer`, `OnTGZZCallServer` — và chúng lấy
+		từ `self.ChapterObj:OnKill`, mà `OnKill` chỉ tồn tại ở
+		`FBHuangJinRuQin/FBSeaBoss/FBShiChangShi/FBTongGuanZhiZhan/
+		FBXueZhanWanCheng/FBDK` — ải thường KHÔNG có ai gom.
+
+		Vì thế bản cũ lấy `{}` làm danh sách giết ⇒ `filterKillDropList` trả
+		`Drop = {}` ⇒ **mọi món đều bị lọc sạch**, và mọi trận đều ghi
+		"khong roi mon nao" (đo trên `L_N_01_03` và `L_N_01_04`, hai ải mà
+		config bảo NPC 1001/120 rơi CHẮC CHẮN Binh Hồn x6). Đây đúng là gốc rễ
+		của "trận thắng có rơi đồ mà mở Túi không có".
+
+		Không có thông tin giết thì KHÔNG lọc: danh sách đã quay ở
+		`OfflineDrop_build` (xác suất `DropValue/TotalDropValue` từng món) là
+		thứ được trao. ]]
 	local tRoi = tRoiDangChoi or danhSachRoiRong()
-	local tGiet = type(cd.KillIdList) == "table" and cd.KillIdList or {}
-	local okLoc, tRoiGiet = G_ChapterLogic:filterKillDropList(tGiet, tRoi)
-	if okLoc and type(tRoiGiet) == "table" then
-		tRoi = tRoiGiet
+	if type(cd.KillIdList) == "table" then
+		local okLoc, tRoiGiet = G_ChapterLogic:filterKillDropList(cd.KillIdList, tRoi)
+		if okLoc and type(tRoiGiet) == "table" then
+			tRoi = tRoiGiet
+		else
+			OfflineLog:warn("filterKillDropList tu choi — trao nguyen danh sach roi")
+		end
 	else
-		OfflineLog:warn("filterKillDropList tu choi — gui danh sach roi rong")
-		tRoi = danhSachRoiRong()
+		OfflineLog:info("ClientChapterCompleteSuccess: client khong gui KillIdList — trao het danh sach roi")
 	end
 
+	-- Danh sách rơi THẬT đi vào luật gốc; chính `SetDataWithDropList` trao
+	-- (đã bọc để nhận `tReportsData = nil`, xem `boc_SetDataWithDropList`).
+	-- Đừng trao thêm lần nữa ở đây — trao hai lần thì kho nhân đôi.
+	ghiNhatKyRoiDo(tRoi, "ClientChapterCompleteSuccess " .. tostring(strKey))
 	local ok, nErr, nResourceCount = G_ChapterLogic:chapterCompleteSuccess(
 		strKey, tRoi, nRating, cfg.ChapterUserEx or 0)
 	if not ok then

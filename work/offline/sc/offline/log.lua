@@ -25,14 +25,43 @@ function OfflineLog:path()
 	return self.FILE
 end
 
+--[[ Xoay vòng nhật ký.
+
+	`open()` mở bằng "a" và không bao giờ cắt, nên sau một ngày chơi thử
+	(27/10) file đã lên hơn 90.000 dòng. Khi quá `OfflineLog.GIOI_HAN` byte thì
+	đổi tên bản cũ thành `<tên>.1` (xoá bản .1 trước đó) rồi mở file mới — giữ
+	được MỘT đời log trước để đối chiếu, không phình vô hạn. ]]
+OfflineLog.GIOI_HAN = 4 * 1024 * 1024
+
+local function xoayVong(p)
+	local f = io.open(p, "r")
+	if not f then
+		return false
+	end
+	local n = f:seek("end") or 0
+	f:close()
+	if n <= OfflineLog.GIOI_HAN then
+		return false
+	end
+	os.remove(p .. ".1")
+	local ok = os.rename(p, p .. ".1")
+	return ok == true or ok == 0
+end
+
 function OfflineLog:open()
 	if self.__fp or not self.enabled then
 		return
 	end
-	local ok, fp = pcall(io.open, self:path(), "a")
+	local p = self:path()
+	local daXoay = xoayVong(p)
+	local ok, fp = pcall(io.open, p, "a")
 	if ok and fp then
 		self.__fp = fp
 		fp:write(string.format("\n===== phien moi %s =====\n", os.date("%Y-%m-%d %H:%M:%S")))
+		if daXoay then
+			fp:write(string.format("[%s] info     da xoay vong nhat ky (ban cu -> %s.1)\n",
+				os.date("%H:%M:%S"), p))
+		end
 		fp:flush()
 	end
 end

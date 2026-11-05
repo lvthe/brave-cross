@@ -12,12 +12,23 @@
 require("offline.log")
 
 OfflineRouter = {}
-OfflineRouter.handlers = {}     -- [funcName] = function(ctx, ...)
+OfflineRouter.handlers = {}     -- ["obj.func" hoặc "func"] = function(ctx, ...)
 OfflineRouter.silent = {}       -- các API cố tình bỏ qua, không ghi log thiếu
 
 --[[ Đăng ký handler.
-	strFunc  tên hàm server, đúng như trong đặc tả
-	fn       function(ctx, ...) ]]
+
+	TÊN CÓ THỂ CÓ TIỀN TỐ OBJ: `"G_CavernLogic.ClientCompeleteFight"`.
+
+	Vì sao cần: RPC của bản gốc khoá theo BỘ BA (module, objName, funcName) —
+	`CallLocal(szObjName, szFunName, …)` (`system/rpc.lua:83`) — nên HAI hệ
+	khác nhau được dùng CÙNG một tên hàm. Đo 27/10: `ClientCompeleteFight` có ở
+	CẢ `ClientCavernLogic.lua:24` (obj `G_CavernLogic`) LẪN
+	`ClientEndlessChapterLogic.lua:290` (obj `G_EndlessChapterLogic`), tham số
+	khác hẳn nhau. Router cũ khoá trơ tên hàm ⇒ cái đăng ký sau ĐÈ cái trước và
+	lượt gọi đi nhầm hàm (log `dang ky de handler: ClientCompeleteFight`).
+
+	Vì vậy: đăng ký được cả `"obj.func"`; lúc điều phối, `net.lua` thử
+	`obj .. "." .. func` TRƯỚC rồi mới tới tên trơ (giữ nguyên mọi handler cũ). ]]
 function OfflineRouter:on(strFunc, fn)
 	if self.handlers[strFunc] then
 		OfflineLog:warn("dang ky de handler: " .. strFunc)
@@ -49,6 +60,18 @@ function OfflineRouter:isSilent(strFunc)
 end
 
 function OfflineRouter:get(strFunc)
+	return self.handlers[strFunc]
+end
+
+--[[ Tra handler theo ĐÚNG bộ ba của bản gốc: (objName, funcName).
+	Ưu tiên bản ghi CÓ OBJ; không có thì rơi về tên trơ. ]]
+function OfflineRouter:getFor(strObj, strFunc)
+	if strObj ~= nil and strObj ~= "" then
+		local fn = self.handlers[strObj .. "." .. strFunc]
+		if fn ~= nil then
+			return fn
+		end
+	end
 	return self.handlers[strFunc]
 end
 

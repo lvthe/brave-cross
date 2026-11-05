@@ -224,7 +224,15 @@ function OfflineNet:flushOne(item)
 			item.obj ~= "" and item.obj or "(toan cuc)", tostring(item.func)))
 	end
 
-	local okCall, err = pcall(CallLocal, item.obj, item.func, szData)
+	--[[ xpcall + traceback: lỗi nằm SÂU trong mã gốc (vd `class.lua:66`), chỉ
+		có câu thông báo thì không biết ai gọi ai. Traceback ghi kèm, một dòng
+		mỗi khung, để tra ngược. ]]
+	local traceback = debug and debug.traceback
+	local okCall, err = xpcall(function ()
+		return CallLocal(item.obj, item.func, szData)
+	end, function (e)
+		return tostring(e) .. (traceback and ("\n" .. tostring(traceback())) or "")
+	end)
 	if not okCall then
 		OfflineLog:err(string.format("loi khi tra %s.%s: %s", item.obj, item.func, tostring(err)))
 	end
@@ -250,7 +258,7 @@ end
 --------------------------------------------------------------- điều phối lệnh
 
 function OfflineNet:dispatch(nModule, strObj, strFunc, ...)
-	local fn = OfflineRouter:get(strFunc)
+	local fn = OfflineRouter:getFor(strObj, strFunc)
 	if not fn then
 		if not OfflineRouter:isSilent(strFunc) then
 			OfflineLog:missing(nModule, strObj, strFunc, packv(...))

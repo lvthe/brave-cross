@@ -148,29 +148,13 @@ local function chua_lam(strTen, strViSao)
 	end)
 end
 
-chua_lam("ClientFight",
-	"nua may chu khong duoc ship — chi biet cong vao IsCanFight, khong biet khi nao"
-	.. " ChallengesCount tang / PayChallengesCount bi tieu")
-chua_lam("ClientInspire",
-	"InspireProbability co trong ma nhung KHONG cho nao doc — khong biet 50/100"
-	.. " la phan tram hay nguong")
-chua_lam("ClientResetEndlessChapter",
-	"khong biet reset cai gi va gia bao nhieu")
-chua_lam("ClientCompeleteFight",
-	"biet thuong qua tang (107000+n) va bo xet IsCompeleteData, nhung khong biet"
-	.. " thu tu duong thang cung cach doi CurrentProsess/BestProsees/CurrentState")
-chua_lam("ClientGotoNextProsees",
-	"phan doi trang thai la cua may chu")
-chua_lam("ClientSwap",
-	"tinh duoc thoi gian quet, nhung cach GOM thuong da tich thanh tPrizeList"
-	.. " khong duoc ship")
-chua_lam("ClientStopSwap",
-	"cung ly do ClientSwap: danh sach thuong quet khong duoc ship")
-chua_lam("ClientSwapImmediately",
-	"client khong co listener nao cho lenh nay — no-op tu dau")
-chua_lam("ClientBuyChallengesCount",
-	"khong biet khi nao tru tai nguyen / cong PayChallengesCount (gia 50 thi co)")
-
+--[[ 9 khoá TRÊN đã được làm THẬT ở `handlers/vong_vo_tan.lua` (2/11) — tệp này
+	KHÔNG đăng ký chúng nữa để tránh "dang ky de handler" và để hành vi thật có
+	hiệu lực. Chín dòng `chua_lam` cũ (Fight/Inspire/Reset/CompeleteFight/
+	GotoNextProsees/Swap/StopSwap/SwapImmediately/BuyChallengesCount) đã bị gỡ;
+	lý do "nửa máy chủ không ship" ở đầu tệp vẫn đúng về mặt LUẬT GỐC, nhưng giờ
+	ta dựng lại bằng các hằng số + hàm ĐỌC có thật của `share/EndlessChapterLogic.lua`
+	(xem [GHIM] ở đầu tệp mới). ]]
 
 --[[ Thưởng thông ải LẦN ĐẦU của một tầng (首次通关奖励).
 

@@ -65,6 +65,11 @@ OfflineStore.TABLES = {
 	-- thoát ngay ở đó, nên `CUIGuildControl:onInit` không chạy tiếp.
 	"GameUserGuildData",     -- share_GuildLogic.ModuleName, GuildStoreLogic
 	"GameUserCloudShop",
+	-- 3/11 (CẦU RPC): `G_SubtitleLogic` của SERVER lưu phụ đề vào bảng này
+	-- (`phu_de.ts`, Mốc 49). Lớp offline tự lưu ở `ClientCommonData`, nên bảng này
+	-- chỉ có khi nhóm ấy đi qua cầu — thêm vào đây để `syncFromClient` LƯU được nó
+	-- (thiếu thì phụ đề đặt qua cầu mất sau lần khởi động lại, im lặng).
+	"GameUserSubtitle",
 	"GameUserStateWar",
 	"GameUserRankTitle",
 	-- Cũng hỏi bằng chuỗi: `EndlessChapterLogic.ModuleName`
@@ -72,6 +77,27 @@ OfflineStore.TABLES = {
 	-- `syncFromClient` LƯU được nó — xem `TU_DUNG` ngay dưới, nó là trường hợp
 	-- đặc biệt chứ không phải mâu thuẫn.
 	"GameUserEndlessChapter",
+	-- Nhiệm vụ ngày — ĐO 28/10: danh sách KHÔNG nằm ở `GameUserDailyTask` mà ở
+	-- **`userData.DailyTaskList`** (`CDataManager:getDailyTaskList`,
+	-- `share/share_CDataManagerPrivate.lua:975-980`). Thiếu tên này thì 8 nhiệm
+	-- vụ sinh ra không sống qua lần vào game sau.
+	"DailyTaskList",
+	-- Vòng quay may mắn: bộ đếm lượt + HAI danh sách 12 ô (`FreeWheelList`,
+	-- `VipWheelList`). Thiếu trong TABLES thì danh sách sinh ra không sống qua
+	-- lần vào game sau — cùng bẫy với `GameUserCavern` ngay dưới.
+	"GameUserFortuneWheel",
+	-- Ma Khu (魔窟). ĐO 28/10: sau khi handler làm mới hàng Ma Khu chạy
+	-- (`Ma Khu: lam moi hang (mien phi) -> 17 mon`), file lưu vẫn
+	-- `"GameUserCavern": null` — vì bảng này KHÔNG có trong TABLES nên
+	-- `syncFromClient` bỏ qua. Client tự dựng nó khi nil (CavernDataManager),
+	-- nên phải LƯU được thì hàng vừa sinh mới sống qua lần vào game sau.
+	"GameUserCavern",
+	-- Luyện hero (训练英雄). ĐO 31/10: handler gán tướng chạy đúng (callback
+	-- `Statistics.OnPracticeHero`) nhưng file lưu KHÔNG có khoá này ⇒
+	-- `PracticeStates` mất sau mỗi lần vào game. Cùng họ bẫy với GameUserCavern
+	-- và GameUserFortuneWheel. Bảng KHÔNG thuộc TU_DUNG: client tự dựng
+	-- `PracticeStates = {}` khi thiếu (`HeroPracticeLogic:GetUserHeroPracticeData`).
+	"GameUserHeroPractice",
 }
 
 --[[ Bảng mà client TỰ DỰNG hình dạng, nhưng CHỈ khi bảng là NIL.
@@ -129,6 +155,15 @@ OfflineStore.TU_DUNG = {
 	-- (CUITourMerchant.lua:179) — nhưng cả hai chỉ chạy khi màn cửa hàng mở,
 	-- mà màn đó chỉ mở trong khối `IS_OPEN_TOURMERCHANT`, tức không bao giờ.
 	GameUserCloudShop = true,
+	--[[ Tinh hồn (星魂). `StarSoulDataManager:GetUserStarSoulData`
+	    (`share_StarSoul/share_StarSoulDataManager.lua:76-95`) chỉ TỰ LÀNH khi
+	    bảng là **nil** — với `{}` nó trả nguyên `{}` và panel đọc `data.pack`
+	    ra nil. Mà `initUserDataFromDB` trả `{}` cho mọi bảng không thuộc
+	    `TU_DUNG` ⇒ phải để bảng VẮNG MẶT để client dựng `InitData()` của nó.
+	    Bảng vẫn nằm trong `TABLES` để LƯU được sau khi client dựng.
+	    ĐO 31/10 trong game: mở panel Chiêm Tinh trước khi vá thì log có
+	    `THIEU G_StarSoulProtocol.ClientGetReq` và panel mở nửa vời. ]]
+	GameUserStarSoul = true,
 }
 
 function OfflineStore:path()
@@ -136,6 +171,33 @@ function OfflineStore:path()
 		return LGG_GetSetFilePath() .. self.FILE
 	end
 	return self.FILE
+end
+
+--[[ Đổi sang KHO CỦA MỘT TÀI KHOẢN (uid lấy từ Postgres sau khi đăng nhập).
+
+	Mỗi tài khoản một file `offline_save_<uid>.json`. Trước khi có tài khoản
+	(hoặc ở chế độ cũ) vẫn là `offline_save.json`. `switchTo` xoá trạng thái
+	trong bộ nhớ rồi nạp file của uid ấy — KHÔNG trộn dữ liệu hai tài khoản.
+
+	Trả `true` nếu đã có file (tài khoản cũ), `false` nếu chưa (tài khoản mới →
+	`OfflineBootstrap:ensure()` sẽ dựng người chơi mới). ]]
+function OfflineStore:switchTo(uid)
+	uid = tostring(uid or "")
+	if uid == "" then
+		return false
+	end
+	if self.uid_tai_khoan == uid and self.data ~= nil then
+		return true
+	end
+	self.uid_tai_khoan = uid
+	self.FILE = string.format("offline_save_%s.json", uid)
+	self.data = nil
+	self.dirty = false
+	self.phien_ban = nil
+	local co = self:load()
+	OfflineLog:info(string.format("tai khoan: kho uid %s — %s", uid,
+		co and "da nap file luu" or "chua co, se tao nguoi choi moi"))
+	return co
 end
 
 --------------------------------------------------------------------- nạp / lưu

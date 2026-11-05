@@ -1,0 +1,3031 @@
+{
+ "player_config.xml": [
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player03",
+   "sClass": "CDFSpriteFightPlayer03",
+   "nAttackType": 5,
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 6.0,
+   "fAttackFrameFight3": 6.0,
+   "nComboNum": 1
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player03_Weapon",
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player03Wake",
+   "sClass": "CDFSpritePlayer03Wake",
+   "nAttackType": 5,
+   "fAttackFrameWake": 1.2
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player03_WeaponWake",
+   "sClass": "CDFSpriteFightPlayer03WeaponWakeFight",
+   "nAttackType": 3,
+   "fAttackFrameFight": 15.0,
+   "ptAttackExpandUnitLB": [
+    -1.5,
+    -1
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_EquipWing_Weapon",
+   "sClass": "CDFSpriteFightInAbility"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_EquipWingS14_Weapon",
+   "sClass": "CDFSpriteFightInAbility",
+   "fAttackFrameFight": 5
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player00003",
+   "sBaseItem": "fight_Player03"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player00003Wake",
+   "sBaseItem": "fight_Player03Wake"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player000M03W",
+   "sBaseItem": "fight_Player00003"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player000M03F",
+   "sBaseItem": "fight_Player00003"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player000W03W",
+   "sBaseItem": "fight_Player00003"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player000W03WWake",
+   "sBaseItem": "fight_Player03Wake",
+   "fAttackFrameWake": 5.0
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player000W03F",
+   "sBaseItem": "fight_Player00003"
+  },
+  {
+   "_tep": "player_config.xml",
+   "sName": "fight_Player002W03WWake",
+   "sBaseItem": "fight_Player03Wake",
+   "fAttackFrameWake": 5.0
+  }
+ ],
+ "hero_config.xml": [
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiao",
+   "sClass": "CDFSpriteFightZhangJiao",
+   "fAttackFrameFight": 9.2,
+   "fAttackFrameFight2": 0,
+   "fAttackFrameLoopFight": 9.2,
+   "ptAttackExpandUnitLB": [
+    -1,
+    -1
+   ],
+   "nAttackTargetLimit": 3,
+   "nComboNumFight": 3,
+   "sWeaponFight": "ZhangJiao_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiao_Weapon1",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiaoWake",
+   "sClass": "CDFSpriteFightZhangJiaoWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 13.0,
+   "nAttackSectionLimit": 8,
+   "fAttackSectionInterval": 5.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiangYoung",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "fAttackFrameFight": 14.64,
+   "fAttackFrameFight2": 9.0,
+   "fAttackFrameLoopFight": 4.0,
+   "nComboNumFight": 3,
+   "sWeaponFight": "BowHero_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiangYoungWake",
+   "sClass": "CDFSpriteFightZuoCiWake",
+   "fAttackFrameWake": 10.0,
+   "nComboNum": 23,
+   "sWeaponFight": "SunShangXiangYoung_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiangYoung_WeaponWake",
+   "sClass": "CDFSpriteFightThrowInMove",
+   "lsPlugins": [
+    "ZuoCi_WeaponWakeHit"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiangYoung_WeaponWake2",
+   "lsPlugins": [
+    "ZuoCi_WeaponWake2Hit"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZuoCi",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "fAttackFrameFight": 14.64,
+   "fAttackFrameFight2": 9.0,
+   "fAttackFrameLoopFight": 4.0,
+   "nComboNumFight": 3,
+   "sWeaponFight": "ZuoCi_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZuoCiWake",
+   "sClass": "CDFSpriteFightZuoCiWakeStage",
+   "nAttackType": 5,
+   "fAttackFrameWake": 10.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZuoCi_WeaponWake",
+   "sClass": "CDFSpriteFightThrowInMove",
+   "lsPlugins": [
+    "ZuoCi_WeaponWakeHit",
+    "ZuoCi_WakeDebuff"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZuoCi_WeaponWake2",
+   "lsPlugins": [
+    "ZuoCi_WeaponWake2Hit",
+    "ZuoCi_WakeDebuff"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuJin",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 5.0,
+   "fAttackFrameFight2": 9.0,
+   "nAttackTargetLimit": 2,
+   "fDamageBonusFight": 0.24
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuJinWake",
+   "sClass": "CDFSpriteFightYuJinWake",
+   "nSortTargets": 3,
+   "fAttackFrameWake": 12.0,
+   "nAttackTargetLimit": 4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaDai",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "fAttackFrameFight": 4.8,
+   "fAttackFrameFight2": 11,
+   "fAttackFrameLoopFight": 2.4,
+   "nAttackTargetLimit": 3,
+   "nComboNum": 3,
+   "sWeaponFight": "MaDai_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaDaiWake",
+   "sClass": "CDFSpriteFightMaDaiWake",
+   "nAttackType": 5,
+   "fAttackFrameWake": 14.4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaDai_WeaponWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 8,
+   "nAttackTargetLimit": 5,
+   "nAttackSectionLimit": 4,
+   "fAttackSectionInterval": 4,
+   "bAttackSectionReorientation": 1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuShu",
+   "sClass": "CDFSpriteFightDoubleBarrel",
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 7.2,
+   "fAttackFrameLoopFight": 1.8,
+   "nAttackTargetLimit": 2,
+   "nComboNum": 2,
+   "sWeaponFight": "XuShu_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuShuWake",
+   "sClass": "CDFSpriteFightXuShuWake",
+   "fAttackFrameWake": 7.8,
+   "sWeaponFight": "XuShu_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuShu_WeaponWake",
+   "lsPlugins": [
+    "XuShu_WakeEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuShuWeaponWakeFinal",
+   "sClass": "CDFSpriteFightXuShuWeaponWake",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -1,
+    -1
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuShu_WeaponWakeEnergy",
+   "sClass": "CDFSpriteFightEnergy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangYueYing",
+   "sClass": "CDFSpriteHeroHuangYueYingFight",
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 7.2,
+   "fAttackFrameLoopFight": 6.0,
+   "nComboNum": 2,
+   "sWeaponFight": "HuangYueYing_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangYueYing_Weapon1",
+   "sClass": "CDFSpriteFightHuangYueYingWeapon01",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangYueYing_Weapon2",
+   "sClass": "CDFSpriteFightHuangYueYingWeapon02"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangYueYingWake",
+   "sClass": "CDFSpriteHeroHuangYueYingWake",
+   "fAttackFrameWake": 9.6,
+   "sWeaponFight": "HuangYueYingWeapon_Wake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangYueYingWeaponWake",
+   "sClass": "CDFSpriteFightHuangYueYingWeaponWake",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoZhi",
+   "sClass": "CDFSpriteFightCaoZhiWeapon",
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 7.0,
+   "nAttackTargetLimit": 2,
+   "sWeaponFight": "CaoZhi_Weapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoZhiWeapon",
+   "sClass": "CDFSpriteFightCaoZhiWeapon",
+   "fAttackFrameFight": 0,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoZhiWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 2,
+   "fAttackFrameWake": 10.6,
+   "ptAttackExpandUnitLB": [
+    0,
+    -1
+   ],
+   "ptAttackExpandUnitRT": [
+    4.5,
+    1
+   ],
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LuXun",
+   "sClass": "CDFSpriteFightLuXun",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 6.0,
+   "fAttackFrameWake": 13,
+   "nAttackTargetLimit": 2,
+   "fAttackSectionInterval": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LuXunAwaken",
+   "sClass": "CDFSpriteFightLuXunAwaken",
+   "fAttackFrameFight": 13,
+   "fAttackFrameFight2": 20,
+   "fAttackFrameFight3": 9,
+   "fAttackFrameWake": 13,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PangDe",
+   "fAttackFrameFight": 12.3,
+   "fAttackFrameFight2": 7.0,
+   "nAttackTargetLimit": 2,
+   "lsPlugins": [
+    "PangDe_PluginChangeWakeFuryAdd"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PangDeWake",
+   "sClass": "CDFSpriteFightPangDeWake",
+   "nAttackType": 2,
+   "fAttackFrameWake": 8.4,
+   "ptAttackExpandUnitLB": [
+    0,
+    -1
+   ],
+   "ptAttackExpandUnitRT": [
+    4.5,
+    1
+   ],
+   "nAttackTargetLimit": 6,
+   "nAttackSectionLimit": 6,
+   "lsPlugins": [
+    "PangDe_NoCure"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangFei",
+   "sClass": "CDFSpriteFightZhangFei",
+   "fAttackFrameFight": 3.0,
+   "fAttackFrameFight2": 9.6,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangFeiWake",
+   "sClass": "CDFSpriteFightZhangFeiWake",
+   "fAttackFrameWake": 44.0,
+   "nAttackTargetLimit": 6,
+   "nComboNum": 7
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangFeiWeaponWake",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LingTong",
+   "fAttackFrameFight": 5.0,
+   "fAttackFrameFight2": 5.4,
+   "nAttackTargetLimit": 1,
+   "nAttackSectionLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LingTongWake",
+   "sClass": "CDFSpriteWakeLingTong",
+   "nAttackType": 1,
+   "fAttackFrameWake": 16.9,
+   "nAttackTargetLimit": 6,
+   "lsPlugins": [
+    "Plugin_LingTong"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PoJun",
+   "sClass": "CDFSpriteFightCure",
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 9.6,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PoJunWake",
+   "sClass": "CDFSpriteFightPoJunWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 19.5,
+   "nAttackTargetLimit": 6,
+   "nAttackSectionLimit": 20,
+   "fAttackSectionInterval": 0.48
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiangWei",
+   "sClass": "CDFSpriteFightJiangWei",
+   "fAttackFrameFight": 4.0,
+   "fAttackFrameFight2": 4.6,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiangWeiWake",
+   "sClass": "CDFSpriteWakeJiangWei",
+   "nAttackTargetLimit": 12,
+   "lsPlugins": [
+    "JiangWei_EtchBuff"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouCang",
+   "sClass": "CDFSpriteFightZhouCang",
+   "nAttackType": 2,
+   "fAttackFrameFight": 13.0,
+   "fAttackFrameFight2": 6,
+   "ptAttackExpandUnitLB": [
+    -2,
+    -2
+   ],
+   "nAttackTargetLimit": 2,
+   "fAttackSectionInterval": 0.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouCangWake",
+   "sClass": "CDFSpriteFightZhouCangWake",
+   "fAttackFrameWake": 0.0,
+   "nAttackTargetLimit": 4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouCangWakeScript",
+   "sClass": "CDFSpriteFightZhouCangWake",
+   "fAttackFrameWake": 0.0,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuanYu",
+   "sClass": "CDFSpriteFightGuanYu",
+   "fAttackFrameFight": 4.6,
+   "fAttackFrameFight2": 4.6,
+   "nAttackTargetLimit": 3,
+   "nAttackSectionLimit": 3,
+   "fAttackSectionInterval": 4.6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuanYuWake",
+   "sClass": "CDFSpriteWakeGuanYu",
+   "sBaseItem": "fight_GuanYuWakeDiff",
+   "nAttackType": 6,
+   "fAttackFrameWake": 6.25,
+   "nAttackTargetLimit": 6,
+   "nAttackSectionLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaoQiao",
+   "sClass": "CDFSpriteFightXiaoQiao",
+   "nAttackType": 5,
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 18,
+   "nAttackTargetLimit": 4,
+   "sWeaponFight": "XiaoQiao_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaoQiaoWake",
+   "sClass": "CDFSpriteFightXiaoQiaoWake",
+   "fAttackFrameWake": 12,
+   "nAttackSectionLimit": 24,
+   "fAttackSectionInterval": 1.3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaoQiaoWeapon2",
+   "fAttackFrameFight": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_TanLang",
+   "sClass": "CDFSpriteFightTanLang",
+   "fAttackFrameFight": 7.0,
+   "fAttackFrameFight2": 3.6,
+   "fAttackFrameFight3": 9.6,
+   "nAttackTargetLimit": 3,
+   "nAttackSectionLimit": 2,
+   "fAttackSectionInterval": 6.0,
+   "fDamageBonusFight": 0.3,
+   "lsPlugins": []
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_TanLangWake",
+   "sClass": "CDFSpriteFightTanLangWake",
+   "sWeaponFight": "TanLang_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_bounceHoriz_weapon",
+   "sClass": "CDFSpriteFightWeaponBounceHoriz",
+   "lsPlugins": [
+    "TanLang_WakeEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LvBu",
+   "sClass": "CDFSpriteFightLvBu",
+   "fAttackFrameFight": 4.5,
+   "fAttackFrameFight2": 1.8,
+   "nAttackTargetLimit": 5,
+   "fDamageBonusFight": 0.4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LvBuEvil",
+   "sClass": "CDFSpriteFightLvBuEvil",
+   "fAttackFrameFight": 13.6,
+   "fAttackFrameFight2": 3.0,
+   "nAttackTargetLimit": 5,
+   "fDamageBonusFight": 0.4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunCe",
+   "fAttackFrameFight": 7.68,
+   "fAttackFrameFight2": 3.0,
+   "nAttackTargetLimit": 3,
+   "nAttackSectionLimit": 2,
+   "fDamageBonusFight": 0.55
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunCeWake",
+   "sClass": "CDFSpriteWakeSunCe",
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhaoYun",
+   "sClass": "CDFSpriteFightZhaoYun",
+   "fAttackFrameFight": 7.68,
+   "fAttackFrameFight2": 6.0,
+   "nAttackTargetLimit": 4,
+   "nAttackSectionLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhaoYunWake",
+   "sClass": "CDFSpriteFightZhaoYunWake",
+   "fAttackFrameWake": 2.4,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuYong",
+   "fAttackFrameFight": 14.4,
+   "fAttackFrameFight2": 7.2,
+   "sWeaponFight": "GuYong_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuYongWake",
+   "sClass": "CDFSpriteFightGuYongWake",
+   "nAttackType": 5,
+   "fAttackFrameWake": 5.46
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuYong_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackTargetLimit": 2,
+   "lsPlugins": [
+    "GuYong_PluginChangeWakeFury"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XinXianYing",
+   "sClass": "CDFSpriteFightXinXianYing",
+   "nAttackType": 5,
+   "fAttackFrameFight": 7.2,
+   "fAttackFrameFight2": 7.2,
+   "fAttackFrameLoopFight": 10.8,
+   "nComboNumFight": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XinXianYing_Weapon",
+   "sClass": "CDFSpriteFightXinXianYingWeapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XinXianYingWake",
+   "sClass": "CDFSpriteFightXinXianYingWake",
+   "fAttackFrameWake": 13.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouYu",
+   "sClass": "CDFSpriteFightZhouYu",
+   "fAttackFrameFight": 7.0,
+   "fAttackFrameFight2": 7.0,
+   "sWeaponFight": "ZhouYu_Weapon_Normal1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouYuWake",
+   "sClass": "CDFSpriteFightZhouYuWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouYu_Weapon_Wake",
+   "sClass": "CDFSpriteFightFightZhouYuWakeWeapon",
+   "fAttackFrameFight": 11.0,
+   "lsPlugins": [
+    "ZhouYu_PluginReducedDefense"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhouYu_Weapon_TianFu"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiaoEvil",
+   "sClass": "CDFSpriteFightZhangJiaoEvil",
+   "nAttackType": 5,
+   "fAttackFrameFight": 9.6,
+   "fAttackFrameFight2": 0,
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "ZhangJiaoEvil_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiaoEvil_Weapon1",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 4.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangJiaoEvilWake",
+   "sClass": "CDFSpriteFightZhangJiaoEvilWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 16.8,
+   "nAttackSectionLimit": 10,
+   "fAttackSectionInterval": 4.5
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiangBao",
+   "sClass": "CDFSpriteFightZhangLiangBao",
+   "nAttackType": 5,
+   "fAttackFrameFight": 30.0,
+   "fAttackFrameFight2": 12,
+   "ptAttackExpandUnitLB": [
+    -2,
+    -2
+   ],
+   "ptAttackExpandUnitRT": [
+    2,
+    2
+   ],
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "ZhangLiangBao_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiangBao_Weapon1",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 3.08,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiangBaoWake",
+   "sClass": "CDFSpriteFightZhangJiaoEvilWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 16.8,
+   "nAttackSectionLimit": 10,
+   "fAttackSectionInterval": 1.2,
+   "lsPlugins": []
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiangEvil",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 9.6,
+   "fAttackFrameFight2": 6.0,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiangEvilWake",
+   "sClass": "CDFSpriteFightZhangLiangEvilWake",
+   "fAttackFrameWake": 8.0,
+   "nAttackSectionLimit": 8,
+   "fAttackSectionInterval": 1.8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuHuang",
+   "sClass": "CDFSpriteFightXuHuang",
+   "fAttackFrameFight": 3.84,
+   "fAttackFrameFight2": 5.4,
+   "nAttackTargetLimit": 2,
+   "fDamageBonusFight": 0.7
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuHuang_Weapon2",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 2.4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuHuangWake",
+   "sClass": "CDFSpriteWakeXuHuang",
+   "fAttackFrameWake": 7.7
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XuHuang_WeaponWake",
+   "sClass": "CDFSpriteFightXuHuangWeaponWake",
+   "fAttackFrameFight": 5.8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PanFeng",
+   "sClass": "CDFSpriteFightPanFeng",
+   "fAttackFrameFight": 6.1,
+   "fAttackFrameFight2": 5.376,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_PanFengWake",
+   "sClass": "CDFSpriteWakePanFeng",
+   "nAttackType": 2,
+   "fAttackFrameWake": 18,
+   "ptAttackExpandUnitLB": [
+    -2,
+    -2
+   ],
+   "nAttackTargetLimit": 6,
+   "nAttackSectionLimit": 1,
+   "lsPlugins": []
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GongSunZan",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 13.0,
+   "fAttackFrameFight2": 14.5,
+   "nAttackTargetLimit": 3,
+   "fDamageBonusFight": 0.8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GongSunZanWake",
+   "sClass": "CDFSpriteWakeGongSunZan",
+   "nAttackType": 6,
+   "fAttackFrameWake": 20.0,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LiuBei",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 12.0,
+   "fAttackFrameFight2": 6.0,
+   "nAttackTargetLimit": 2,
+   "lsPlugins": [
+    "LiuBei_PluginChangeWakeFury"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LiuBeiWake",
+   "sClass": "CDFSpriteFightLiuBeiWake",
+   "fAttackFrameWake": 13.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuaXiong",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 1,
+   "fAttackFrameFight": 14.4,
+   "fAttackFrameFight2": 9.8,
+   "nAttackTargetLimit": 1,
+   "lsPlugins": [
+    "HuaXiong_PluginChangeWakeFury",
+    "HuaXiong_PluginChangeWakeFuryAdd"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuaXiongWake",
+   "sClass": "CDFSpriteFightHuaXiongWake",
+   "fAttackFrameWake": 24.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunLuBan",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 9.0,
+   "fAttackFrameFight2": 7.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunLuBanWake",
+   "sClass": "CDFSpriteFightSunLuBanWake",
+   "fAttackFrameWake": 18.25,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuo",
+   "sClass": "CDFSpriteFightDongZhuo",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 5.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoWake",
+   "sClass": "CDFSpriteFightDongZhuoWake",
+   "fAttackFrameWake": 15
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoEvil",
+   "sClass": "CDFSpriteFightDongZhuoEvil",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 8.0,
+   "fAttackFrameFight2": 7.0,
+   "fAttackFrameWake": 10.0,
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "DongZhuoEvil_WeaponNormal1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoEvil_Weapon1",
+   "sClass": "CDFSpriteFightDongZhuoEvilWeapon",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoEvil_Weapon2",
+   "sClass": "CDFSpriteFightDongZhuoEvilWeapon",
+   "fAttackFrameFight": 5.4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoEvil_WeaponWake",
+   "sClass": "CDFSpriteFightDongZhuoEvilWeapon",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DongZhuoEvil_Energy",
+   "sClass": "CDFSpriteFightEnergy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShao",
+   "sClass": "CDFSpriteFightHeavy",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 12.0,
+   "fAttackFrameFight2": 3.6,
+   "sWeaponFight": "YuanShao_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShao_Weapon",
+   "sClass": "CDFSpriteFightYuanShaoWeapon",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShaoWake",
+   "sClass": "CDFSpriteFightYuanShaoWake",
+   "sWeaponFight": "YuanShao_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShao_WeaponWake",
+   "sClass": "CDFSpriteFightWeaponBounceHoriz",
+   "lsPlugins": [
+    "YuanShao_WakeEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunJian",
+   "sClass": "CDFSpriteFightSunJian",
+   "fAttackFrameFight": 16.0,
+   "fAttackFrameFight2": 11.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunJianWake",
+   "sClass": "CDFSpriteFightSunJianWake",
+   "fAttackFrameWake": 25.32,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_FaZheng",
+   "sClass": "CDFSpriteFightFaZheng",
+   "fAttackFrameFight": 7.2,
+   "fAttackFrameFight2": 8.4,
+   "sWeaponFight": "FaZheng_Weapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_FaZheng_Weapon",
+   "sClass": "CDFSpriteFightFaZhengWeapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_FaZhengWake",
+   "sClass": "CDFSpriteFightFaZhengWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiaoChan",
+   "sClass": "CDFSpriteFightDiaoChan",
+   "fAttackFrameFight": 6.144,
+   "fAttackFrameFight2": 3.84,
+   "nAttackSectionLimit": 2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiaoChanWake",
+   "sClass": "CDFSpriteFightDiaoChanWake",
+   "fAttackFrameWake": 14.6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YanLiangWenChou",
+   "sClass": "CDFSpriteFightYanLiangWenChou",
+   "sWeaponFight": "YanLiangWenChou_Weapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YanLiangWenChouWeapon",
+   "sClass": "CDFSpriteFightYanLiangWenChouWeapon",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -2.0,
+    -2.0
+   ],
+   "nAttackTargetLimit": 1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YanLiangWenChouWake",
+   "sClass": "CDFSpriteWakeYanLiangWenChou",
+   "fAttackFrameWake": 8,
+   "ptAttackExpandUnitLB": [
+    -2,
+    -1
+   ],
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShu",
+   "sClass": "CDFSpriteFightYuanShao",
+   "fAttackFrameFight": 3.6,
+   "fAttackFrameFight2": 6.0,
+   "sWeaponFight": "YuanShu_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShu_Weapon",
+   "sClass": "CDFSpriteFightYuanShuWeapon",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YuanShuWake",
+   "sClass": "CDFSpriteFightYuanShuWake",
+   "fAttackFrameWake": 18.0,
+   "sWeaponFight": "YuanShu_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LuSu",
+   "sClass": "CDFSpriteFightLuSu",
+   "fAttackFrameFight": 15.0,
+   "fAttackFrameFight2": 7.0,
+   "fAttackFrameWake": 7.0,
+   "fAttackFrameLoopFight": 1.2,
+   "nAttackTargetLimit": 2,
+   "nComboNum": 2,
+   "sWeaponFight": "LuSu_Weapon1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LuSuWeapon",
+   "lsPlugins": [
+    "LuSu_PluginChangeWakeFury"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_LuSuWeaponWake",
+   "sClass": "CDFSpriteFightLuSuWeaponWake",
+   "nAttackType": 2,
+   "fAttackFrameFight": 3.36,
+   "ptAttackExpandUnitLB": [
+    -4,
+    -4
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiao",
+   "sClass": "CDFSpriteFightZhangLiao",
+   "fAttackFrameFight": 8.4,
+   "fAttackFrameFight2": 16.2,
+   "fAttackFrameFight3": 6,
+   "nAttackTargetLimit": 4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiaoWake",
+   "sClass": "CDFSpriteFightZhangLiaoGodWake",
+   "nSortTargets": 3,
+   "fAttackFrameWake": 20,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiaoGod",
+   "sClass": "CDFSpriteFightZhangLiaoGod",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 10,
+   "nAttackTargetLimit": 4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiaoGodWeapon",
+   "lsPlugins": [
+    "ZhangLiaoGod_WeaponHit"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangLiaoGodWake",
+   "sClass": "CDFSpriteFightZhangLiaoGodWake",
+   "fAttackFrameWake": 29,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiang",
+   "sClass": "CDFSpriteFightSunShangXiang",
+   "fAttackFrameFight": 9.0,
+   "fAttackFrameFight2": 14.0,
+   "fAttackFrameLoopFight": 4.0,
+   "nAttackTargetLimit": 3,
+   "nComboNumFight": 3,
+   "sWeaponFight": "SunShangXiang_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_sunshangxiang_weapon",
+   "sClass": "CDFSpriteFightSunShangXiangWeapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiangWake",
+   "sClass": "CDFSpriteFightSunShangXiangWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunShangXiang_WeaponWake",
+   "sClass": "CDFSpriteFightSunShangXiangWeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiaXu",
+   "sClass": "CDFSpriteFightDoubleBarrel",
+   "nSortTargets": 2,
+   "fAttackFrameFight": -1,
+   "fAttackFrameFight2": 7,
+   "nAttackTargetLimit": 2,
+   "nComboNum": 2,
+   "sWeaponFight": "JiaXu_Weapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiaXuWeapon",
+   "sBaseItem": "fight_JiaXuWeapon2",
+   "fAttackFrameFight": 9
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiaXuWeapon2",
+   "sClass": "CDFSpriteFightJiaXuWeapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_JiaXuWake",
+   "sClass": "CDFSpriteFightJiaXuWake",
+   "fAttackFrameWake": 14,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_BuLianShi",
+   "fAttackFrameFight": 15,
+   "fAttackFrameFight2": 9,
+   "fAttackFrameWake": 16,
+   "sWeaponFight": "BuLianShi_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_BuLianShi_WeaponNormal",
+   "sClass": "CDFSpriteFightSplash"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_BuLianShi_WeaponNormal2",
+   "sBaseItem": "fight_BuLianShi_WeaponNormal",
+   "lsPlugins": [
+    "BuLianShi_WeaponEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_BuLianShi_WeaponWakeAttack",
+   "sClass": "CDFSpriteFightBuLianShiWeaponWake",
+   "lsPlugins": [
+    "BuLianShi_WeaponEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangYoung",
+   "sClass": "CDFSpriteFightZhuGeLiangYoung",
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameFight2": 6.0,
+   "fAttackFrameLoopFight": 2.0,
+   "nComboNum": 4,
+   "sWeaponFight": "ZhuGeLiangYoung_Weapon_Normal1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangYoung_Weapon1",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangYoung_Weapon2",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangYoung_Wake",
+   "sClass": "CDFSpriteFightZhuGeLiangYoungWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 12,
+   "nAttackTargetLimit": 10
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiang",
+   "sClass": "CDFSpriteFightHeavy",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 10,
+   "fAttackFrameFight2": 10,
+   "nAttackTargetLimit": 8,
+   "sWeaponFight": "ZhuGeLiang_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiang_WeaponNormal",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 2,
+   "lsPlugins": [
+    "ZhuGeLiang_FightEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangWake",
+   "sClass": "CDFSpriteFightZhuGeLiangWake",
+   "fAttackFrameWake": 6,
+   "nAttackTargetLimit": 8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangThunder_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 2,
+   "lsPlugins": [
+    "ZhuGeLiangThunder_FightFury"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhuGeLiangSnow_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 2,
+   "lsPlugins": [
+    "ZhuGeLiangSnow_FightFury",
+    "ZhuGeLiangSnow_FightEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_Thief",
+   "fAttackFrameFight": 0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DianWei",
+   "sClass": "CDFSpriteFightDianWei",
+   "fAttackFrameFight": 13,
+   "fAttackFrameFight2": 12,
+   "fAttackFrameWake": 20,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DaQiao",
+   "sClass": "CDFSpriteFightDaQiao",
+   "fAttackFrameFight": 12.0,
+   "fAttackFrameFight2": 15.0,
+   "sWeaponFight": "DaQiao_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DaQiaoWake",
+   "sClass": "CDFSpriteFightDaQiaoWake",
+   "fAttackFrameWake": 5
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DengAi",
+   "sClass": "CDFSpriteFightDengAi",
+   "fAttackFrameFight": 5.0,
+   "fAttackFrameFight2": 16,
+   "nAttackTargetLimit": 1,
+   "sWeaponFight": "DengAi_Weapon"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DengAi_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 0,
+   "nAttackTargetLimit": 5
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DengAiWake",
+   "sClass": "CDFSpriteFightDengAiWake",
+   "fAttackFrameWake": 5,
+   "nAttackSectionLimit": 7,
+   "fAttackSectionInterval": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuoJia",
+   "sClass": "CDFSpriteRoleGuoJiaFight",
+   "nSortTargets": 3,
+   "fAttackFrameFight": 9.0,
+   "fAttackFrameFight2": 10,
+   "fAttackFrameLoopFight": 2.0,
+   "nComboNumFight": 2,
+   "sWeaponFight": "GuoJia_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuoJia_WeaponNormal",
+   "sClass": "CDFSpriteFightGuoJiaWeapon",
+   "nAttackType": 1,
+   "fAttackFrameFight": 3,
+   "nAttackTargetLimit": 1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuoJia_WeaponNormal2",
+   "sClass": "CDFSpriteFightGuoJiaWeapon",
+   "nAttackType": 1,
+   "fAttackFrameFight": 16,
+   "nAttackTargetLimit": 1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuoJiaWake",
+   "sClass": "CDFSpriteFightGuoJiaWake",
+   "fAttackFrameWake": 13
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GuoJiaMonster",
+   "sClass": "CDFSpriteFightGuoJiaMonster",
+   "nAttackType": 2,
+   "fAttackFrameFight": 12,
+   "fAttackFrameFight2": 12,
+   "ptAttackExpandUnitLB": [
+    -2,
+    -2.0
+   ],
+   "ptAttackExpandUnitRT": [
+    10.0,
+    2.0
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunWuKong",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 15.5,
+   "fAttackFrameFight2": 5,
+   "fAttackSectionInterval": 4
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunWuKongWake",
+   "sClass": "CDFSpriteFightSunWuKongWake",
+   "nAttackType": 2,
+   "fAttackFrameWake": 16.9,
+   "ptAttackExpandUnitLB": [
+    -2.5,
+    -4
+   ],
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaiWenJi",
+   "sClass": "CDFSpriteFightCaiWenJi",
+   "fAttackFrameFight": 12,
+   "fAttackFrameFight2": 12,
+   "fAttackFrameWake": 8,
+   "nAttackTargetLimit": 11
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunQuan",
+   "sClass": "CDFSpriteFightSunQuanWeapon",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 14.0,
+   "nAttackTargetLimit": 1,
+   "sWeaponFight": "SunQuan_Weapon_Normal1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunQuanWeapon",
+   "sClass": "CDFSpriteFightSunQuanWeapon",
+   "fAttackFrameFight": 0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunQuanWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 5,
+   "fAttackFrameWake": 12.0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SunQuan_WeaponWake",
+   "sClass": "CDFSpriteFightSunQuanWeaponWake",
+   "fAttackFrameFight": 0,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_NanHuaLaoXian",
+   "sClass": "CDFSpriteFightNanHuaLaoXian",
+   "fAttackFrameFight": 10,
+   "fAttackFrameFight2": 10,
+   "fAttackFrameWake": 28,
+   "nAttackTargetLimit": 3,
+   "nComboNumFight": 3,
+   "sWeaponFight": "NanHuaLaoXian_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_NanHuaLaoXian_Weapon",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_NanHuaLaoXian_Thrown",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuShen",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 7
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_WangYuanJi",
+   "sClass": "CDFSpriteFightWangYuanJi",
+   "nAttackType": 2,
+   "fAttackFrameFight": 12,
+   "fAttackFrameFight2": 14,
+   "ptAttackExpandUnitLB": [
+    0,
+    -1
+   ],
+   "ptAttackExpandUnitRT": [
+    300,
+    1
+   ],
+   "nAttackTargetLimit": 12
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_WangYuanJiWake",
+   "sClass": "CDFSpriteFightWangYuanJiWake",
+   "nSortTargets": 3,
+   "fAttackFrameWake": 3.5,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_WangYuanJi_Talent",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangHe",
+   "sClass": "CDFSpriteFightZhangHe",
+   "fAttackFrameFight": 7.5,
+   "fAttackFrameFight2": 11,
+   "nAttackTargetLimit": 10
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangHeWake",
+   "sClass": "CDFSpriteFightZhangHeWake",
+   "nSortTargets": 3,
+   "fAttackFrameWake": 10
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhangHeGhost",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 10
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaChao",
+   "sClass": "CDFSpriteFightMaChao",
+   "fAttackFrameFight": 16,
+   "fAttackFrameFight2": 13,
+   "fAttackFrameWake": 16,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SuperThunderDragonHeroWake",
+   "sBaseItem": "fight_SuperThunderDragonWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SiMaYi",
+   "sClass": "CDFSpriteFightBoth",
+   "fAttackFrameFight": 8,
+   "fAttackFrameFight2": 6,
+   "fAttackFrameFight3": 8,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SiMaYiWake",
+   "sClass": "CDFSpriteFightSiMaYiWake",
+   "fAttackFrameWake": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_SiMaYi_WakeEffect",
+   "sClass": "CDFSpriteFightSiMaYiWakeEffect",
+   "fAttackFrameWake": 7.35
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhiTianXinChang",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 11,
+   "fAttackFrameFight2": 17,
+   "nAttackTargetLimit": 4,
+   "lsPlugins": [
+    "ZhiTianXinChang_HitEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhiTianXinChang_WeaponNormal",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "ZhiTianXinChang_WeaponHitEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ZhiTianXinChangWake",
+   "sClass": "CDFSpriteFightPredetermineTarget",
+   "nSortTargets": 2,
+   "fAttackFrameWake": 67,
+   "lsPlugins": [
+    "ZhiTianXinChang_WakeDebuff"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangZhong",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "fAttackFrameFight": 8.5,
+   "fAttackFrameFight2": 10,
+   "sWeaponFight": "HuangZhong_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangZhongWeaponNormal",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangZhongWeaponNormal2",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_HuangZhongWake",
+   "sClass": "CDFSpriteFightStorePower",
+   "fAttackFrameWake": 9
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoCao",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 11,
+   "fAttackFrameFight2": 9,
+   "lsPlugins": [
+    "CaoCao_HitEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoCao_WeaponNormal",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "CaoCao_HitEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoCaoWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 5,
+   "fAttackFrameWake": 22
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoCao_WeaponWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 5,
+   "sWeaponFight": "CaoCao_WakeEnergy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_CaoCao_WakeEnergy",
+   "sClass": "CDFSpriteFightPlugWeapon",
+   "fAttackFrameFight": 112,
+   "lsPlugins": [
+    "CaoCao_HitEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YueJin",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 6,
+   "fAttackFrameFight2": 4,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_YueJinWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 2,
+   "fAttackFrameWake": 9,
+   "ptAttackExpandUnitLB": [
+    -1.5,
+    -3
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GanNing",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 7
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GanNingWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_GanNingGhost",
+   "sBaseItem": "fight_GanNing"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouDun",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 6,
+   "fAttackFrameFight2": 10
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouDunWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 0,
+   "fAttackFrameWake": 18
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouDunGhost",
+   "sBaseItem": "fight_GanNing"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouHunPo",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouBa",
+   "sClass": "CDFSpriteFightCure",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 11,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_XiaHouBaWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 0
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ShuiJingXianSheng",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 11,
+   "fAttackFrameFight2": 6,
+   "sWeaponFight": "ShuiJingXianSheng_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ShuiJingXianShengWeapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "ShuiJingXianSheng_FightEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ShuiJingXianShengWeapon2",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 8
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_ShuiJingXianShengWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 8,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaYunLu",
+   "sClass": "CDFSpriteFightHeavy",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 19.2,
+   "fAttackFrameFight2": 8.3,
+   "sWeaponFight": "MaYunLu_WeaponNormal1"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaYunLu_WeaponNormal",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaYunLuWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 12,
+   "sWeaponFight": "MaYunLu_WeaponWake"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_MaYunLu_WeaponWake",
+   "sClass": "CDFSpriteFightStorePower",
+   "fAttackFrameWake": 28,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiJianShi",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiJianShiWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 0,
+   "fAttackFrameWake": 9
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiQiangBing",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 12,
+   "fAttackFrameWake": 10,
+   "fAttackSectionInterval": 5.5
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiQiangBingWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 9.5,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiGongJianShou",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 9,
+   "nComboNum": 1,
+   "sWeaponFight": "DiJiGongJianShou_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiGongJianShouWake",
+   "sClass": "CDFSpriteFightMultiBarrel",
+   "nAttackType": 5,
+   "fAttackFrameWake": 35,
+   "nAttackTargetLimit": 3,
+   "nComboNum": 3
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiGongJianShou_WeaponWake",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNvFaShi",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 7,
+   "fAttackFrameWake": 8,
+   "sWeaponFight": "DiJiNvFaShi_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNvFaShi_WeaponNormal",
+   "lsPlugins": [
+    "DiJiNvFaShi_FightEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNvFaShi_WeaponWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 21.5,
+   "lsPlugins": [
+    "DiJiNvFaShi_WakeEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNanFaShi",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 7,
+   "fAttackFrameWake": 10,
+   "sWeaponFight": "DiJiNanFaShi_WeaponNormal"
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNanFaShi_WeaponNormal",
+   "lsPlugins": [
+    "DiJiNanFaShi_FightEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiNanFaShi_WeaponWake",
+   "sBaseItem": "fight_DiJiNvFaShi_WeaponWake",
+   "fAttackFrameWake": 19.5,
+   "lsPlugins": [
+    "DiJiNanFaShi_WakeEffect"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiMuShi",
+   "sClass": "CDFSpriteFightTreat",
+   "nAttackType": 6,
+   "fAttackFrameFight": 6,
+   "fAttackFrameFight2": 8,
+   "lsPlugins": [
+    "DiJiMuShi_CureBuff"
+   ]
+  },
+  {
+   "_tep": "hero_config.xml",
+   "sName": "fight_DiJiMuShiWake",
+   "sClass": "CDFSpriteFightTreat",
+   "nAttackType": 6,
+   "fAttackFrameWake": 12,
+   "lsPlugins": [
+    "DiJiMuShi_WakeCureBuff"
+   ]
+  }
+ ],
+ "heroex_config.xml": [
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangFeiExclus",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 9.6,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangFeiExclusWake",
+   "sClass": "CDFSpriteFightZhangFeiExclusWake",
+   "nSortTargets": 2,
+   "fAttackFrameWake": 10,
+   "nAttackTargetLimit": 6,
+   "nComboNum": 4
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangFeiExclusWeaponWake",
+   "sBaseItem": "fight_ZhangFeiWeaponWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhaoYunExclusWake",
+   "sBaseItem": "fight_ZhaoYunWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangLiaoExclus",
+   "sBaseItem": "fight_ZhangLiao"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangLiaoExclusGod",
+   "sBaseItem": "fight_ZhangLiaoGod"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangLiaoExclusGodWeapon",
+   "lsPlugins": [
+    "ZhangLiaoExclusGod_WeaponHit"
+   ]
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_JiangWeiExclus",
+   "sBaseItem": "fight_JiangWei"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_JiangWeiExclusWake",
+   "sClass": "CDFSpriteWakeJiangWei",
+   "nAttackType": 5,
+   "fAttackFrameWake": 68
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_XiaoQiaoExclus",
+   "sBaseItem": "fight_XiaoQiao",
+   "sWeaponFight": "XiaoQiaoExclus_Weapon1"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_XiaoQiaoExclusWeapon1",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_XiaoQiaoExclusWeapon2",
+   "sClass": "CDFSpriteFightHeavy",
+   "sBaseItem": "fight_XiaoQiaoWeapon2"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_XiaoQiaoExclusWake",
+   "sBaseItem": "fight_XiaoQiaoWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DianWeiExclus",
+   "sBaseItem": "fight_DianWei",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 9
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DianWeiExclusWake",
+   "sClass": "CDFSpriteFightDianWeiExclusWake",
+   "fAttackFrameWake": 35
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunQuanExclus",
+   "sBaseItem": "fight_SunQuan",
+   "sWeaponFight": "SunQuanExclus_Weapon_Normal1"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunQuanExclus_Weapon",
+   "sBaseItem": "fight_SunQuanWeapon"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunQuanExclusWake",
+   "sClass": "CDFSpriteFightSunQuanExclusWake",
+   "fAttackFrameWake": 41,
+   "nAttackSectionLimit": 13,
+   "fAttackSectionInterval": 3.0
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhangHeExclusWake",
+   "sBaseItem": "fight_ZhangHeWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_CaiWenJiExclus",
+   "sBaseItem": "fight_CaiWenJi",
+   "fAttackFrameWake": 12
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_CaiWenJiExclusBird_Weapon",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_HuangYueYingExclus",
+   "sBaseItem": "fight_HuangYueYing",
+   "fAttackFrameLoopFight": 2.0,
+   "nComboNum": 6,
+   "nComboNumFight": 6,
+   "sWeaponFight": "HuangYueYingExclus_Weapon1"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_HuangYueYingExclus_Weapon1",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 1.2
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_HuangYueYingExclus_Weapon2",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_HuangYueYingExclusWake",
+   "sClass": "CDFSpriteHeroHuangYueYingExclusWake",
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "HuangYueYingExclus_WakeWeapon"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_HuangYueYingWeaponExclusWake",
+   "sBaseItem": "fight_HuangYueYingWeaponWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_GuanYuExclus",
+   "sBaseItem": "fight_GuanYu"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_GuanYuExclusWake",
+   "sClass": "CDFSpriteFightGuanYuExclusWake",
+   "fAttackFrameWake": 5.9,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunShangXiangExclus",
+   "sClass": "CDFSpriteFightSunShangXiang",
+   "fAttackFrameFight": 20,
+   "fAttackFrameFight2": 13,
+   "nAttackTargetLimit": 3,
+   "lsPlugins": [
+    "SunShangXiangExclus_FightEffect"
+   ]
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunShangXiangExclus_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "SunShangXiangExclus_FightEffect"
+   ]
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunShangXiangExclusWake",
+   "sClass": "CDFSpriteFightSunShangXiangWake",
+   "fAttackFrameWake": 0.1
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunShangXiangExclus_WeaponWake",
+   "sClass": "CDFSpriteFightSunShangXiangWeaponWake",
+   "fAttackFrameFight": 8
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunCeExclus",
+   "sClass": "CDFSpriteFightHeavy",
+   "sBaseItem": "fight_SunCe"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunCeExclusWake",
+   "sBaseItem": "fight_SunCeWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_BuLianShiExclus",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 7,
+   "sWeaponFight": "BuLianShiExclus_WeaponNormal"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_BuLianShiExclus_WeaponNormal",
+   "sBaseItem": "fight_BuLianShi_WeaponNormal"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_BuLianShiExclusWake",
+   "sClass": "CDFSpriteFightFlashFront",
+   "nAttackType": 6,
+   "fAttackFrameWake": 14,
+   "nAttackTargetLimit": 10
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_PoJunExclus",
+   "sBaseItem": "fight_PoJun",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_PoJunExclusWake",
+   "sClass": "CDFSpriteFightThreeSection",
+   "fAttackFrameWake": 22,
+   "nAttackTargetLimit": 5
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_CaoZhiExclus",
+   "sBaseItem": "fight_CaoZhi",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 10,
+   "sWeaponFight": ""
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_CaoZhiExclusWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 0
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_CaoZhiExclus_SwordSpirit",
+   "sClass": "CDFSpriteFightHeavy"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DiaoChanExclus",
+   "sBaseItem": "fight_DiaoChan"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DiaoChanExclusWake",
+   "sBaseItem": "fight_DiaoChanWake"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhouYuExclus",
+   "sClass": "CDFSpriteFightZhouYu",
+   "fAttackFrameFight": 7,
+   "fAttackFrameFight2": 7,
+   "sWeaponFight": "ZhouYuExclus_WeaponNormal"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhouYuExclus_WeaponNormal",
+   "lsPlugins": [
+    "ZhouYuExclus_HitEffect"
+   ]
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhouYuExclusWake",
+   "sClass": "CDFSpriteFightStorePower",
+   "nAttackType": 0,
+   "fAttackFrameWake": 13,
+   "nAttackSectionLimit": 25,
+   "fAttackSectionInterval": 1.8
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhouYuExclus_WeaponWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "ZhouYuExclus_HitEffect"
+   ]
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_MaChaoExclus",
+   "sBaseItem": "fight_MaChao"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DengAiExclus",
+   "sClass": "CDFSpriteFightDengAi",
+   "fAttackFrameFight": 4,
+   "fAttackFrameFight2": 9.5,
+   "nAttackTargetLimit": 1,
+   "sWeaponFight": "DengAiExclus_Weapon"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DengAiExclus_Weapon",
+   "sBaseItem": "fight_DengAi_Weapon"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_DengAiExclusWake",
+   "sClass": "CDFSpriteFightDengAiWake",
+   "fAttackFrameWake": 3,
+   "nAttackSectionLimit": 7,
+   "fAttackSectionInterval": 1.1
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_LvBuGod",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 6,
+   "fAttackFrameFight2": 10,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_LvBuGodXuanWu",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -2.5,
+    -4
+   ],
+   "nAttackTargetLimit": -1,
+   "sAttackAction": "Super"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_LvBuGodWakeLuanWu",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameWake": 13,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_LvBuGodWakeJueDou",
+   "sClass": "CDFSpriteFightHeavy",
+   "sAttackAction": "Wake2"
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunCeIkkitousen",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 11,
+   "fAttackFrameFight2": 12,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunCeIkkitousenWake",
+   "sClass": "CDFSpriteFightStorePower",
+   "fAttackFrameWake": 9,
+   "nAttackSectionLimit": 15,
+   "fAttackSectionInterval": 2
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_SunCeIkkitousen_WeaponTalent",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 4
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_GuanYuIkkitousen",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 10,
+   "fAttackFrameFight2": 7,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_GuanYuIkkitousenWake",
+   "sClass": "CDFSpriteFightStorePower",
+   "nAttackType": 2,
+   "fAttackFrameWake": 6,
+   "ptAttackExpandUnitLB": [
+    -2.5,
+    -4
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhaoYunIkkitousen",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 8,
+   "fAttackFrameFight2": 5
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhaoYunIkkitousenWake",
+   "sClass": "CDFSpriteFightFlashCut",
+   "fAttackFrameWake": 5
+  },
+  {
+   "_tep": "heroex_config.xml",
+   "sName": "fight_ZhaoYunIkkitousenZiDian",
+   "sBaseItem": "fight_ZhaoYunIkkitousenWake"
+  }
+ ],
+ "sprite_config.xml": [
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Archer",
+   "sClass": "CDFSpriteFightMultiShot",
+   "fAttackFrameFight": 13.2,
+   "sWeaponFight": "Archer_WeaponNormal"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArcherWake",
+   "sClass": "CDFSpriteFightArcherWake",
+   "fAttackFrameWake": 12.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Defender",
+   "fAttackFrameFight": 4.8,
+   "fAttackFrameFight2": 7.2,
+   "fAttackFrameCritical": 8.4
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_DefenderWake",
+   "nAttackType": 1,
+   "fAttackFrameWake": 4.8,
+   "nAttackTargetLimit": 2,
+   "nAttackSectionLimit": 2,
+   "fAttackSectionInterval": 5.16,
+   "bAttackSectionReorientation": 0,
+   "lsPlugins": [
+    "DefenderWakeBuff"
+   ]
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Priest",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 7.2,
+   "sWeaponFight": "Priest_Weapon1"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PriestWeaponLow",
+   "sClass": "CDFSpriteFightBounceLow"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PriestWeapon",
+   "sClass": "CDFSpriteFightBounce"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PriestWeapon2",
+   "sClass": "CDFSpriteFightPriestWeaponNormal",
+   "fAttackFrameFight": 4.0,
+   "nAttackTargetLimit": 1
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PriestWake",
+   "sClass": "CDFSpriteFightPriestWake",
+   "fAttackFrameWake": 18.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PriestWeaponWake",
+   "sClass": "CDFSpriteFightPriestWeapon"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Spearmen",
+   "sClass": "CDFSpriteFightSpearmen",
+   "fAttackFrameFight": 9.6,
+   "fAttackFrameFight2": 3.0,
+   "fAttackFrameWake": 9.6,
+   "sWeaponFight": "Spearmen_Weapon_Lv1"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_SpearmenWeapon",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Witch",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 10.5,
+   "fAttackFrameFight2": 13.2,
+   "fAttackFrameWake": 13.2,
+   "sWeaponFight": "Witch_Weapon1"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WitchWeapon1",
+   "sClass": "CDFSpriteFightSplash"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WitchWeapon2",
+   "sBaseItem": "fight_WitchWeapon1",
+   "fAttackFrameFight": 5
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WitchWake",
+   "sClass": "CDFSpriteFightWitchWake",
+   "fAttackFrameWake": 16.5
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WitchWeaponWake",
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Hoplite",
+   "fAttackFrameFight": 8.8,
+   "fAttackFrameFight2": 4.0,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_HopliteWake",
+   "sClass": "CDFSpriteFightHopliteWake",
+   "fAttackFrameWake": 12.0,
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Artillery",
+   "sClass": "CDFSpriteFightArtillery",
+   "sWeaponFight": "Artillery_WeaponNormal"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArtilleryWeaponNormal",
+   "sClass": "CDFSpriteFightArtilleryWeapon",
+   "nAttackType": 2,
+   "ptAttackExpandUnitRT": [
+    1.5,
+    1.5
+   ],
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArtilleryWeaponWake",
+   "sClass": "CDFSpriteFightArtilleryWeapon",
+   "nAttackType": 2,
+   "ptAttackExpandUnitRT": [
+    2.0,
+    2.0
+   ],
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ElephantSoldier",
+   "nAttackType": 1,
+   "fAttackFrameFight": 3.0,
+   "nAttackTargetLimit": 2,
+   "fDamageBonusFight": 0.8,
+   "lsPlugins": [
+    "Plugin_ElephantSoldier"
+   ]
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ElephantSoldierWake",
+   "sClass": "CDFSpriteFightElephantSoldierWake",
+   "nAttackType": 6,
+   "fAttackFrameWake": 10.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Cavalry",
+   "sClass": "CDFSpriteFightCavalry",
+   "fAttackFrameFight": 8.4,
+   "fAttackFrameFight2": 6.0,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_CavalryWake",
+   "sClass": "CDFSpriteFightCavalryWake",
+   "fAttackFrameWake": 4.0,
+   "ptAttackExpandUnitLB": [
+    0.0,
+    -1.0
+   ],
+   "ptAttackExpandUnitRT": [
+    1.5,
+    1.0
+   ],
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Catapult",
+   "sClass": "CDFSpriteFightCatapult",
+   "fAttackFrameFight": 3.0,
+   "sWeaponFight": "Catapult_WeaponNormal"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_CatapultyWeaponNormal",
+   "sClass": "CDFSpriteFightCatapultyWeapon",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -1.0,
+    -1.0
+   ]
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_CatapultWake",
+   "sClass": "CDFSpriteFightCatapultWake",
+   "nSortTargets": 2,
+   "fAttackFrameWake": 3.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Assasin",
+   "sClass": "CDFSpriteFightAssasin",
+   "fAttackFrameFight": 8.0,
+   "fAttackFrameFight2": 4.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_AssasinWake",
+   "sClass": "CDFSpriteFightAssasinWake",
+   "fAttackFrameWake": 9.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArmorCavalry",
+   "sClass": "CDFSpriteFightArmorCavalry",
+   "fAttackFrameFight": 8.4,
+   "fAttackFrameFight2": 6.0,
+   "fAttackFrameWake": 5.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Berserker",
+   "sClass": "CDFSpriteFightBerserker",
+   "fAttackFrameFight": 8.0,
+   "fAttackFrameFight2": 5.0,
+   "fAttackFrameWake": 7.0,
+   "nAttackTargetLimit": 2
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Pastor",
+   "sClass": "CDFSpriteFightTreat",
+   "nAttackType": 6,
+   "fAttackFrameFight": 6.0,
+   "fAttackFrameWake": 4.0,
+   "lsPlugins": [
+    "PastorCureBuff"
+   ]
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_IceWitch",
+   "sClass": "CDFSpriteFightIceWitch",
+   "fAttackFrameFight": 8.0,
+   "fAttackFrameFight2": 9.0,
+   "fAttackFrameWake": 8.0,
+   "bAttackSectionReorientation": 1,
+   "sWeaponFight": "IceWitch_Weapon1"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_IceWitchWeapon1",
+   "sClass": "CDFSpriteFightIceWitchWeapon",
+   "fAttackFrameFight": 2.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_IceWitchWeapon2",
+   "sBaseItem": "fight_IceWitchWeapon1",
+   "fAttackFrameFight": 2.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_IceWitchWeaponWake",
+   "fAttackFrameFight": 7.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WitchDoctor",
+   "sClass": "CDFSpriteFightWitchDoctor",
+   "fAttackFrameFight": 5.0,
+   "fAttackFrameWake": 4.0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ShieldMaster",
+   "fAttackFrameFight": 8
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ShieldMasterWake",
+   "nAttackType": 5,
+   "fAttackFrameWake": 19
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ShieldMaster_WeaponWake",
+   "sClass": "CDFSpriteFightSplash"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_DefenderN",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 4,
+   "fAttackFrameWake": 9,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_DefenderNGuard",
+   "sClass": "CDFSpriteFightDefenderNGuard"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArcherN",
+   "sClass": "CDFSpriteFightArcherN",
+   "fAttackFrameFight": 13.2,
+   "sWeaponFight": "ArcherN_Weapon_Normal"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_ArcherNWake",
+   "sBaseItem": "fight_ArcherWake"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_SpearmenN",
+   "sClass": "CDFSpriteFightSpearmenN",
+   "fAttackFrameFight": 9.6,
+   "fAttackFrameFight2": 3.0,
+   "fAttackFrameFight3": 9.0,
+   "fAttackFrameWake": 9.6,
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "SpearmenN_Weapon_Lv1"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_SpearmenNWeaponArms",
+   "sClass": "CDFSpriteFightRestraint"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_SpearmenNWeapon",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_SpearmenNWeaponWake",
+   "sClass": "CDFSpriteFightThrowInMove",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -1.75,
+    -1.75
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WatchTower",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 2.0,
+   "sWeaponFight": "WatchTower_Weapon"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_Thunder",
+   "sClass": "CDFSpriteFightOnceCollision",
+   "fAttackFrameFight": 3
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_WeaponEnergy",
+   "sClass": "CDFSpriteFightEnergy"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_PlotMonitor",
+   "sClass": "CDFSpriteFightPlotMonitor",
+   "fAttackFrameFight": 0
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_weapon"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_weapon_thrown",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "sprite_config.xml",
+   "sName": "fight_weapon_empty",
+   "nAttackType": 0
+  }
+ ],
+ "boss_config.xml": [
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ThunderDragon",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 15,
+   "fAttackFrameFight2": 10.3,
+   "fAttackFrameFight3": 11,
+   "fAttackFrameWake": 9.6,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_SuperThunderDragon",
+   "sClass": "CDFSpriteFightSuperThunderDragon",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 10.5,
+   "fAttackFrameFight2": 23,
+   "fAttackFrameFight3": 23,
+   "nAttackTargetLimit": 8
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_SuperThunderDragonWake",
+   "sClass": "CDFSpriteFightSuperThunderDragonWake",
+   "fAttackFrameWake": 12
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_TaoTie",
+   "sClass": "CDFSpriteFightTaoTie",
+   "fAttackFrameFight": 16.0,
+   "fAttackFrameFight2": 10.0,
+   "fAttackFrameFight3": 12.0,
+   "fAttackFrameWake": 10.0,
+   "nAttackTargetLimit": 8
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_SuperTaoTie",
+   "sClass": "CDFSpriteFightSuperTaoTie",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 15.8,
+   "fAttackFrameWake": 9,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_FengYaoJi",
+   "sClass": "CDFSpriteFightFengYaoJi",
+   "fAttackFrameFight": 13,
+   "fAttackFrameWake": 11,
+   "nAttackTargetLimit": 3,
+   "fDamageBonusFight": 2
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_FengYaoJi_WeaponNormal2",
+   "sClass": "CDFSpriteFightFengYaoJiWeapon",
+   "fAttackFrameFight": 29
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_BaiHuZi",
+   "sClass": "CDFSpriteFightBaiHuZi",
+   "fAttackFrameFight": 5,
+   "fAttackFrameFight2": 6.5,
+   "fAttackFrameWake": 18,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_BaiHuZi_WeaponNormal",
+   "sClass": "CDFSpriteFightSplash",
+   "lsPlugins": [
+    "BaiHuZi_Coma"
+   ]
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_BaiHuZi_WeaponNormal2",
+   "sClass": "CDFSpriteFightThrowInMove"
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ShenHaiZhangYu",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 20,
+   "fAttackFrameFight2": 15,
+   "nAttackTargetLimit": -1
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ShenHaiZhangYuWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 0,
+   "fAttackFrameWake": 17
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ShenHaiZhangYuWake_Tentacle",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 6,
+   "fAttackFrameWake": 4.5,
+   "nAttackTargetLimit": -1,
+   "lsPlugins": [
+    "ShenHaiZhangYu_WakeDebuff"
+   ]
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_MaYuanYi",
+   "sClass": "CDFSpriteFightHeavy",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 10.32,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_MaYuanYiWake",
+   "sClass": "CDFSpriteFightMaYuanYi",
+   "fAttackFrameWake": 4.56,
+   "nAttackTargetLimit": -1,
+   "nAttackSectionLimit": 2,
+   "fAttackSectionInterval": 12.0
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ZhangManCheng",
+   "fAttackFrameFight": 5.4,
+   "fAttackFrameFight2": 9.12,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "boss_config.xml",
+   "sName": "fight_ZhangManChengWake",
+   "fAttackFrameWake": 13.0
+  }
+ ],
+ "evil_config.xml": [
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_HellDog",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 12.0,
+   "fAttackFrameCritical": 8.5,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_Butcher",
+   "fAttackFrameFight": 8.4,
+   "fAttackFrameFight2": 7.0,
+   "fAttackFrameCritical": 8.4,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_Ooze",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 9.6,
+   "fAttackFrameCritical": 8.4,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_Ghoul",
+   "fAttackFrameFight": 11.0,
+   "fAttackFrameFight2": 9.6,
+   "fAttackFrameCritical": 8.4,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_TenAttendants",
+   "fAttackFrameFight": 5.0,
+   "fAttackFrameFight2": 8.4,
+   "fAttackFrameCritical": 8.4,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_DragonFlight",
+   "sClass": "CDFSpriteFightObliqueShot",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 9,
+   "sWeaponFight": "DragonFlight_Weapon"
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_DragonFlight_Weapon",
+   "sClass": "CDFSpriteFightHeavy",
+   "lsPlugins": [
+    "DragonFlight_FightEffect"
+   ]
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_DragonFlight_Weapon2",
+   "sBaseItem": "fight_DragonFlight_Weapon",
+   "lsPlugins": [
+    "DragonFlight_FightEffect2"
+   ]
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_DragonFlightWake",
+   "sClass": "CDFSpriteFightHeavy",
+   "nAttackType": 2,
+   "fAttackFrameWake": 18.5,
+   "ptAttackExpandUnitLB": [
+    0,
+    -5
+   ],
+   "ptAttackExpandUnitRT": [
+    10,
+    2
+   ]
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_BatFlight",
+   "sClass": "CDFSpriteFightBatFlight",
+   "fAttackFrameFight": 9,
+   "fAttackFrameFight2": 9,
+   "fAttackFrameWake": 12,
+   "sWeaponFight": "BatFlight_WeaponNormal"
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_BatFlight_WeaponNormal",
+   "sClass": "CDFSpriteFightThrowInMove",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -1,
+    -1
+   ],
+   "ptAttackExpandUnitRT": [
+    1,
+    1
+   ],
+   "nAttackTargetLimit": 6
+  },
+  {
+   "_tep": "evil_config.xml",
+   "sName": "fight_BatFlight_WeaponWake",
+   "sClass": "CDFSpriteFightThrowInMove",
+   "nAttackType": 2,
+   "ptAttackExpandUnitLB": [
+    -1,
+    -1
+   ],
+   "ptAttackExpandUnitRT": [
+    1,
+    1
+   ],
+   "nAttackTargetLimit": 6
+  }
+ ],
+ "pet_config.xml": [
+  {
+   "_tep": "pet_config.xml",
+   "sName": "fight_PetLingHou2Fight",
+   "sClass": "CDFSpriteFightObliqueShot",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 11,
+   "nAttackTargetLimit": 3,
+   "sWeaponFight": "PetLingHou2_Weapon"
+  },
+  {
+   "_tep": "pet_config.xml",
+   "sName": "fight_PetLingHou3Fight",
+   "sClass": "CDFSpriteFightHeavy",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 12,
+   "nAttackTargetLimit": 3
+  },
+  {
+   "_tep": "pet_config.xml",
+   "sName": "fight_PetLingHou4Fight",
+   "sBaseItem": "fight_PetLingHou3Fight",
+   "fAttackFrameFight": 13
+  },
+  {
+   "_tep": "pet_config.xml",
+   "sName": "fight_PetDuJiaoShi2",
+   "sClass": "CDFSpriteFightObliqueShot",
+   "nSortTargets": 2,
+   "fAttackFrameFight": 13,
+   "sWeaponFight": "PetDuJiaoShi2_Weapon"
+  }
+ ]
+}
