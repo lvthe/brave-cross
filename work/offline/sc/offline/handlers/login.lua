@@ -313,6 +313,18 @@ R:on("ClientEnterGame", function(ctx)
 	-- 4/11 (tiếp): đường lùi "mất server" đã `dat()` cờ ở `ClientLogin`; hẹn hiện câu
 	-- báo SAU khi cảnh Main dựng xong. Không có cờ thì `hen()` trả false, vô hại.
 	if OfflineBao ~= nil then OfflineBao:hen() end
+
+	-- 5/11: nhận khoản nạp do API ngoài tạo (thay SDK thanh toán đã chết). Một lần
+	-- mỗi phiên; máy không có HTTP thì `kiem()` tự bỏ qua.
+	pcall(function ()
+		if OfflineNapApi ~= nil then OfflineNapApi:kiem() end
+	end)
+	-- Nhật ký hành động (mục 2 của hướng "hoạt động do máy chủ vận hành").
+	pcall(function ()
+		if OfflineHanhDong ~= nil then
+			OfflineHanhDong:ghi("login", "enter", { lan = Offline.LAN_VAO_GAME })
+		end
+	end)
 end)
 
 --[[ TẠO NHÂN VẬT (`ClientUserLogic:CreateCharacter`).

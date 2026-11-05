@@ -4342,3 +4342,176 @@ cũng không chạy. Đây là hành vi ĐÃ CHỐT, không phải lỗi của �
 
 **Dọn:** `selftest.flag` + `nguoi_choi.flag` đã xoá; sidecar `1044/145`; game ở cảnh Main
 (panel BXH do đồ thử mở — BACK/`input tap` không đóng được, đúng bẫy UI đã ghi, không phải lỗi).
+
+# 🗡️ 4/11 (tiếp 11) — TRANG BỊ ĐỘC QUYỀN: ĐÚC + TINH LUYỆN
+
+Hai lệnh client nằm trong lớp chắn `chua_ho_tro.lua` và **có UI sống** — nay làm thật:
+
+| khoá | UI gọi từ | trước |
+|---|---|---|
+| `G_EquipmentLogic.ClientForgingExclusiveEquip(heroID, part)` | `CUIEquipment_Refine:onTouchEnd_OnMakeForgeExclusive` (`:1713-1760`) | mã 1 |
+| `G_EquipmentLogic.ClientPurifyExclusiveEquip(heroID, part)` | nút tinh luyện khi `EquipRefineType.IsExclusive` (`:607`) | mã 1 |
+
+**Dữ liệu THẬT (ship trong game):** `KDBGameExclusiveEquipConfig.json` 5 bảng con —
+`ExclusiveEquipHeroConfig` (22 tướng) · `ExclusiveEquipForgeConfig`
+(`[hero][part] = {ItemList, PurifyLevel}`) · `ExclusiveEquipPurifyConfig` (5 phần × 21 cấp)
+· `ExclusiveEquipCommonSkillConfig` · `ExclusiveReelSaleConfig`. Đọc bằng đúng hàm config
+manager (`GetExclusiveEquipHeroConfig/ForgeConfig/PurifyConfig`).
+
+**Luật** (ba nguồn độc lập, chi tiết ở đầu `handlers/trang_bi_doc_quyen.lua`):
+- Đúc: tướng ∈ danh sách (**1330** nếu không) → ô đồ có (**1106**) → chưa độc quyền (**1116**)
+  → chất lượng `>= QualityKey.Red+1 = 6` (**1117**) → **tinh luyện THƯỜNG phải đầy** (UI chỉ
+  hiện nút đúc ở trạng thái `UpgradeExclusive`, tức `RefineLevel >= 5` — `getEquipState:965`)
+  → đủ nguyên liệu (**1201**; trừ nguyên tử, hỏng thì hoàn) → **riêng VŨ KHÍ cần 4 món kia
+  đã độc quyền** (**1115**, `GetCanMakeForgeExclusive:1877-1923`) → `SetEquipIsExclusive` →
+  `updateEquipData` (thuộc tính đổi sang bảng purify).
+- Tinh luyện: phải độc quyền (**1111**) → phần có cấu hình (**1112**) → chưa tối đa (**1113**) →
+  đủ tinh hoa (**1109**) → `SetEquipRefineLevel(cấp+1)` + `updateEquipData`.
+
+**HAI BẪY ĐÃ TRÁNH (đo từ chính client, không suy đoán):**
+1. **Bảng purify đánh khoá 0-based** (`updateGameExclusiveEquipConfig` gán `[nLevel-1]`), và
+   **khoá = `RefineLevel`** — thuộc tính (`share_EquipmentPropertyLogic.lua:147`) và UI
+   (`CUIEquipment_Refine.lua:1129`) đều đọc `[RefineLevel]`; **cấp kế = `[RefineLevel+1]`**.
+   Toán tử `#` trên bảng 0-based KHÔNG xác định ⇒ cấp tối đa đếm bằng `pairs`.
+   Đo: đúc xong giữ `RefineLevel = 5` ⇒ +50% (thường cấp 5 chỉ +25% — đây là phần thưởng độc quyền).
+2. **Giá tinh luyện đi qua `HeroLogic:GetUpgradeRefineCost`** — ĐÚNG hàm UI dùng để HIỂN THỊ
+   (`:1171`), nên số hiện = số trừ (VIP10 giảm 20%).
+
+**ĐO TRONG GAME (tài khoản thử 1044, APK vá, không frida)** — đồ thử
+`offline/thu_doc_quyen.lua`, cờ `thu_doc_quyen.flag`:
+- Cấu hình đọc được: **22 tướng · bảng đúc · bảng tinh luyện**.
+- Thêm tướng 10, tạo ô bộ phận 2 (chất lượng 6, tinh luyện thường 5), cấp 5+5 nguyên liệu.
+- `đúc -> ma=0 · IsExclusive=true` · `đúc lần hai -> ma=1116` ·
+  `tinh luyện -> ma=0 · RefineLevel 5→6 · tinh hoa 1961→761 (trừ 1200)`.
+- File lưu: `GameUserEquipment["10"]["2"] = {IsExclusive=true, RefineLevel=6, Quality=6}`,
+  nguyên liệu 127/89 về 0. **Bản lưu thử giờ có thêm tướng 10 + món độc quyền** (tài khoản thử).
+
+**Cổng:** `_kiem_cu_phap` **99 tệp · 0 lỗi** · `_chay_het` **60 tệp · 1352 phép · 0 đỏ** ·
+`run_tests` **163 · 0** · bộ thử mới `_thu_trang_bi_doc_quyen.lua` **30/30** · lớp chắn còn
+**82 khoá** (bộ thử lớp chắn đổi kỳ vọng 84 → 82).
+
+# 📋 KIỂM KÊ TÍNH NĂNG CÒN DỞ (sau 4/11 tiếp 11)
+
+Nguồn: `_con_lai.py` (73 khoá THIẾU nhưng **0 SỐNG**), `chua_ho_tro.lua` (82 khoá SỐNG bị chắn),
+`_tim_port_duoc.py` (0 ứng viên còn lại), README các mục "chưa làm".
+
+**A. KHÔNG THỂ làm offline thật (cần nhiều người/máy chủ khác/dịch vụ ngoài):**
+giải đấu `G_TournamentLogic` (16) · `G_WCSProtocol` (13) · chiến trường trạng thái (2) ·
+chợ mây `G_CloudShopLogic` (2) · cửa hàng bang hội (1) · đỏ bao bang (2) · nạp tiền SDK (6) ·
+QQ/WeChat (5) · bình luận (1) · mã đổi thưởng (1) · liên kết kênh (1).
+
+**B. Hoạt động do máy chủ VẬN HÀNH — cần viết lịch/dữ liệu [MOI]** (không có trong cấu hình ship):
+`ActivityRank` (4) · `Wushuang` (2) · `ActivityShopping` (2) · `ObjExchange` (2) ·
+`WealthGod` (2) · `GodHero` (1) · `FreeStrength` (1) · `WeeklyFun` (1) · `TimeHero` (1) ·
+`SingleRecharge` (1) · `RechargeSign` (2) · `ActivityFightCap` (1) · `Anniversary` (1) ·
+`Adventure` (1) · `ServerTournamentPrize` (1).
+
+**C. 0 thân hàm trong `share/` — phải VIẾT MỚI hoặc cần dữ liệu chưa ship:**
+~~nâng cấp/tự động cánh~~ **ĐÃ LÀM 5/11** (chép luật từ bản Axmol — xem mục "4/11 (tiếp 12)") ·
+hộp Thần Binh (2 — không có bảng hộp/giá) · bán đồ độc quyền thừa (1 — có
+`ExclusiveReelSaleConfig`, nhưng nút gọi chỉ nằm trong panel giải đấu/WCS) · thuốc (1 — hệ
+chết trong bản gốc) · kích hoạt skin độc quyền (`ClientGetHeroExclusiveSkin` — nút bị
+`do return end` ngay trong client ⇒ mã chết).
+
+**D. Axmol:** phần đăng nhập MD5 hex đã làm 3/11 nhưng **chưa nghiệm thu trong app** (chủ dự án
+dặn để sau).
+
+# 🪶 4/11 (tiếp 12) — CÁNH: TIẾN CẤP (chúc phúc) + CƯỜNG HOÁ
+
+Bốn lệnh `CUIWing` có UI sống: `ClientUpgradeWing` · `ClientUpgradeWingWithDiamond` ·
+`ClientIntensifyWing` · `ClientAutoIntensifyWing` (`handlers/canh.lua`). Luật **chép nguyên**
+khối CÁNH trong `bravecross-ax/Content/src/bc/may_chu/handler/duong_choi.lua:560-1030` —
+bản chủ dự án đã chốt 19/10/2026 sau khi đọc tip gốc:
+
+- Đọc chúc phúc ĐANG HIỆN; thanh đầy (`>= MaxBlessing`) ⇒ lượt này **CHẮC CHẮN**.
+- Chưa đầy ⇒ `p = EffectivePercent + (1-EffectivePercent) * blessing/MaxBlessing`.
+- **THẤT BẠI mới cộng** `ceil(MaxBlessing * EffectivePercent / 2)`; THÀNH CÔNG ⇒ cấp +1, chúc phúc 0.
+- Chúc phúc **reset 5:00 mỗi ngày** (khoá riêng `WingBlessingDay` trong `GameUserGlobalData`).
+- Nâng bằng kim cương: trả `CostDiamond`, **chắc chắn thành công**.
+- Cường hoá: `GameWingIntensifyConfig[cấp+1].StoneCost` đá 101; **trần = CẤP NGƯỜI CHƠI**
+  (`CUIWingEnhance:isEnhanceLevelOverUserLevel:1924` + `getCanEnhanceLevelAndWingStoneNum:1952`).
+
+**HAI BẪY ĐÃ VẤP TRONG LƯỢT (cùng họ "hàm trả nhiều giá trị"):**
+1. `pcall(function() return GetHeroWithID(id) end)` — `GetHeroWithID` trả `(bResult, hero)`,
+   `pcall` gói thêm ⇒ phải nhận **BA** giá trị; nhận hai thì `hero` là boolean ⇒ mọi lượt 1301.
+2. `GetUserGlobalData` cũng trả `(bResult, giá trị)` — đọc hai giá trị thì `tonumber(true)=nil`
+   ⇒ chúc phúc **reset mỗi lượt** (bộ thử bắt: "cùng ngày 5:00 → 5→2 thay vì 5→7").
+
+**ĐO TRONG GAME (tài khoản thử 1044, cờ `thu_canh.flag`):** cấu hình `UpgradeWingConfig` 13 ·
+`HeroWingConfig["1"]` 14 cấp · `GameWingIntensifyConfig` 99 dòng. Thêm cánh 1 cấp 1 cho tướng 25,
+cấp 20 đá 102 + 10 đá 101. Kết quả 5 lượt: `that bai (+2) → thanh cong → thanh cong → that bai (+6)
+→ that bai (+6)`, đá 102 `20 → 7` (2+2+3+3+3). Cường hoá tự động lên **cấp 1 = trần người chơi**,
+lượt hai **1328**; kim cương thiếu **504**. File lưu: `WingLevel=3, WingBlessing=12,
+WingIntensifyLevel=1`, đá 101 `10→9`.
+
+**Cổng:** `_kiem_cu_phap` **101 tệp · 0 lỗi** · `_chay_het` **61 tệp · 1381 phép · 0 đỏ** ·
+`run_tests` **163 · 0** · bộ thử mới `_thu_canh.lua` **29/29** · lớp chắn còn **80 khoá**.
+
+# 💳 4/11 (tiếp 13) — DỊCH VỤ NGOÀI: MÃ ĐỔI THƯỞNG · BÌNH LUẬN · NHẬN NẠP
+
+Ba khoá trước đây nằm trong lớp chắn (mã 1) nay **làm thật**, dùng API của server riêng (`:8787`):
+
+- `G_RedeemCodeLogic|ClientUseRedeemCode` → `handlers/ma_doi.lua` → `POST /api/redeem`.
+  Thành công: cộng KC bằng `G_UserLogic:AddDiamond`, phát vật phẩm bằng
+  `G_ChapterLogic:SetDataWithPrizeList(items, 1, "UseRedeemCode")`, báo UI bằng
+  `OnServerUseRedeemCode{nServerErrCode, nClientErrCode, RetData}` — đúng hình mà
+  `CUIRedeemCode:OnUseRedeemCode` (`:132-190`) đang đọc.
+- `G_GameCommentLogic|ClientCommentGame` → `handlers/binh_luan.lua` → `POST /api/comment`
+  (client gửi **KHÔNG đối số**, chỉ bật lớp tải).
+- `offline/nap_api.lua` → gọi ở cuối `ClientEnterGame` (**một lần/phiên**): `POST /api/recharge/claim`,
+  cộng bằng `OfflineNap:cong(kc, kc)` — đi đúng đường GM nạp nên cập nhật luôn nạp-đầu / nạp-liên-tục /
+  quà-tân-thủ. `[MOI]` coi 1 KC = 1 đơn vị tiền nạp (API chỉ biết số kim cương).
+
+**Hành vi đã chọn (không bịa):** máy không có HTTP ⇒ mã đổi trả **2405** ("không tồn tại", như bản
+gốc không có kho mã), bình luận bỏ qua nhưng **vẫn đóng lớp tải**; chưa đăng nhập ⇒ **2403**
+(`GetRedeemCodeFail`). Lớp chắn còn **78 khoá**.
+
+**Đo:** `_kiem_cu_phap` **104 tệp · 0 lỗi** · `_chay_het` **62 tệp · 1403 phép · 0 đỏ** ·
+`run_tests` **163 · 0** · bộ thử mới `_thu_api_nap.lua` **22/22** · server `npm run test:nap_api`
+**16/16** (cần server + Postgres). Đã `build.py` + `deploy.py --push` 5 chỗ.
+
+**CHƯA CHẠY TRONG GAME** (repo server cấm tự khởi động game). Nghiệm thu tay:
+1. `curl -X POST http://127.0.0.1:8787/api/redeem/create -H "content-type: application/json" -d '{"code":"THU500","diamonds":500,"max_uses":3}'`
+2. Mở game → Tuỳ chọn → nhập `THU500` → phải cộng 500 KC (và báo lỗi đúng nếu nhập lại).
+3. `curl -X POST http://127.0.0.1:8787/api/recharge -H "content-type: application/json" -d '{"uid":<uid>,"diamonds":200}'`
+   → thoát/vào lại game → toast "Nạp thành công: +200 kim cương", rồi gọi lại `claim` bằng curl
+   phải thấy `kc: 0` (đã nhận).
+
+# 📝 4/11 (tiếp 14) — NHẬT KÝ HÀNH ĐỘNG (nền cho nhóm hoạt động "máy chủ vận hành")
+
+`offline/hanh_dong.lua`: `OfflineHanhDong:ghi(kind, key, value)` gửi `POST /api/event` (server
+riêng) — **không bao giờ chặn game**: không có tài khoản / không có `sngHttpRequestWithString`
+thì im lặng trả `false`; mỗi `kind` tối đa một lượt mỗi **2 giây**; mọi lỗi HTTP đều bị nuốt.
+Đã nối ba chỗ: **vào game** (`login/enter`, cuối `ClientEnterGame`) · **đổi mã thành công**
+(`redeem/<mã>`) · **nhận khoản nạp** (`recharge/claim`).
+
+Server dựng kèm động cơ hoạt động: bảng `activities` (lịch `daily` / `weekly` theo thứ /
+`range`), `activity_claims` chống nhận hai lần ở khoá chính, `GET /api/activities?uid=` trả
+`open` + `day_key` (mốc **5:00**) + `claimed`, `POST /api/activity/claim` trả `{diamonds, items}`
+để lớp offline tự áp (như mã đổi). Chi tiết + số đo ở README của `bravecross-server`
+(mục "5/11 (tiếp) — ĐỘNG CƠ HOẠT ĐỘNG").
+
+**Đo:** `_kiem_cu_phap` **105 tệp · 0 lỗi** · `_chay_het` **63 tệp · 1413 phép · 0 đỏ** ·
+`run_tests` **163 · 0** · bộ thử mới `_thu_hanh_dong.lua` **10/10** · server
+`test:hoat_dong_api` **19/19** + `test:nap_api` **16/16** · tsc sạch. Đã `deploy.py --push` 5 chỗ.
+
+**Chưa chạy trong game** (repo server cấm tự bật game). Khi bạn mở game: log `offline.log` có
+dòng `hanh dong: da noi nhat ky`; bảng `user_events` sẽ có `login` mỗi lần vào cảnh Main —
+kiểm bằng `curl "http://127.0.0.1:8787/api/events?uid=<uid>&limit=5"`.
+
+# 🏆 4/11 (tiếp 15) — SERVER ĐÃ CÓ GIẢI ĐẤU (mục A, phần máy chủ)
+
+Server riêng có **động cơ giải đấu** (mô hình `[MOI]`, `bravecross-server/src/tournament.ts`):
+bốn bảng (`tournaments` · `tournament_entries` · `tournament_matches` · `tournament_claims`) +
+bảy endpoint (`/api/tournament/create|register|start|tick|claim` và `GET /api/tournament?id=&uid=`,
+`GET /api/tournaments`). Sức mạnh xếp hạt giống dùng đúng chuỗi chiến lực 5 tướng đã port; mỗi vòng
+chạy sau `round_seconds`; acc không online vẫn được máy chủ **tự đánh** (băm ổn định, 15% lật kèo);
+thưởng nhất/nhì/ba nhận một lần (khoá chính CSDL).
+
+**Đo:** `npm run test:tournament_api` **20/20** (3 suất → bracket 4 + 2 vòng, bye, tick 3 trận,
+idempotent, 500/250/100 KC, 4007, cascade) · `test:nap_api` 16/16 · `test:hoat_dong_api` 19/19 ·
+`tsc` sạch · `test:do_phu` 0 đỏ.
+
+**Chưa nối vào client:** 16 khoá `G_TournamentLogic` (và 13 khoá WCS) vẫn là lớp chắn — màn giải
+đấu trong game cần đọc giao thức `CUITournament*` (bracket/quiz/playback) rồi mới trả lời được.
+Lớp chắn vẫn **78 khoá**.

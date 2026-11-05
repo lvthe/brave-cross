@@ -1,7 +1,8 @@
 --[[
 	offline/handlers/chua_ho_tro.lua — LỚP CHẮN CUỐI cho các RPC CÒN SỐNG chưa có dữ liệu.
 
-	Sinh từ `_phan_loai_toancuc.py --tat-ca`: 100 khoá SỐNG còn lại của 34 module.
+	Sinh từ `_phan_loai_toancuc.py --tat-ca`: các khoá SỐNG còn lại (sau khi rút
+	hai khoá trang bị độc quyền đã làm thật 4/11 tiếp 11).
 	Mỗi khoá ĐƯỢC ĐĂNG KÝ (chuỗi HẰNG, không ghép) để:
 	  1. KHÔNG còn dòng `THIEU` và KHÔNG còn panel quay mãi;
 	  2. trả ĐÚNG mã GỐC của nhóm khi có (`ActivityNotOpen 4001`,
@@ -89,10 +90,10 @@ R:on("G_FriendLogic.ClientSendQqWxFriendFatigue", chuaHoTro("G_FriendLogic", "Cl
 R:on("G_FriendLogic.ClientBatchSendriendFatigue", chuaHoTro("G_FriendLogic", "ClientBatchSendriendFatigue", 1, "can tai khoan QQ/WeChat SDK (da chet)"))
 R:on("G_FriendLogic.ClientBatchReceiveFriendFatigue", chuaHoTro("G_FriendLogic", "ClientBatchReceiveFriendFatigue", 1, "can tai khoan QQ/WeChat SDK (da chet)"))
 
--- G_HeroLogic — canh/ky nang — 0 than ham trong share/ (do 30/10)
-R:on("G_HeroLogic.ClientUpgradeWing", chuaHoTro("G_HeroLogic", "ClientUpgradeWing", 1, "canh/ky nang — 0 than ham trong share/ (do 30/10)"))
-R:on("G_HeroLogic.ClientAutoIntensifyWing", chuaHoTro("G_HeroLogic", "ClientAutoIntensifyWing", 1, "canh/ky nang — 0 than ham trong share/ (do 30/10)"))
-R:on("G_HeroLogic.ClientGetHeroExclusiveSkin", chuaHoTro("G_HeroLogic", "ClientGetHeroExclusiveSkin", 1, "canh/ky nang — 0 than ham trong share/ (do 30/10)"))
+-- G_HeroLogic: hai khoá cánh ĐÃ LÀM THẬT (5/11 — `handlers/canh.lua`), đã rút khỏi
+-- lớp chắn. `ClientGetHeroExclusiveSkin` giữ chắn: nút kích hoạt trong client bị
+-- `do return end` (`CUIHeroInfoExclusiveUI.lua:236`) ⇒ đường chết.
+R:on("G_HeroLogic.ClientGetHeroExclusiveSkin", chuaHoTro("G_HeroLogic", "ClientGetHeroExclusiveSkin", 1, "canh/ky nang — nut kich hoat bi do return end (ma chet)"))
 
 -- G_ActivityGodHero — chua co du lieu/luat trong ban offline
 R:on("G_ActivityGodHero.ClientGetScorePrize", chuaHoTro("G_ActivityGodHero", "ClientGetScorePrize", 4001, "chua co du lieu/luat trong ban offline"))
@@ -122,9 +123,8 @@ R:on("G_ActivityShoppingLogic.ClientQueryActivityShoppingLimit", chuaHoTro("G_Ac
 R:on("G_ActivityObjExchange.ClientGetObjectExchangeList", chuaHoTro("G_ActivityObjExchange", "ClientGetObjectExchangeList", 4001, "chua co du lieu/luat trong ban offline"))
 R:on("G_ActivityObjExchange.ClientObjectExchange", chuaHoTro("G_ActivityObjExchange", "ClientObjectExchange", 4001, "chua co du lieu/luat trong ban offline"))
 
--- G_EquipmentLogic — trang bi doc quyen — 0 than ham trong share/
-R:on("G_EquipmentLogic.ClientForgingExclusiveEquip", chuaHoTro("G_EquipmentLogic", "ClientForgingExclusiveEquip", 1, "trang bi doc quyen — 0 than ham trong share/"))
-R:on("G_EquipmentLogic.ClientPurifyExclusiveEquip", chuaHoTro("G_EquipmentLogic", "ClientPurifyExclusiveEquip", 1, "trang bi doc quyen — 0 than ham trong share/"))
+-- G_EquipmentLogic: HAI khoá trang bị độc quyền ĐÃ LÀM THẬT (4/11 tiếp 11) —
+-- xem `handlers/trang_bi_doc_quyen.lua`; đã rút khỏi lớp chắn này.
 
 -- G_GuildStoreLogic — cua hang bang hoi — share khong co phan ket toan
 R:on("G_GuildStoreLogic.ClientRefreshWithContribution", chuaHoTro("G_GuildStoreLogic", "ClientRefreshWithContribution", 1, "cua hang bang hoi — share khong co phan ket toan"))
@@ -156,8 +156,7 @@ R:on("G_ServerStateWarProtocol.ClientGetMovingHistory", chuaHoTro("G_ServerState
 -- G_FreeStrengthLogic — chua co du lieu/luat trong ban offline
 R:on("G_FreeStrengthLogic.ClientGetFreeStrength", chuaHoTro("G_FreeStrengthLogic", "ClientGetFreeStrength", 4001, "chua co du lieu/luat trong ban offline"))
 
--- G_GameCommentLogic — binh luan cua hang — can dich vu ngoai
-R:on("G_GameCommentLogic.ClientCommentGame", chuaHoTro("G_GameCommentLogic", "ClientCommentGame", 1, "binh luan cua hang — can dich vu ngoai"))
+-- G_GameCommentLogic: DA LAM THAT (5/11 — `handlers/binh_luan.lua`, ghi qua /api/comment).
 
 -- G_AdventureLogic — kich hoat ky ngo do may chu van hanh
 R:on("G_AdventureLogic.ClientShowTrigger", chuaHoTro("G_AdventureLogic", "ClientShowTrigger", 1, "kich hoat ky ngo do may chu van hanh"))
@@ -174,8 +173,7 @@ R:on("G_Login.ClientBindingChannelAccount", chuaHoTro("G_Login", "ClientBindingC
 -- G_PotionLogic — he thuoc da chet trong ban goc (PotionConfig bi chu thich)
 R:on("G_PotionLogic.ClientCompleteUpgradePotion", chuaHoTro("G_PotionLogic", "ClientCompleteUpgradePotion", 0, "he thuoc da chet trong ban goc (PotionConfig bi chu thich)"))
 
--- G_RedeemCodeLogic — ma doi thuong do may chu cap
-R:on("G_RedeemCodeLogic.ClientUseRedeemCode", chuaHoTro("G_RedeemCodeLogic", "ClientUseRedeemCode", 1, "ma doi thuong do may chu cap"))
+-- G_RedeemCodeLogic: DA LAM THAT (5/11 — `handlers/ma_doi.lua`, kho mã ở server: /api/redeem).
 
 -- G_TimeHeroLogic — tuong thoi gian — do may chu van hanh
 R:on("G_TimeHeroLogic.ClientBuyTimeHero", chuaHoTro("G_TimeHeroLogic", "ClientBuyTimeHero", 1, "tuong thoi gian — do may chu van hanh"))
@@ -189,6 +187,6 @@ R:on("G_ServerActivityFightCap.ClientGetInfoReq", chuaHoTro("G_ServerActivityFig
 -- G_ActivitySingleRecharge — chua co du lieu/luat trong ban offline
 R:on("G_ActivitySingleRecharge.ClientGetSingleRechargePrize", chuaHoTro("G_ActivitySingleRecharge", "ClientGetSingleRechargePrize", 4001, "chua co du lieu/luat trong ban offline"))
 
-OfflineLog:info(string.format("chua ho tro: da dang ky 100 khoa (lop chan, chua lam that)", 100))
+OfflineLog:info("chua ho tro: da dang ky 78 khoa (lop chan, chua lam that)")
 
 return true

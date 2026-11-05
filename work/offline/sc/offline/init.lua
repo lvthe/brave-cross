@@ -51,6 +51,15 @@ require("offline.handlers.tinh_nang")
 require("offline.handlers.trang_bi_cuong_hoa")
 -- Nâng phẩm + tẩy luyện (30/10): luật gốc bỏ sót phần thuộc tính phụ — xem `handlers/trang_bi_pham.lua`.
 require("offline.handlers.trang_bi_pham")
+-- Trang bị độc quyền — đúc + tinh luyện (4/11 tiếp 11): `KDBGameExclusiveEquipConfig`.
+require("offline.handlers.trang_bi_doc_quyen")
+-- Cánh — tiến cấp (chúc phúc) + cường hoá (5/11): luật chép từ bản Axmol đã chốt 19/10.
+require("offline.handlers.canh")
+-- Dịch vụ ngoài thay SDK chết (5/11): mã đổi thưởng · bình luận · nhận khoản nạp.
+require("offline.handlers.ma_doi")
+require("offline.handlers.binh_luan")
+require("offline.nap_api")
+require("offline.hanh_dong")
 require("offline.handlers.vong_quay")
 require("offline.handlers.nhiem_vu_ngay")
 require("offline.handlers.dau_truong")
@@ -443,6 +452,14 @@ OfflineVaoTran:batDau()
 -- Gọi THẲNG handler với ctx giả sau khi vào cảnh Main — xem `offline/thu_nhom_moi.lua`.
 require("offline.thu_nhom_moi")
 OfflineThuNhomMoi:batDau()
+
+-- Đồ thử trang bị độc quyền (đúc/tinh luyện) — cờ `thu_doc_quyen.flag`.
+require("offline.thu_doc_quyen")
+OfflineThuDocQuyen:batDau()
+
+-- Đồ thử CÁNH (tiến cấp/cường hoá) — cờ `thu_canh.flag`.
+require("offline.thu_canh")
+OfflineThuCanh:batDau()
 
 -- Đồ thử: mở panel Cửa hàng bí ẩn + Hộp hồn rồi gọi đúng đường RPC (hai lối
 -- vào bị khoá theo cấp/tài khoản nên bấm UI không tới). MẶC ĐỊNH TẮT.

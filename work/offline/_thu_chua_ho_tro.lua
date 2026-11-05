@@ -63,7 +63,7 @@ local function maCuoi() return RSP[#RSP] and RSP[#RSP][3] end
 io.write('\n-- 1. dang ky\n')
 local dong = 0
 for _, h in pairs(R.handlers) do dong = dong + 1 end
-check(dong == 84, 'dang ky DU 84 khoa (4 than binh + 8 doanh trai + 4 dau truong da lam that)', dong)
+check(dong == 78, 'dang ky DU 78 khoa (da rut 2 khoa trang bi doc quyen + 2 khoa canh + 2 khoa dich vu ngoai)', dong)
 
 --=========================================================== 2. MÃ GỐC THEO NHÓM
 io.write('\n-- 2. ma goc theo nhom\n')
